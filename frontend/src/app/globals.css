@@ -1,0 +1,202 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #252525;
+  --card: #ffffff;
+  --card-foreground: #252525;
+  --popover: #ffffff;
+  --popover-foreground: #252525;
+  --primary: #333333;
+  --primary-foreground: #fafafa;
+  --secondary: #f7f7f7;
+  --secondary-foreground: #333333;
+  --muted: #f7f7f7;
+  --muted-foreground: #8a8a8a;
+  --accent: #f7f7f7;
+  --accent-foreground: #333333;
+  --destructive: #d73a49;
+  --destructive-foreground: #d73a49;
+  --border: #ebebeb;
+  --input: #ebebeb;
+  --ring: #b5b5b5;
+  --chart-1: #ff8c00;
+  --chart-2: #00bcd4;
+  --chart-3: #2196f3;
+  --chart-4: #4caf50;
+  --chart-5: #ff9800;
+  --radius: 0.625rem;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #252525;
+  --sidebar-primary: #333333;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f7f7f7;
+  --sidebar-accent-foreground: #333333;
+  --sidebar-border: #ebebeb;
+  --sidebar-ring: #b5b5b5;
+  
+  /* Custom Yogreet Colors */
+  --yogreet-red: #d73a49;
+  --yogreet-charcoal: #333333;
+  --yogreet-beige: #f7f7f7;
+  --yogreet-light-gray: #f7f7f7;
+  
+  /* Extended Yogreet Color Palette */
+  --yogreet-orange: #ff6b35;
+  --yogreet-gold: #f4a261;
+  --yogreet-amber: #e9c46a;
+  --yogreet-sage: #2a9d8f;
+  --yogreet-teal: #264653;
+  --yogreet-mint: #a8dadc;
+  --yogreet-lavender: #8b5a96;
+  --yogreet-purple: #6a4c93;
+  --yogreet-coral: #ff8a80;
+  --yogreet-peach: #ffb3ba;
+  --yogreet-cream: #fef7e0;
+  --yogreet-warm-gray: #8d6e63;
+}
+
+.dark {
+  --background: #252525;
+  --foreground: #fafafa;
+  --card: #252525;
+  --card-foreground: #fafafa;
+  --popover: #252525;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #333333;
+  --secondary: #444444;
+  --secondary-foreground: #fafafa;
+  --muted: #444444;
+  --muted-foreground: #b5b5b5;
+  --accent: #444444;
+  --accent-foreground: #fafafa;
+  --destructive: #c53030;
+  --destructive-foreground: #fca5a5;
+  --border: #444444;
+  --input: #444444;
+  --ring: #666666;
+  --chart-1: #3b82f6;
+  --chart-2: #06b6d4;
+  --chart-3: #ff9800;
+  --chart-4: #8b5cf6;
+  --chart-5: #f59e0b;
+  --sidebar: #333333;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #444444;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #444444;
+  --sidebar-ring: #666666;
+  
+  /* Custom Yogreet Colors - Dark Mode */
+  --yogreet-red: #ef4444;
+  --yogreet-charcoal: #fafafa;
+  --yogreet-beige: #444444;
+  --yogreet-light-gray: #333333;
+  
+  /* Extended Yogreet Color Palette - Dark Mode */
+  --yogreet-orange: #ff8a65;
+  --yogreet-amber: #ffcc02;
+  --yogreet-sage: #4db6ac;
+  --yogreet-teal: #37474f;
+  --yogreet-mint: #b2dfdb;
+  --yogreet-lavender: #ba68c8;
+  --yogreet-purple: #9575cd;
+  --yogreet-coral: #ffab91;
+  --yogreet-peach: #f8bbd9;
+  --yogreet-cream: #fff8e1;
+  --yogreet-warm-gray: #a1887f;
+}
+
+@theme inline {
+  --font-sans: var(--font-poppins), 'Geist', 'Geist Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --font-poppins: var(--font-poppins);
+  --font-inter: var(--font-inter);
+  --font-manrope: var(--font-manrope);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Custom Yogreet Colors */
+  --color-yogreet-red: var(--yogreet-red);
+  --color-yogreet-charcoal: var(--yogreet-charcoal);
+  --color-yogreet-beige: var(--yogreet-beige);
+  --color-yogreet-light-gray: var(--yogreet-light-gray);
+  
+  /* Extended Yogreet Color Palette */
+  --color-yogreet-orange: var(--yogreet-orange);
+  --color-yogreet-gold: var(--yogreet-gold);
+  --color-yogreet-amber: var(--yogreet-amber);
+  --color-yogreet-sage: var(--yogreet-sage);
+  --color-yogreet-teal: var(--yogreet-teal);
+  --color-yogreet-mint: var(--yogreet-mint);
+  --color-yogreet-lavender: var(--yogreet-lavender);
+  --color-yogreet-purple: var(--yogreet-purple);
+  --color-yogreet-coral: var(--yogreet-coral);
+  --color-yogreet-peach: var(--yogreet-peach);
+  --color-yogreet-cream: var(--yogreet-cream);
+  --color-yogreet-warm-gray: var(--yogreet-warm-gray);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  .animate-scroll {
+    animation: scroll 30s linear infinite;
+  }
+}
