@@ -13,7 +13,6 @@ interface ExploreDetailModalProps {
     minQuantity: number
     origin: string
     image: string
-    sampleAvailable: boolean
     rating: number
     reviews: number
     description: string
@@ -76,11 +75,6 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
               <div className="mb-6 pb-6 border-b border-gray-200">
                 <p className="text-3xl font-poppins font-semibold text-yogreet-red mb-2">${spice.price}/kg</p>
                 <p className="text-yogreet-charcoal text-opacity-70 mb-4">Minimum order: {spice.minQuantity} kg</p>
-                {spice.sampleAvailable && (
-                  <div className="bg-yogreet-light-gray px-3 py-2 text-sm text-yogreet-charcoal font-medium inline-block">
-                    Sample Available
-                  </div>
-                )}
               </div>
 
               {/* Buttons */}

@@ -17,7 +17,7 @@ export function ExplorePagination({ currentPage, totalPages, onPageChange }: Exp
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="p-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray disabled:opacity-50 disabled:cursor-not-allowed transition"
+        className="p-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
       >
         <FiChevronLeft className="w-5 h-5" />
       </button>
@@ -26,7 +26,7 @@ export function ExplorePagination({ currentPage, totalPages, onPageChange }: Exp
         <>
           <button
             onClick={() => onPageChange(1)}
-            className="px-3 py-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray transition"
+            className="px-3 py-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray cursor-pointer transition"
           >
             1
           </button>
@@ -38,7 +38,7 @@ export function ExplorePagination({ currentPage, totalPages, onPageChange }: Exp
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`px-3 py-2 transition ${
+          className={`px-3 py-2 transition cursor-pointer ${
             page === currentPage
               ? "bg-yogreet-red text-white"
               : "border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray"
@@ -55,7 +55,7 @@ export function ExplorePagination({ currentPage, totalPages, onPageChange }: Exp
           )}
           <button
             onClick={() => onPageChange(totalPages)}
-            className="px-3 py-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray transition"
+            className="px-3 py-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray cursor-pointer transition"
           >
             {totalPages}
           </button>
@@ -65,7 +65,7 @@ export function ExplorePagination({ currentPage, totalPages, onPageChange }: Exp
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="p-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray disabled:opacity-50 disabled:cursor-not-allowed transition"
+        className="p-2 border border-gray-200 text-yogreet-charcoal hover:bg-yogreet-light-gray disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
       >
         <FiChevronRight className="w-5 h-5" />
       </button>

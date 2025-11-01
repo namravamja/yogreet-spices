@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { FiStar, FiMapPin, FiArrowLeft, FiCheck, FiX, FiUser } from "react-icons/fi"
 import { Navbar, Footer } from "@/components/layout"
+import BuyBulkModal from "@/components/buyer/BuyBulkModal"
+import RequestSampleModal from "@/components/buyer/RequestSampleModal"
 
 // Mock data - same as in explore page
 const MOCK_SPICES = [
@@ -16,7 +18,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Telangana, India",
     image: "/turmeric-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.8,
     reviews: 234,
     description:
@@ -34,7 +35,6 @@ const MOCK_SPICES = [
     minQuantity: 50,
     origin: "Rajasthan, India",
     image: "/cumin-seeds-spice.jpg",
-    sampleAvailable: true,
     rating: 4.7,
     reviews: 189,
     description: "Authentic organic cumin seeds with a warm, earthy flavor. Ideal for Indian cuisine and spice blends.",
@@ -51,7 +51,6 @@ const MOCK_SPICES = [
     minQuantity: 200,
     origin: "Andhra Pradesh, India",
     image: "/red-chili-powder-spice.jpg",
-    sampleAvailable: false,
     rating: 4.6,
     reviews: 156,
     description: "Vibrant red chili powder with perfect heat and color. Made from premium red chilies.",
@@ -68,7 +67,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Madhya Pradesh, India",
     image: "/coriander-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.9,
     reviews: 267,
     description: "Fresh coriander powder with a citrusy aroma. Perfect for curries and spice blends.",
@@ -85,7 +83,6 @@ const MOCK_SPICES = [
     minQuantity: 25,
     origin: "Kerala, India",
     image: "/cardamom-pods-spice.jpg",
-    sampleAvailable: true,
     rating: 4.8,
     reviews: 198,
     description: "Whole green cardamom pods with intense aromatic flavor. Premium quality from Kerala.",
@@ -102,7 +99,6 @@ const MOCK_SPICES = [
     minQuantity: 50,
     origin: "Kerala, India",
     image: "/cloves-whole-spice.jpg",
-    sampleAvailable: false,
     rating: 4.7,
     reviews: 142,
     description: "Aromatic whole cloves with strong flavor. Perfect for spice blends and traditional recipes.",
@@ -119,7 +115,6 @@ const MOCK_SPICES = [
     minQuantity: 150,
     origin: "Rajasthan, India",
     image: "/fenugreek-seeds-spice.jpg",
-    sampleAvailable: true,
     rating: 4.5,
     reviews: 87,
     description: "Whole fenugreek seeds with a slightly bitter taste. Used in Indian cooking and traditional medicine.",
@@ -136,7 +131,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Rajasthan, India",
     image: "/asafoetida-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.6,
     reviews: 112,
     description: "Pure asafoetida powder with strong pungent aroma. Essential for Indian vegetarian cooking.",
@@ -153,7 +147,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Kerala, India",
     image: "/turmeric-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.8,
     reviews: 203,
     description: "Freshly ground black pepper with sharp, peppery flavor. Premium quality from Kerala.",
@@ -211,6 +204,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [reviews, setReviews] = useState(MOCK_REVIEWS)
   const [showReviewForm, setShowReviewForm] = useState(false)
+  const [showBulkModal, setShowBulkModal] = useState(false)
+  const [showSampleModal, setShowSampleModal] = useState(false)
   const [newReview, setNewReview] = useState({
     rating: 5,
     comment: "",
@@ -280,7 +275,7 @@ export default function ProductDetailPage() {
             <p className="text-yogreet-warm-gray mb-6">The product you're looking for doesn't exist.</p>
             <button
               onClick={() => router.back()}
-              className="px-6 py-2 bg-yogreet-red text-white font-medium rounded hover:opacity-80 transition-opacity"
+              className="px-6 py-2 bg-yogreet-red text-white font-medium rounded hover:opacity-80 transition-opacity cursor-pointer"
             >
               Go Back
             </button>
@@ -300,7 +295,7 @@ export default function ProductDetailPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-yogreet-charcoal hover:text-yogreet-red transition-colors"
+            className="flex items-center gap-2 text-yogreet-charcoal hover:text-yogreet-red transition-colors cursor-pointer"
           >
             <FiArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back to Explore</span>
@@ -312,28 +307,49 @@ export default function ProductDetailPage() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Image */}
-          <div className="space-y-4">
-            <div className="aspect-square bg-yogreet-light-gray rounded-lg overflow-hidden">
+          <div className="space-y-6">
+            <div className="aspect-square w-full bg-yogreet-light-gray rounded-lg overflow-hidden">
               <Image
                 src={product.image || "/placeholder.svg"}
                 alt={product.name}
-                width={600}
-                height={600}
+                width={300}
+                height={300}
                 className="w-full h-full object-cover"
               />
             </div>
             
-            {/* Sample Available Badge */}
-            {product.sampleAvailable && (
-              <div className="flex items-center gap-2 text-yogreet-teal">
-                <FiCheck className="w-4 h-4" />
-                <span className="text-sm font-medium">Sample Available</span>
+
+            {/* Product Details */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-yogreet-charcoal">Product Details</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-yogreet-warm-gray">Origin</span>
+                  <div className="flex items-center gap-1">
+                    <FiMapPin className="w-4 h-4 text-yogreet-sage" />
+                    <span className="text-yogreet-charcoal">{product.origin}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-yogreet-warm-gray">Processing Method</span>
+                  <span className="text-yogreet-charcoal">{product.processingMethod}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-yogreet-warm-gray">Quality Grade</span>
+                  <span className="text-yogreet-charcoal">{product.qualityGrade}</span>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-3">
+              <h3 className="text-xl font-semibold text-yogreet-charcoal">Description</h3>
+              <p className="text-yogreet-warm-gray leading-relaxed">{product.description}</p>
+            </div>
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-5 flex flex-col">
             <div>
               <h1 className="text-3xl font-poppins font-semibold text-yogreet-charcoal mb-2">{product.name}</h1>
               <p className="text-yogreet-warm-gray mb-4">by {product.seller}</p>
@@ -364,34 +380,6 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Product Details */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-yogreet-charcoal">Product Details</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-yogreet-warm-gray">Origin</span>
-                  <div className="flex items-center gap-1">
-                    <FiMapPin className="w-4 h-4 text-yogreet-sage" />
-                    <span className="text-yogreet-charcoal">{product.origin}</span>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-yogreet-warm-gray">Processing Method</span>
-                  <span className="text-yogreet-charcoal">{product.processingMethod}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-yogreet-warm-gray">Quality Grade</span>
-                  <span className="text-yogreet-charcoal">{product.qualityGrade}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-3">
-              <h3 className="text-xl font-semibold text-yogreet-charcoal">Description</h3>
-              <p className="text-yogreet-warm-gray leading-relaxed">{product.description}</p>
-            </div>
-
             {/* Seller Info */}
             <div className="bg-yogreet-light-gray p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-yogreet-charcoal mb-3">Seller Information</h3>
@@ -416,10 +404,16 @@ export default function ProductDetailPage() {
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <button className="flex-1 bg-yogreet-red text-white py-3 font-manrope font-medium text-lg hover:opacity-80 transition-opacity">
+              <button 
+                onClick={() => setShowBulkModal(true)}
+                className="flex-1 bg-yogreet-red text-white py-3 font-manrope font-medium text-lg hover:opacity-80 transition-opacity cursor-pointer"
+              >
                 Buy in Bulk
               </button>
-              <button className="flex-1 border-2 border-yogreet-sage text-yogreet-sage py-3 font-manrope font-medium text-lg hover:bg-yogreet-sage hover:text-white transition-all">
+              <button 
+                onClick={() => setShowSampleModal(true)}
+                className="flex-1 border-2 border-yogreet-sage text-yogreet-sage py-3 font-manrope font-medium text-lg hover:bg-yogreet-sage hover:text-white transition-all cursor-pointer"
+              >
                 Request Sample
               </button>
             </div>
@@ -452,7 +446,7 @@ export default function ProductDetailPage() {
             {/* Add Review Button */}
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
-              className="px-6 py-2 bg-yogreet-red text-white font-medium rounded hover:opacity-80 transition-opacity"
+              className="px-6 py-2 bg-yogreet-red text-white font-medium rounded hover:opacity-80 transition-opacity cursor-pointer"
             >
               {showReviewForm ? "Cancel" : "Write a Review"}
             </button>
@@ -483,7 +477,7 @@ export default function ProductDetailPage() {
                         key={i}
                         type="button"
                         onClick={() => setNewReview({ ...newReview, rating: i + 1 })}
-                        className="focus:outline-none"
+                        className="focus:outline-none cursor-pointer"
                       >
                         <FiStar
                           className={`w-6 h-6 ${i < newReview.rating ? "fill-yogreet-gold text-yogreet-gold" : "text-yogreet-light-gray"}`}
@@ -507,14 +501,14 @@ export default function ProductDetailPage() {
                 <div className="flex gap-4">
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-yogreet-red text-white font-medium rounded hover:opacity-80 transition-opacity"
+                    className="px-6 py-2 bg-yogreet-red text-white font-medium rounded hover:opacity-80 transition-opacity cursor-pointer"
                   >
                     Submit Review
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowReviewForm(false)}
-                    className="px-6 py-2 border border-gray-300 text-yogreet-charcoal font-medium rounded hover:bg-gray-50 transition-colors"
+                    className="px-6 py-2 border border-gray-300 text-yogreet-charcoal font-medium rounded hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -563,6 +557,36 @@ export default function ProductDetailPage() {
       </div>
 
       <Footer />
+
+      {/* Buy Bulk Modal */}
+      {product && (
+        <BuyBulkModal
+          isOpen={showBulkModal}
+          onClose={() => setShowBulkModal(false)}
+          product={{
+            name: product.name,
+            price: product.price,
+            minQuantity: product.minQuantity,
+            origin: product.origin,
+            image: product.image,
+          }}
+        />
+      )}
+
+      {/* Request Sample Modal */}
+      {product && (
+        <RequestSampleModal
+          isOpen={showSampleModal}
+          onClose={() => setShowSampleModal(false)}
+          product={{
+            name: product.name,
+            price: product.price,
+            minQuantity: product.minQuantity,
+            origin: product.origin,
+            image: product.image,
+          }}
+        />
+      )}
     </main>
   )
 }

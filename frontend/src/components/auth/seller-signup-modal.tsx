@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser } from "react-icons/fi"
 
 interface SellerSignupModalProps {
@@ -12,22 +13,17 @@ interface SellerSignupModalProps {
 export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSignupModalProps) {
   console.log("SellerSignupModal rendered, isOpen:", isOpen)
   
+  const router = useRouter()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!")
-      return
-    }
     
     setIsLoading(true)
     // Simulate API call
@@ -35,6 +31,8 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
       console.log("Seller Signup:", formData)
       setIsLoading(false)
       onClose()
+      try { localStorage.setItem("yg_just_signed_up", "1") } catch {}
+      router.push("/seller/verify-document/1")
     }, 1000)
   }
 
@@ -71,10 +69,8 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
             name: "",
             email: "",
             password: "",
-            confirmPassword: "",
           })
       setShowPassword(false)
-      setShowConfirmPassword(false)
       setIsLoading(false)
     }
   }, [isOpen])
@@ -197,66 +193,11 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
               </div>
             </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiLock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  disabled={isLoading}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  {showConfirmPassword ? (
-                    <FiEyeOff className="h-5 w-5" />
-                  ) : (
-                    <FiEye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                required
-                disabled={isLoading}
-                className="h-4 w-4 text-yogreet-sage focus:ring-yogreet-sage border-gray-300 rounded mt-1 cursor-pointer"
-              />
-              <label className="ml-2 text-sm text-gray-700 font-inter">
-                I agree to the{" "}
-                <button type="button" className="text-yogreet-sage hover:text-yogreet-charcoal transition-colors cursor-pointer">
-                  Terms of Service
-                </button>{" "}
-                and{" "}
-                <button type="button" className="text-yogreet-sage hover:text-yogreet-charcoal transition-colors cursor-pointer">
-                  Privacy Policy
-                </button>
-              </label>
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-sage hover:bg-yogreet-sage/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-sage disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
+              className="w-full flex justify-center items-center gap-2 mt-6 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-sage hover:bg-yogreet-sage/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-sage disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
             >
               {isLoading ? (
                 <>
@@ -264,7 +205,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   Creating seller account...
                 </>
               ) : (
-                "Create Seller Account"
+                "Go to Document Verification"
               )}
             </button>
           </form>

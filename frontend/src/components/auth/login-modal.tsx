@@ -7,17 +7,36 @@ interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToSignup: () => void
+  onLoginSuccess?: () => void
 }
 
-export function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
   console.log("LoginModal rendered, isOpen:", isOpen)
   
   const [formData, setFormData] = useState({
-    email: "",
+    companyEmail: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Field configs for array-driven rendering
+  const fieldConfigs = [
+    {
+      name: "companyEmail" as const,
+      label: "Company Email Address",
+      type: "email" as const,
+      placeholder: "Enter company email",
+      Icon: FiMail,
+    },
+    {
+      name: "password" as const,
+      label: "Password",
+      type: "password" as const,
+      placeholder: "Enter your password",
+      Icon: FiLock,
+    },
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,6 +47,10 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProp
       console.log("Login:", formData)
       setIsLoading(false)
       onClose()
+      // Call the login success callback if provided
+      if (onLoginSuccess) {
+        onLoginSuccess()
+      }
     }, 1000)
   }
 
@@ -61,7 +84,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProp
   useEffect(() => {
     if (!isOpen) {
       setFormData({
-        email: "",
+        companyEmail: "",
         password: "",
       })
       setShowPassword(false)
@@ -106,69 +129,39 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProp
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-manrope font-medium text-gray-700 mb-1"
-              >
-                Email address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-purple focus:border-yogreet-purple disabled:bg-gray-50 disabled:text-gray-500 font-inter"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-manrope font-medium text-gray-700 mb-1"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiLock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-purple focus:border-yogreet-purple disabled:bg-gray-50 disabled:text-gray-500 font-inter"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  {showPassword ? (
-                    <FiEyeOff className="h-5 w-5" />
-                  ) : (
-                    <FiEye className="h-5 w-5" />
+            {fieldConfigs.map(({ name, label, type, placeholder, Icon }) => (
+              <div key={name}>
+                <label htmlFor={name} className="block text-sm font-manrope font-medium text-gray-700 mb-1">
+                  {label}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Icon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id={name}
+                    name={name}
+                    type={name === "password" ? (showPassword ? "text" : "password") : type}
+                    required
+                    value={(formData as any)[name]}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-purple focus:border-yogreet-purple disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
+                    placeholder={placeholder}
+                  />
+                  {name === "password" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={isLoading}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
+                      {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                    </button>
                   )}
-                </button>
+                </div>
               </div>
-            </div>
+            ))}
 
             {/* Remember me and Forgot password */}
             <div className="flex items-center justify-between">

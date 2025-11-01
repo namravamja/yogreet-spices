@@ -1,0 +1,177 @@
+"use client";
+
+import type React from "react";
+import { useRef, useState } from "react";
+
+interface SellerExportEligibilityData {
+  iecCode: string;
+  iecCertificate?: string;
+  apedaRegistrationNumber: string;
+  apedaCertificate?: string;
+  spicesBoardRegistrationNumber: string;
+  spicesBoardCertificate?: string;
+  tradeLicense?: string;
+  bankAccountHolderName: string;
+  bankAccountNumber: string;
+  bankIfscCode: string;
+  bankProofDocument?: string;
+}
+
+interface Step2Props {
+  data: SellerExportEligibilityData & Record<string, any>;
+  updateData: (updates: Partial<SellerExportEligibilityData>) => void;
+  setUploadedFiles: (
+    files:
+      | Record<string, File | File[]>
+      | ((prev: Record<string, File | File[]>) => Record<string, File | File[]>)
+  ) => void;
+  onSave?: () => Promise<boolean>;
+  isLoading?: boolean;
+}
+
+export default function Step2ExportEligibility({ data, updateData, setUploadedFiles }: Step2Props) {
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [localFiles, setLocalFiles] = useState<Record<string, File | null>>({});
+
+  const handleChange = (field: keyof SellerExportEligibilityData, value: any) => {
+    updateData({ [field]: value } as Partial<SellerExportEligibilityData>);
+  };
+
+  const renderUpload = (id: string, label: string) => {
+    const file = localFiles[id] || null;
+    return (
+      <div>
+        <label className="block text-sm font-medium text-stone-700 mb-2">{label}</label>
+        <input
+          ref={(el) => {
+            inputRefs.current[id] = el;
+          }}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0] || null;
+            setLocalFiles((prev) => ({ ...prev, [id]: f }));
+            if (f) setUploadedFiles((prev) => ({ ...(typeof prev === "function" ? {} : prev), [id]: f } as any));
+          }}
+        />
+        {!file ? (
+          <div
+            onClick={() => inputRefs.current[id]?.click()}
+            className="mt-1 flex items-center justify-center px-6 py-12 border-2 border-dashed border-stone-300 rounded-md hover:border-yogreet-sage/50 transition-colors cursor-pointer"
+          >
+            <div className="space-y-1 text-center flex flex-col items-center">
+              <div className="text-sm text-yogreet-warm-gray">
+                <span className="font-medium text-yogreet-sage">Click to upload</span> or drag and drop
+              </div>
+              <p className="text-xs text-yogreet-warm-gray">PDF, JPG, PNG up to 10MB</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 p-3 border-2 border-dashed border-stone-300 rounded-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-stone-700">{file.name}</p>
+                <p className="text-xs text-stone-500">{(file.size / 1024).toFixed(1)} KB</p>
+              </div>
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-700"
+                onClick={() => {
+                  setLocalFiles((prev) => ({ ...prev, [id]: null }));
+                  setUploadedFiles((prev) => {
+                    const next = typeof prev === "function" ? (prev as any)({}) : { ...(prev as any) };
+                    delete (next as any)[id];
+                    return next;
+                  });
+                  if (inputRefs.current[id]) inputRefs.current[id]!.value = "";
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl sm:text-2xl font-light text-yogreet-charcoal mb-4 sm:mb-6">Export Eligibility Verification</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <label className="block text-sm font-medium text-stone-700 mb-2">IEC Code</label>
+          <input
+            type="text"
+            value={data.iecCode || ""}
+            onChange={(e) => handleChange("iecCode", e.target.value)}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+          />
+        </div>
+        <div className="md:col-span-3">{renderUpload("iecCertificate", "IEC Certificate")}</div>
+        <div className="md:col-span-3">{renderUpload("tradeLicense", "Trade License")}</div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <label className="block text-sm font-medium text-stone-700 mb-2">APEDA Registration Number</label>
+          <input
+            type="text"
+            value={data.apedaRegistrationNumber || ""}
+            onChange={(e) => handleChange("apedaRegistrationNumber", e.target.value)}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+          />
+        </div>
+        <div className="md:col-span-3">{renderUpload("apedaCertificate", "APEDA Certificate")}</div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <label className="block text-sm font-medium text-stone-700 mb-2">Spices Board Registration Number</label>
+          <input
+            type="text"
+            value={data.spicesBoardRegistrationNumber || ""}
+            onChange={(e) => handleChange("spicesBoardRegistrationNumber", e.target.value)}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+          />
+        </div>
+        <div className="md:col-span-3">{renderUpload("spicesBoardCertificate", "Spices Board Certificate")}</div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <label className="block text-sm font-medium text-stone-700 mb-2">Bank Account Holder Name</label>
+          <input
+            type="text"
+            value={data.bankAccountHolderName || ""}
+            onChange={(e) => handleChange("bankAccountHolderName", e.target.value)}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+          />
+        </div>
+        <div className="md:col-span-1">
+          <label className="block text-sm font-medium text-stone-700 mb-2">Bank Account Number</label>
+          <input
+            type="text"
+            value={data.bankAccountNumber || ""}
+            onChange={(e) => handleChange("bankAccountNumber", e.target.value)}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+          />
+        </div>
+        <div className="md:col-span-1">
+          <label className="block text-sm font-medium text-stone-700 mb-2">Bank IFSC Code</label>
+          <input
+            type="text"
+            value={data.bankIfscCode || ""}
+            onChange={(e) => handleChange("bankIfscCode", e.target.value)}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+          />
+        </div>
+        <div className="md:col-span-3">{renderUpload("bankProofDocument", "Bank Proof Document (Cancelled Cheque/Statement)")}</div>
+      </div>
+    </div>
+  );
+}
+
+

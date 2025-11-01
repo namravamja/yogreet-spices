@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import { Navbar, Footer } from "@/components/layout"
-import { ExploreHeader, ExploreFilterBar, ExploreSpiceCard, ExplorePagination, type FilterState } from "@/components/explore"
+import { ExploreHeader, ExploreFilterBar, ExploreSpiceCard, ExplorePagination, type FilterState, type ExploreSpiceCardProps } from "@/components/explore"
+import BuyBulkModal from "@/components/buyer/BuyBulkModal"
+import RequestSampleModal from "@/components/buyer/RequestSampleModal"
 
 // Mock data for spices
 const MOCK_SPICES = [
@@ -14,7 +16,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Telangana, India",
     image: "/turmeric-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.8,
     reviews: 234,
     description:
@@ -32,7 +33,6 @@ const MOCK_SPICES = [
     minQuantity: 50,
     origin: "Rajasthan, India",
     image: "/cumin-seeds-spice.jpg",
-    sampleAvailable: true,
     rating: 4.7,
     reviews: 189,
     description: "Authentic organic cumin seeds with a warm, earthy flavor. Ideal for Indian cuisine and spice blends.",
@@ -49,7 +49,6 @@ const MOCK_SPICES = [
     minQuantity: 200,
     origin: "Andhra Pradesh, India",
     image: "/red-chili-powder-spice.jpg",
-    sampleAvailable: false,
     rating: 4.6,
     reviews: 156,
     description: "Vibrant red chili powder with perfect heat and color. Made from premium red chilies.",
@@ -66,7 +65,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Madhya Pradesh, India",
     image: "/coriander-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.9,
     reviews: 267,
     description: "Fresh coriander powder with a citrusy aroma. Perfect for curries and spice blends.",
@@ -83,7 +81,6 @@ const MOCK_SPICES = [
     minQuantity: 25,
     origin: "Kerala, India",
     image: "/cardamom-pods-spice.jpg",
-    sampleAvailable: true,
     rating: 4.8,
     reviews: 198,
     description: "Whole green cardamom pods with intense aromatic flavor. Premium quality from Kerala.",
@@ -100,7 +97,6 @@ const MOCK_SPICES = [
     minQuantity: 50,
     origin: "Kerala, India",
     image: "/cloves-whole-spice.jpg",
-    sampleAvailable: false,
     rating: 4.7,
     reviews: 142,
     description: "Aromatic whole cloves with strong flavor. Perfect for spice blends and traditional recipes.",
@@ -117,7 +113,6 @@ const MOCK_SPICES = [
     minQuantity: 150,
     origin: "Rajasthan, India",
     image: "/fenugreek-seeds-spice.jpg",
-    sampleAvailable: true,
     rating: 4.5,
     reviews: 87,
     description: "Whole fenugreek seeds with a slightly bitter taste. Used in Indian cooking and traditional medicine.",
@@ -134,7 +129,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Rajasthan, India",
     image: "/asafoetida-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.6,
     reviews: 112,
     description: "Pure asafoetida powder with strong pungent aroma. Essential for Indian vegetarian cooking.",
@@ -151,7 +145,6 @@ const MOCK_SPICES = [
     minQuantity: 100,
     origin: "Kerala, India",
     image: "/turmeric-powder-spice.jpg",
-    sampleAvailable: true,
     rating: 4.8,
     reviews: 203,
     description: "Freshly ground black pepper with sharp, peppery flavor. Premium quality from Kerala.",
@@ -166,18 +159,35 @@ const ITEMS_PER_PAGE = 40
 
 export default function ExplorePage() {
   const [currentPage, setCurrentPage] = useState(1)
+  const [showBulkModal, setShowBulkModal] = useState(false)
+  const [showSampleModal, setShowSampleModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [filters, setFilters] = useState<FilterState>({
     category: "all",
     priceRange: "all",
-    availability: "all",
+    location: "all",
     country: "all",
-    sampleAvailable: false,
+    seller: "all",
     sortBy: "relevance",
   })
 
+  // Get unique sellers from MOCK_SPICES
+  const uniqueSellers = Array.from(new Set(MOCK_SPICES.map(spice => spice.seller))).sort()
+  
+  // Get unique locations from MOCK_SPICES (using sellerLocation)
+  const uniqueLocations = Array.from(new Set(MOCK_SPICES.map(spice => spice.sellerLocation))).sort()
+
   // Filter and sort spices
   const filteredSpices = MOCK_SPICES.filter((spice) => {
-    if (filters.sampleAvailable && !spice.sampleAvailable) return false
+    // Seller filter
+    if (filters.seller !== "all" && spice.seller !== filters.seller) {
+      return false
+    }
+    // Location filter
+    if (filters.location !== "all" && spice.sellerLocation !== filters.location) {
+      return false
+    }
+    // Add other filter conditions here if needed
     return true
   })
 
@@ -198,11 +208,25 @@ export default function ExplorePage() {
     setCurrentPage(1)
   }
 
+  const handleBulkOrder = (spice: any) => {
+    setSelectedProduct(spice)
+    setShowBulkModal(true)
+  }
+
+  const handleRequestSample = (spice: any) => {
+    setSelectedProduct(spice)
+    setShowSampleModal(true)
+  }
+
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
       <ExploreHeader />
-      <ExploreFilterBar onFilterChange={handleFilterChange} />
+      <ExploreFilterBar 
+        onFilterChange={handleFilterChange} 
+        sellers={uniqueSellers}
+        locations={uniqueLocations}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
@@ -211,7 +235,12 @@ export default function ExplorePage() {
             {/* Spice Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
               {paginatedSpices.map((spice) => (
-                <ExploreSpiceCard key={spice.id} {...spice} />
+                <ExploreSpiceCard 
+                  key={spice.id} 
+                  {...spice} 
+                  onBulkOrder={() => handleBulkOrder(spice)}
+                  onRequestSample={() => handleRequestSample(spice)}
+                />
               ))}
             </div>
 
@@ -233,6 +262,36 @@ export default function ExplorePage() {
       </div>
 
       <Footer />
+
+      {/* Buy Bulk Modal */}
+      {selectedProduct && (
+        <BuyBulkModal
+          isOpen={showBulkModal}
+          onClose={() => setShowBulkModal(false)}
+          product={{
+            name: selectedProduct.name,
+            price: selectedProduct.price,
+            minQuantity: selectedProduct.minQuantity,
+            origin: selectedProduct.origin,
+            image: selectedProduct.image,
+          }}
+        />
+      )}
+
+      {/* Request Sample Modal */}
+      {selectedProduct && (
+        <RequestSampleModal
+          isOpen={showSampleModal}
+          onClose={() => setShowSampleModal(false)}
+          product={{
+            name: selectedProduct.name,
+            price: selectedProduct.price,
+            minQuantity: selectedProduct.minQuantity,
+            origin: selectedProduct.origin,
+            image: selectedProduct.image,
+          }}
+        />
+      )}
     </main>
   )
 }

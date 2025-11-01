@@ -1,41 +1,59 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export function TopSpicesSection() {
   const [isHovered, setIsHovered] = useState(false)
+  const router = useRouter()
+  
   const spices = [
     {
+      id: "1",
       name: "Turmeric Powder",
       origin: "Telangana, India",
       image: "/turmeric-powder-spice.jpg",
     },
     {
+      id: "2",
       name: "Cumin Seeds",
       origin: "Gujarat, India",
       image: "/cumin-seeds-spice.jpg",
     },
     {
+      id: "3",
       name: "Red Chili Powder",
       origin: "Andhra Pradesh, India",
       image: "/red-chili-powder-spice.jpg",
     },
     {
+      id: "4",
       name: "Coriander Powder",
       origin: "Rajasthan, India",
       image: "/coriander-powder-spice.jpg",
     },
     {
+      id: "5",
       name: "Cardamom Pods",
       origin: "Kerala, India",
       image: "/cardamom-pods-spice.jpg",
     },
     {
+      id: "6",
       name: "Cloves",
       origin: "Kerala, India",
       image: "/cloves-whole-spice.jpg",
     },
   ]
+
+  const handleCardClick = (id: string) => {
+    router.push(`/explore/${id}`)
+  }
+
+  const handleViewDetailsClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    router.push(`/explore/${id}`)
+  }
 
   // Duplicate spices for infinite scroll effect
   const duplicatedSpices = [...spices, ...spices]
@@ -68,7 +86,11 @@ export function TopSpicesSection() {
             }}
           >
             {duplicatedSpices.map((spice, index) => (
-              <div key={index} className="shrink-0 w-80 bg-white overflow-hidden hover:shadow-lg transition-shadow rounded-xs">
+              <div 
+                key={index} 
+                onClick={() => handleCardClick(spice.id)}
+                className="shrink-0 w-80 bg-white overflow-hidden hover:shadow-lg transition-shadow rounded-xs cursor-pointer"
+              >
                 <div className="relative aspect-square bg-gray-200 overflow-hidden">
                   <img
                     src={spice.image || "/placeholder.svg"}
@@ -79,7 +101,10 @@ export function TopSpicesSection() {
                 <div className="p-4">
                   <h3 className="font-poppins font-semibold text-yogreet-charcoal text-base mb-2">{spice.name}</h3>
                   <p className="text-yogreet-charcoal font-inter text-sm mb-3">{spice.origin}</p>
-                  <button className="w-full px-4 py-2 bg-yogreet-red text-white font-manrope font-medium hover:opacity-90 transition-opacity cursor-pointer">
+                  <button 
+                    onClick={(e) => handleViewDetailsClick(e, spice.id)}
+                    className="w-full px-4 py-2 bg-yogreet-red text-white font-manrope font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                  >
                     View Details
                   </button>
                 </div>

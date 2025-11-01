@@ -4,10 +4,9 @@ export interface ProductCardProps {
   image: string
   pricePerKg: number
   quantity: number
-  sampleAvailable: boolean
 }
 
-export function ProductCard({ name, image, pricePerKg, quantity, sampleAvailable }: ProductCardProps) {
+export function ProductCard({ name, image, pricePerKg, quantity }: ProductCardProps) {
   return (
     <div className="bg-white overflow-hidden border border-yogreet-light-gray hover:shadow-lg hover:border-gray-100 transition-all duration-300 rounded-xs">
       <div className="aspect-square bg-yogreet-light-gray overflow-hidden">
@@ -23,16 +22,6 @@ export function ProductCard({ name, image, pricePerKg, quantity, sampleAvailable
           <div className="flex justify-between items-center">
             <span className="text-yogreet-warm-gray font-inter text-xs">Available Qty</span>
             <span className="font-inter text-xs text-yogreet-charcoal">{quantity} kg</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-yogreet-warm-gray font-inter text-xs">Sample</span>
-            <span
-              className={`text-xs font-manrope font-medium px-2 py-0.5 rounded ${
-                sampleAvailable ? "bg-yogreet-mint text-yogreet-teal" : "bg-yogreet-light-gray text-yogreet-warm-gray"
-              }`}
-            >
-              {sampleAvailable ? "Available" : "Not Available"}
-            </span>
           </div>
         </div>
         <div className="flex gap-1">

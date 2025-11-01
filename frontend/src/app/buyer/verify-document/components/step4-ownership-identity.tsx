@@ -1,0 +1,97 @@
+"use client";
+
+import type React from "react";
+import { useRef, useState } from "react";
+
+interface ProfileData {
+  director_id_document?: string;
+  business_address_proof_document?: string;
+  business_address?: string;
+}
+
+interface Step4Props {
+  data: ProfileData;
+}
+
+export default function Step4OwnershipIdentity({ data }: Step4Props) {
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [localFiles, setLocalFiles] = useState<Record<string, File | null>>({});
+
+  const renderUpload = (id: string, label: string) => {
+    const file = localFiles[id] || null;
+    return (
+      <div>
+        <label className="block text-sm font-medium text-stone-700 mb-2">{label}</label>
+        <input
+          ref={(el) => {
+            inputRefs.current[id] = el;
+          }}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0] || null;
+            setLocalFiles((prev) => ({ ...prev, [id]: f }));
+          }}
+        />
+        {!file ? (
+          <div
+            onClick={() => inputRefs.current[id]?.click()}
+            className="mt-1 flex items-center justify-center px-6 py-12 min-h-40 border-2 border-dashed border-stone-300 rounded-md hover:border-yogreet-purple/50 transition-colors cursor-pointer"
+          >
+            <div className="space-y-1 text-center flex flex-col items-center">
+              <div className="text-sm text-yogreet-warm-gray">
+                <span className="font-medium text-yogreet-purple">Click to upload</span> or drag and drop
+              </div>
+              <p className="text-xs text-yogreet-warm-gray">PDF, JPG, PNG up to 10MB</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 p-3 border-2 border-dashed border-stone-300 rounded-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-stone-700">{file.name}</p>
+                <p className="text-xs text-stone-500">{(file.size / 1024).toFixed(1)} KB</p>
+              </div>
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-700"
+                onClick={() => {
+                  setLocalFiles((prev) => ({ ...prev, [id]: null }));
+                  if (inputRefs.current[id]) inputRefs.current[id]!.value = "";
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  return (
+    <div>
+      <h2 className="text-xl sm:text-2xl font-light text-yogreet-charcoal mb-4 sm:mb-6">
+        Ownership & Identity Verification
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-2">{renderUpload("director_id_document", "Director / Authorized Person ID (NRIC/Passport)")}</div>
+        
+        <div className="md:col-span-2">{renderUpload("business_address_proof_document", "Business Address Proof")}</div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">Business Address (full address)</label>
+          <textarea
+            value={data?.business_address || ""}
+            onChange={() => {}}
+            rows={3}
+            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-red focus:outline-none focus:ring-1 focus:ring-yogreet-red"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+

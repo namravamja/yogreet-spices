@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
-import { FiMenu } from "react-icons/fi"
+import { useState, useEffect } from "react"
+import { FiMenu, FiUser, FiLogOut, FiPackage, FiTruck, FiShoppingCart, FiBox, FiChevronDown, FiCheckCircle } from "react-icons/fi"
 import { LoginModal, SignupModal, SellerSignupModal, SellerLoginModal } from "../auth"
 
 export function Navbar() {
@@ -12,6 +12,21 @@ export function Navbar() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [isSellerSignupModalOpen, setIsSellerSignupModalOpen] = useState(false)
   const [isSellerLoginModalOpen, setIsSellerLoginModalOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false) // Temporary login state
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [showSellerDropdown, setShowSellerDropdown] = useState(false)
+  const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [sellerDropdownTimeout, setSellerDropdownTimeout] = useState<NodeJS.Timeout | null>(null)
+  // Mock: whether buyer's document verification is pending
+  const [isDocVerificationPending] = useState(true)
+
+  // Check localStorage on component mount
+  useEffect(() => {
+    const savedLoginState = localStorage.getItem('yogreet-login-state')
+    if (savedLoginState === 'true') {
+      setIsLoggedIn(true)
+    }
+  }, [])
 
   // Navigation menu items
   const menuItems = [
@@ -25,6 +40,53 @@ export function Navbar() {
     console.log("Login button clicked")
     setIsLoginModalOpen(true)
     setIsSignupModalOpen(false)
+  }
+
+  // Temporary login handler
+  const handleTemporaryLogin = () => {
+    setIsLoggedIn(true)
+    localStorage.setItem('yogreet-login-state', 'true')
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(false)
+  }
+
+  // Logout handler
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    localStorage.removeItem('yogreet-login-state')
+    setShowProfileDropdown(false)
+  }
+
+  // Dropdown handlers with delay
+  const handleMouseEnter = () => {
+    if (dropdownTimeout) {
+      clearTimeout(dropdownTimeout)
+      setDropdownTimeout(null)
+    }
+    setShowProfileDropdown(true)
+  }
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setShowProfileDropdown(false)
+    }, 150) // 150ms delay before hiding
+    setDropdownTimeout(timeout)
+  }
+
+  // Seller dropdown handlers
+  const handleSellerMouseEnter = () => {
+    if (sellerDropdownTimeout) {
+      clearTimeout(sellerDropdownTimeout)
+      setSellerDropdownTimeout(null)
+    }
+    setShowSellerDropdown(true)
+  }
+
+  const handleSellerMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setShowSellerDropdown(false)
+    }, 150) // 150ms delay before hiding
+    setSellerDropdownTimeout(timeout)
   }
 
   const handleSignupClick = () => {
@@ -70,13 +132,13 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white/60 backdrop-blur-sm">
+      <nav className="sticky top-0 z-50 bg-white/60 backdrop-blur-sm shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-2 sm:px-4">
             <div className="flex justify-between items-center h-24">
           {/* Logo */}
               <Link href="/" className="flex items-center cursor-pointer">
             <Image 
-              src="/Yogreet-logo.png" 
+              src="/Yogreet-logo.png"
               alt="Yogreet Logo" 
               width={160} 
               height={60} 
@@ -92,7 +154,7 @@ export function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="text-yogreet-charcoal font-inter text-base hover:text-yogreet-purple transition-colors cursor-pointer"
+                      className="text-yogreet-charcoal font-inter text-base hover:text-yogreet-red transition-colors cursor-pointer"
                     >
                       {item.label}
                     </Link>
@@ -104,24 +166,156 @@ export function Navbar() {
             
             {/* Auth Buttons */}
             <div className="flex items-center gap-6">
-              <button 
-                onClick={handleBecomeSellerClick}
-                className="px-4 py-2 text-yogreet-sage font-manrope font-medium hover:text-yogreet-sage/80 transition-colors cursor-pointer"
-              >
-                Become a seller
-              </button>
-              <button 
-                onClick={handleLoginClick}
-                className="px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-purple transition-colors cursor-pointer"
-              >
-                Login
-              </button>
-              <button 
-                onClick={handleSignupClick}
-                className="px-4 py-2 border border-yogreet-purple text-yogreet-purple font-manrope font-medium hover:bg-yogreet-purple hover:text-white transition-all cursor-pointer rounded-sm"
-              >
-                Sign Up
-              </button>
+              {isLoggedIn ? (
+                /* Cart and Samples Icons */
+                <div className="flex items-center gap-4">
+                  <Link href="/buyer/cart" className="w-10 h-10 bg-yogreet-light-gray rounded-full flex items-center justify-center hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
+                    <FiShoppingCart className="w-5 h-5 text-yogreet-charcoal" />
+                    {/* Cart badge */}
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-red text-white text-xs rounded-full flex items-center justify-center">3</span>
+                  </Link>
+                  <Link href="/buyer/samples" className="w-10 h-10 bg-yogreet-light-gray rounded-full flex items-center justify-center hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
+                    <FiBox className="w-5 h-5 text-yogreet-charcoal" />
+                    {/* Samples badge */}
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-sage text-white text-xs rounded-full flex items-center justify-center">5</span>
+                  </Link>
+                </div>
+              ) : (
+                /* Become a seller button when not logged in */
+                <div 
+                  className="relative"
+                  onMouseEnter={handleSellerMouseEnter}
+                  onMouseLeave={handleSellerMouseLeave}
+                >
+                  <button 
+                    onClick={handleBecomeSellerClick}
+                    className="flex items-center gap-2 px-4 py-2 text-yogreet-sage font-manrope font-medium hover:text-yogreet-sage/80 transition-colors cursor-pointer"
+                  >
+                    Become a seller
+                    <FiChevronDown className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Seller Dropdown Menu */}
+                  {showSellerDropdown && (
+                    <div 
+                      className="absolute left-0 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                      onMouseEnter={handleSellerMouseEnter}
+                      onMouseLeave={handleSellerMouseLeave}
+                    >
+                      <div className="py-2">
+                        <button className="w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left">
+                          How to become a seller ?
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsSellerLoginModalOpen(true)
+                            setShowSellerDropdown(false)
+                          }}
+                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
+                        >
+                          Go to profile
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsSellerSignupModalOpen(true)
+                            setShowSellerDropdown(false)
+                          }}
+                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
+                        >
+                          Build profile
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {isLoggedIn ? (
+                /* Profile Icon with Dropdown */
+                <div 
+                  className="relative"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button className="w-10 h-10 bg-yogreet-purple rounded-full flex items-center justify-center hover:bg-yogreet-purple/80 transition-colors cursor-pointer relative">
+                    <FiUser className="w-5 h-5 text-white" />
+                    {isDocVerificationPending && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-purple text-white text-[10px] leading-none rounded-full flex items-center justify-center border-2 border-white">
+                        1
+                      </span>
+                    )}
+                  </button>
+                  
+                  {/* Profile Dropdown Menu */}
+                  {showProfileDropdown && (
+                    <div 
+                      className="absolute right-0 top-14 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <div className="py-2">
+                        <Link 
+                          href="/buyer/profile" 
+                          className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                        >
+                          <FiUser className="w-4 h-4" />
+                          Profile
+                        </Link>
+                        <Link 
+                          href="/buyer/orders" 
+                          className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                        >
+                          <FiPackage className="w-4 h-4" />
+                          Orders
+                        </Link>
+                        <Link 
+                          href="/buyer/verify-document" 
+                          className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                        >
+                          <FiCheckCircle className="w-4 h-4" />
+                          <span>Verify Document</span>
+                          {isDocVerificationPending && (
+                            <span className="ml-auto w-5 h-5 bg-yogreet-purple text-white text-[10px] leading-none rounded-full flex items-center justify-center">
+                              1
+                            </span>
+                          )}
+                        </Link>
+                        <Link 
+                          href="/buyer/track-order" 
+                          className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                        >
+                          <FiTruck className="w-4 h-4" />
+                          Track Order
+                        </Link>
+                        <hr className="my-2 border-gray-200" />
+                        <button 
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
+                        >
+                          <FiLogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Login/Signup Buttons */
+                <>
+                  <button 
+                    onClick={handleLoginClick}
+                    className="px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-red transition-colors cursor-pointer"
+                  >
+                    Login
+                  </button>
+                  <button 
+                    onClick={handleSignupClick}
+                    className="px-4 py-2 border border-yogreet-purple text-yogreet-purple font-manrope font-medium hover:bg-yogreet-purple hover:text-white transition-all cursor-pointer rounded-sm"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -144,26 +338,119 @@ export function Navbar() {
                   </Link>
             ))}
             <div className="px-4 pt-2 space-y-2">
-              <button 
-                onClick={handleBecomeSellerClick}
-                className="w-full px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-purple transition-colors text-center cursor-pointer"
-              >
-                Become Seller
-              </button>
-              <div className="flex gap-2">
-                <button 
-                  onClick={handleLoginClick}
-                  className="flex-1 px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-purple transition-colors text-center cursor-pointer"
+              {isLoggedIn ? (
+                /* Mobile Cart and Samples */
+                <div className="flex gap-4 mb-4">
+                  <Link href="/buyer/cart" className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yogreet-light-gray rounded-lg hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
+                    <FiShoppingCart className="w-4 h-4 text-yogreet-charcoal" />
+                    <span className="text-yogreet-charcoal font-manrope font-medium">Cart</span>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-red text-white text-xs rounded-full flex items-center justify-center">3</span>
+                  </Link>
+                  <Link href="/buyer/samples" className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yogreet-light-gray rounded-lg hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
+                    <FiBox className="w-4 h-4 text-yogreet-charcoal" />
+                    <span className="text-yogreet-charcoal font-manrope font-medium">Samples</span>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-sage text-white text-xs rounded-full flex items-center justify-center">5</span>
+                  </Link>
+                </div>
+              ) : (
+                /* Become Seller button when not logged in */
+                <div 
+                  className="relative"
+                  onMouseEnter={handleSellerMouseEnter}
+                  onMouseLeave={handleSellerMouseLeave}
                 >
-                  Login
-                </button>
-                <button 
-                  onClick={handleSignupClick}
-                  className="flex-1 px-4 py-2 border border-yogreet-purple text-yogreet-purple font-manrope font-medium hover:bg-yogreet-purple hover:text-white transition-all cursor-pointer rounded-sm"
-                >
-                  Sign Up
-                </button>
-              </div>
+                  <button 
+                    onClick={handleBecomeSellerClick}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-red transition-colors cursor-pointer"
+                  >
+                    Become Seller
+                    <FiChevronDown className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Mobile Seller Dropdown Menu */}
+                  {showSellerDropdown && (
+                    <div 
+                      className="absolute left-0 top-12 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                      onMouseEnter={handleSellerMouseEnter}
+                      onMouseLeave={handleSellerMouseLeave}
+                    >
+                      <div className="py-2">
+                        <button className="w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left">
+                          How to become a seller
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsSellerLoginModalOpen(true)
+                            setShowSellerDropdown(false)
+                          }}
+                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
+                        >
+                          Go to profile
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsSellerSignupModalOpen(true)
+                            setShowSellerDropdown(false)
+                          }}
+                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
+                        >
+                          Build profile
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {isLoggedIn ? (
+                /* Mobile Profile Options */
+                <div className="space-y-2">
+                  <Link 
+                    href="/profile" 
+                    className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                  >
+                    <FiUser className="w-4 h-4" />
+                    Profile
+                  </Link>
+                  <Link 
+                    href="/orders" 
+                    className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                  >
+                    <FiPackage className="w-4 h-4" />
+                    Orders
+                  </Link>
+                  <Link 
+                    href="/track-order" 
+                    className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                  >
+                    <FiTruck className="w-4 h-4" />
+                    Track Order
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
+                  >
+                    <FiLogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                /* Mobile Login/Signup Buttons */
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleLoginClick}
+                    className="flex-1 px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-red transition-colors text-center cursor-pointer"
+                  >
+                    Login
+                  </button>
+                  <button 
+                    onClick={handleSignupClick}
+                    className="flex-1 px-4 py-2 border border-yogreet-purple text-yogreet-purple font-manrope font-medium hover:bg-yogreet-purple hover:text-white transition-all cursor-pointer rounded-sm"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -176,6 +463,7 @@ export function Navbar() {
       isOpen={isLoginModalOpen} 
       onClose={handleCloseModals}
       onSwitchToSignup={handleSwitchToSignup}
+      onLoginSuccess={handleTemporaryLogin}
     />
     <SignupModal 
       isOpen={isSignupModalOpen} 

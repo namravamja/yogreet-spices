@@ -20,9 +20,9 @@ export function BuyerSidebar() {
 
         <nav className="space-y-2">
           <Link
-            href="/buyer"
+            href="/buyer/profile"
             className={`block px-4 py-3 font-inter text-sm transition-colors ${
-              isActive("/buyer") ? "bg-yogreet-red text-white" : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
+              isActive("/buyer/profile") ? "bg-yogreet-red text-white" : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
             }`}
           >
             Dashboard
@@ -68,14 +68,14 @@ export function BuyerSidebar() {
             Favorites
           </Link>
           <Link
-            href="/buyer/settings"
+            href="/buyer/support"
             className={`block px-4 py-3 font-inter text-sm transition-colors ${
-              isActive("/buyer/settings")
+              isActive("/buyer/support")
                 ? "bg-yogreet-red text-white"
                 : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
             }`}
           >
-            Settings
+            Support
           </Link>
         </nav>
       </div>

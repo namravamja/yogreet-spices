@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { FiStar, FiMapPin } from "react-icons/fi"
 
-interface ExploreSpiceCardProps {
+export interface ExploreSpiceCardProps {
   id: string
   name: string
   seller: string
@@ -13,9 +13,10 @@ interface ExploreSpiceCardProps {
   minQuantity: number
   origin: string
   image: string
-  sampleAvailable: boolean
   rating: number
   reviews: number
+  onBulkOrder?: () => void
+  onRequestSample?: () => void
 }
 
 export function ExploreSpiceCard({
@@ -26,9 +27,10 @@ export function ExploreSpiceCard({
   minQuantity,
   origin,
   image,
-  sampleAvailable,
   rating,
   reviews,
+  onBulkOrder,
+  onRequestSample,
 }: ExploreSpiceCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const router = useRouter()
@@ -46,12 +48,34 @@ export function ExploreSpiceCard({
     >
       {/* Image Container */}
       <div className="relative aspect-square bg-yogreet-light-gray overflow-hidden">
-        <Image src={image || "/placeholder.svg"} alt={name} fill className="object-cover" />
-        {sampleAvailable && (
-          <div className="absolute top-3 right-3 bg-yogreet-sage text-white px-3 py-1 text-xs font-medium rounded">
-            Sample Available
-          </div>
-        )}
+        <Image 
+          src={image || "/placeholder.svg"} 
+          alt={name} 
+          fill 
+          className={`object-cover transition-transform duration-300 ${
+            isHovered ? "scale-110" : "scale-100"
+          }`} 
+        />
+        {/* View Detail Overlay - appears on hover */}
+        <div 
+          className={`absolute inset-0 bg-black/40 transition-opacity duration-300 flex items-center justify-center ${
+            isHovered ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleCardClick()
+          }}
+        >
+          <button
+            className="px-6 py-2 bg-white text-yogreet-charcoal font-poppins font-semibold text-sm rounded-xs hover:bg-yogreet-red hover:text-white transition-colors cursor-pointer shadow-lg"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleCardClick()
+            }}
+          >
+            View Detail
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -89,21 +113,23 @@ export function ExploreSpiceCard({
         {/* Buttons */}
         <div className="flex gap-1">
           <button
-            className={`flex-1 bg-yogreet-red text-white py-1.5 font-manrope font-medium text-xs transition-all hover:opacity-80 ${
+            className={`flex-1 bg-yogreet-red text-white py-1.5 font-manrope font-medium text-xs transition-all hover:opacity-80 cursor-pointer ${
               isHovered ? "shadow-md" : ""
             }`}
             onClick={(e) => {
               e.stopPropagation()
+              onBulkOrder?.()
             }}
           >
             Buy in Bulk
           </button>
           <button
-            className={`flex-1 border-2 border-yogreet-sage text-yogreet-sage py-1.5 font-manrope font-medium text-xs transition-all hover:bg-yogreet-sage hover:text-white ${
+            className={`flex-1 border-2 border-yogreet-sage text-yogreet-sage py-1.5 font-manrope font-medium text-xs transition-all hover:bg-yogreet-sage hover:text-white cursor-pointer ${
               isHovered ? "shadow-md" : ""
             }`}
             onClick={(e) => {
               e.stopPropagation()
+              onRequestSample?.()
             }}
           >
             Request Sample
