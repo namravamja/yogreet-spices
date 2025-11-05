@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { LoadingSkeleton } from "./components/loading-skeleton";
 import ProfileProgress from "./components/ProfileProgress";
 import AccountDetails from "./components/AccountDetails";
@@ -8,21 +8,8 @@ import ShippingAddresses from "./components/ShippingAddresses";
 import SecuritySettings from "./components/SecuritySettings";
 import AccountInfo from "./components/AccountInfo";
 import PageHero from "@/components/shared/PageHero";
-
-// Updated interface to match the Buyer model exactly
-interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  avatar: string;
-  dateOfBirth: string;
-  gender: string;
-  addresses: any[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { useGetBuyerQuery } from "@/services/api/buyerApi";
+import { useAuth } from "@/hooks/useAuth";
 
 // Helper function to format date for display
 const formatDateForDisplay = (dateString: string): string => {
@@ -39,47 +26,37 @@ const formatDateForDisplay = (dateString: string): string => {
 };
 
 export default function BuyerProfilePage() {
-  // Mock data for now - replace with actual API calls
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [error, setError] = useState<any>(null);
-
-  // Local state for user profile
-  const [user, setUser] = useState<UserProfile | null>({
-    id: "user-123",
-    email: "john.smith@email.com",
-    firstName: "John",
-    lastName: "Smith",
-    phone: "+1 (555) 123-4567",
-    avatar: "",
-    dateOfBirth: "1990-01-15",
-    gender: "male",
-    addresses: [
-      {
-        id: "addr-1",
-        firstName: "John",
-        lastName: "Smith",
-        street: "123 Main Street",
-        city: "New York",
-        state: "NY",
-        postalCode: "10001",
-        country: "USA",
-        phone: "+1 (555) 123-4567",
-        isDefault: true,
-      }
-    ],
-    createdAt: "2024-01-15T00:00:00Z",
-    updatedAt: "2024-01-15T00:00:00Z",
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth("buyer");
+  const { data: buyerData, isLoading, isError, error, refetch } = useGetBuyerQuery(undefined, {
+    skip: !isAuthenticated,
   });
 
+  const user = useMemo(() => {
+    if (!buyerData) return null;
+    
+    return {
+      id: buyerData.id,
+      email: buyerData.email || "",
+      firstName: buyerData.firstName || "",
+      lastName: buyerData.lastName || "",
+      phone: buyerData.phone || "",
+      avatar: buyerData.avatar || "",
+      dateOfBirth: buyerData.dateOfBirth ? formatDateForDisplay(buyerData.dateOfBirth) : "",
+      gender: buyerData.gender || "",
+      addresses: buyerData.addresses || [],
+      createdAt: buyerData.createdAt,
+      updatedAt: buyerData.updatedAt,
+      isVerified: buyerData.isVerified,
+      isAuthenticated: buyerData.isAuthenticated,
+    };
+  }, [buyerData]);
+
   const handleRetry = () => {
-    setIsError(false);
-    setError(null);
-    // Add retry logic here
+    refetch();
   };
 
-  // Show loading if auth is loading
-  if (isLoading) {
+  // Show loading if auth is loading or data is fetching
+  if (isAuthLoading || isLoading) {
     return (
       <main className="pt-0 pb-16">
         <div className="container mx-auto px-2 max-w-4xl">
@@ -149,7 +126,7 @@ export default function BuyerProfilePage() {
   }
 
   // Error state
-  if (isError && !user) {
+  if ((isError || !isAuthenticated) && !user) {
     return (
       <main className="pt-0 pb-16">
         <div className="container mx-auto px-2 max-w-6xl">
@@ -250,7 +227,7 @@ export default function BuyerProfilePage() {
                 ? formatDateForDisplay(user.dateOfBirth)
                 : "",
               // Map addresses to expected shape for ProfileProgress
-              addresses: user.addresses.map((addr) => ({
+              addresses: user.addresses.map((addr: any) => ({
                 id: addr.id || "",
                 firstName: addr.firstName || "",
                 lastName: addr.lastName || "",

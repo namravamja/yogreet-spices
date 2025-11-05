@@ -12,7 +12,8 @@ interface SellerVerificationDataStep1 {
   gstNumber: string;
   businessAddress: string;
   businessAddressProof?: string;
-  ownerFullName: string;
+  fullName: string; // Merged from fullName and ownerFullName
+  ownerFullName?: string; // Backward compatibility
   ownerIdDocument?: string;
   ownerIdNumber: string;
 }
@@ -106,8 +107,11 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
           <label className="block text-sm font-medium text-stone-700 mb-2">Owner Full Name</label>
           <input
             type="text"
-            value={data.ownerFullName || ""}
-            onChange={(e) => handleChange("ownerFullName", e.target.value)}
+            value={data.fullName || data.ownerFullName || ""}
+            onChange={(e) => {
+              handleChange("fullName", e.target.value);
+              if (data.ownerFullName !== undefined) handleChange("ownerFullName", e.target.value);
+            }}
             className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
           />
         </div>

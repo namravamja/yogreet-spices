@@ -2,11 +2,14 @@
 
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { useAddToCartMutation } from "@/services/api/buyerApi";
+import toast from "react-hot-toast";
 
 interface BuyBulkModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: {
+    id: string;
     name: string;
     price: number;
     minQuantity: number;
@@ -16,6 +19,7 @@ interface BuyBulkModalProps {
 }
 
 export default function BuyBulkModal({ isOpen, onClose, product }: BuyBulkModalProps) {
+  const [addToCart, { isLoading }] = useAddToCartMutation();
   const [formData, setFormData] = useState({
     // Weight Selection
     weight: product.minQuantity,
@@ -61,10 +65,19 @@ export default function BuyBulkModal({ isOpen, onClose, product }: BuyBulkModalP
   };
 
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log("Bulk order submitted:", formData);
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      await addToCart({
+        productId: product.id,
+        quantity: formData.weight,
+      }).unwrap();
+      
+      toast.success("Item added to cart successfully!");
+      onClose();
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || error?.message || "Failed to add item to cart";
+      toast.error(errorMessage);
+    }
   };
 
   if (!isOpen) return null;
@@ -210,9 +223,10 @@ export default function BuyBulkModal({ isOpen, onClose, product }: BuyBulkModalP
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-yogreet-red text-white hover:bg-yogreet-red/90 transition-colors cursor-pointer"
+            disabled={isLoading}
+            className="px-6 py-2 bg-yogreet-red text-white hover:bg-yogreet-red/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Add to Cart
+            {isLoading ? "Adding..." : "Add to Cart"}
           </button>
         </div>
       </div>

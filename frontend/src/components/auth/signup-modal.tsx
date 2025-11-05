@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser } from "react-icons/fi"
+import { useSignupBuyerMutation } from "@/services/api/authApi"
+import toast from "react-hot-toast"
 
 interface SignupModalProps {
   isOpen: boolean
@@ -11,8 +13,8 @@ interface SignupModalProps {
 }
 
 export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
-  console.log("SignupModal rendered, isOpen:", isOpen)
   const router = useRouter()
+  const [signupBuyer, { isLoading }] = useSignupBuyerMutation()
   
   const [formData, setFormData] = useState({
     buyerName: "",
@@ -21,7 +23,6 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   // Field configs rendered from an array
   const fieldConfigs = [
@@ -57,16 +58,33 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Submit minimal buyer signup fields
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Signup:", formData)
-      setIsLoading(false)
+    try {
+      // Split buyerName into firstName and lastName (if space exists)
+      const nameParts = formData.buyerName.trim().split(" ")
+      const firstName = nameParts[0] || ""
+      const lastName = nameParts.slice(1).join(" ") || ""
+
+      const signupData = {
+        email: formData.companyEmail,
+        password: formData.password,
+        firstName: firstName,
+        lastName: lastName || undefined,
+      }
+
+      const response = await signupBuyer(signupData).unwrap()
+      
+      toast.success(response.message || "Account created successfully! Please check your email to verify your account.")
       onClose()
-      try { localStorage.setItem("yg_just_signed_up", "1") } catch {}
+      try { 
+        localStorage.setItem("yg_just_signed_up", "1") 
+        localStorage.setItem("yg_user_role", "BUYER")
+        localStorage.setItem("yg_signup_email", formData.companyEmail)
+      } catch {}
       router.push("/buyer/verify-document/1")
-    }, 1000)
+    } catch (error: any) {
+      const errorMessage = error?.data?.message || error?.message || "Failed to create account. Please try again."
+      toast.error(errorMessage)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +123,6 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
             password: "",
           })
       setShowPassword(false)
-      setIsLoading(false)
     }
   }, [isOpen])
 

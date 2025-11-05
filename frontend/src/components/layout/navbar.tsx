@@ -2,31 +2,31 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { FiMenu, FiUser, FiLogOut, FiPackage, FiTruck, FiShoppingCart, FiBox, FiChevronDown, FiCheckCircle } from "react-icons/fi"
 import { LoginModal, SignupModal, SellerSignupModal, SellerLoginModal } from "../auth"
+import { useAuth } from "@/hooks/useAuth"
+import { useLogoutMutation } from "@/services/api/authApi"
+import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 
 export function Navbar() {
+  const router = useRouter()
+  const { isAuthenticated, isLoading: isAuthLoading, user, refetch } = useAuth("buyer")
+  const [logout] = useLogoutMutation()
+  
   const [isOpen, setIsOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [isSellerSignupModalOpen, setIsSellerSignupModalOpen] = useState(false)
   const [isSellerLoginModalOpen, setIsSellerLoginModalOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false) // Temporary login state
+  const [sellerRedirectUrl, setSellerRedirectUrl] = useState<string | undefined>(undefined)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showSellerDropdown, setShowSellerDropdown] = useState(false)
   const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null)
   const [sellerDropdownTimeout, setSellerDropdownTimeout] = useState<NodeJS.Timeout | null>(null)
   // Mock: whether buyer's document verification is pending
   const [isDocVerificationPending] = useState(true)
-
-  // Check localStorage on component mount
-  useEffect(() => {
-    const savedLoginState = localStorage.getItem('yogreet-login-state')
-    if (savedLoginState === 'true') {
-      setIsLoggedIn(true)
-    }
-  }, [])
 
   // Navigation menu items
   const menuItems = [
@@ -37,24 +37,42 @@ export function Navbar() {
 
   // Modal handlers
   const handleLoginClick = () => {
-    console.log("Login button clicked")
     setIsLoginModalOpen(true)
     setIsSignupModalOpen(false)
   }
 
-  // Temporary login handler
-  const handleTemporaryLogin = () => {
-    setIsLoggedIn(true)
-    localStorage.setItem('yogreet-login-state', 'true')
+  // Login success handler - refetch user data
+  const handleLoginSuccess = async () => {
     setIsLoginModalOpen(false)
     setIsSignupModalOpen(false)
+    // Small delay to allow cache invalidation to complete
+    setTimeout(() => {
+      // Refetch user data after successful login
+      refetch()
+    }, 200)
   }
 
   // Logout handler
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    localStorage.removeItem('yogreet-login-state')
-    setShowProfileDropdown(false)
+  const handleLogout = async () => {
+    try {
+      await logout(undefined).unwrap()
+      toast.success("Logged out successfully")
+      // Clear any local state
+      localStorage.removeItem('yogreet-login-state')
+      localStorage.removeItem('yogreet-seller-login-state')
+      setShowProfileDropdown(false)
+      // Refetch will automatically update the auth state
+      await refetch()
+      // Optionally redirect to home
+      router.push("/")
+    } catch (error: any) {
+      // Even if logout API fails, clear local state
+      localStorage.removeItem('yogreet-login-state')
+      localStorage.removeItem('yogreet-seller-login-state')
+      setShowProfileDropdown(false)
+      await refetch()
+      router.push("/")
+    }
   }
 
   // Dropdown handlers with delay
@@ -110,6 +128,7 @@ export function Navbar() {
     setIsSignupModalOpen(false)
     setIsSellerSignupModalOpen(false)
     setIsSellerLoginModalOpen(false)
+    setSellerRedirectUrl(undefined)
   }
 
   const handleBecomeSellerClick = () => {
@@ -166,7 +185,7 @@ export function Navbar() {
             
             {/* Auth Buttons */}
             <div className="flex items-center gap-6">
-              {isLoggedIn ? (
+              {isAuthenticated && !isAuthLoading ? (
                 /* Cart and Samples Icons */
                 <div className="flex items-center gap-4">
                   <Link href="/buyer/cart" className="w-10 h-10 bg-yogreet-light-gray rounded-full flex items-center justify-center hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
@@ -203,11 +222,16 @@ export function Navbar() {
                       onMouseLeave={handleSellerMouseLeave}
                     >
                       <div className="py-2">
-                        <button className="w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left">
+                        <Link
+                          href="/become-seller"
+                          onClick={() => setShowSellerDropdown(false)}
+                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
+                        >
                           How to become a seller ?
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => {
+                            setSellerRedirectUrl("/seller")
                             setIsSellerLoginModalOpen(true)
                             setShowSellerDropdown(false)
                           }}
@@ -230,7 +254,7 @@ export function Navbar() {
                 </div>
               )}
               
-              {isLoggedIn ? (
+              {isAuthenticated && !isAuthLoading ? (
                 /* Profile Icon with Dropdown */
                 <div 
                   className="relative"
@@ -238,9 +262,19 @@ export function Navbar() {
                   onMouseLeave={handleMouseLeave}
                 >
                   <button className="w-10 h-10 bg-yogreet-purple rounded-full flex items-center justify-center hover:bg-yogreet-purple/80 transition-colors cursor-pointer relative">
-                    <FiUser className="w-5 h-5 text-white" />
+                    {user?.image ? (
+                      <Image
+                        src={user.image}
+                        alt={user.name || "User"}
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <FiUser className="w-5 h-5 text-white" />
+                    )}
                     {isDocVerificationPending && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-purple text-white text-[10px] leading-none rounded-full flex items-center justify-center border-2 border-white">
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-purple text-white text-xs rounded-full flex items-center justify-center z-10">
                         1
                       </span>
                     )}
@@ -254,6 +288,13 @@ export function Navbar() {
                       onMouseLeave={handleMouseLeave}
                     >
                       <div className="py-2">
+                        {/* User Info Section */}
+                        {user && (
+                          <div className="px-4 py-2 border-b border-gray-200">
+                            <p className="text-sm font-medium text-yogreet-charcoal truncate">{user.name}</p>
+                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                          </div>
+                        )}
                         <Link 
                           href="/buyer/profile" 
                           className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
@@ -332,13 +373,14 @@ export function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setIsOpen(false)}
                     className="block px-4 py-2 text-yogreet-charcoal font-inter text-sm hover:bg-yogreet-light-gray cursor-pointer"
                   >
                     {item.label}
                   </Link>
             ))}
             <div className="px-4 pt-2 space-y-2">
-              {isLoggedIn ? (
+              {isAuthenticated && !isAuthLoading ? (
                 /* Mobile Cart and Samples */
                 <div className="flex gap-4 mb-4">
                   <Link href="/buyer/cart" className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yogreet-light-gray rounded-lg hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
@@ -375,11 +417,16 @@ export function Navbar() {
                       onMouseLeave={handleSellerMouseLeave}
                     >
                       <div className="py-2">
-                        <button className="w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left">
+                        <Link
+                          href="/become-seller"
+                          onClick={() => setShowSellerDropdown(false)}
+                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
+                        >
                           How to become a seller
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => {
+                            setSellerRedirectUrl("/seller")
                             setIsSellerLoginModalOpen(true)
                             setShowSellerDropdown(false)
                           }}
@@ -402,7 +449,7 @@ export function Navbar() {
                 </div>
               )}
               
-              {isLoggedIn ? (
+              {isAuthenticated && !isAuthLoading ? (
                 /* Mobile Profile Options */
                 <div className="space-y-2">
                   <Link 
@@ -463,7 +510,7 @@ export function Navbar() {
       isOpen={isLoginModalOpen} 
       onClose={handleCloseModals}
       onSwitchToSignup={handleSwitchToSignup}
-      onLoginSuccess={handleTemporaryLogin}
+      onLoginSuccess={handleLoginSuccess}
     />
     <SignupModal 
       isOpen={isSignupModalOpen} 
@@ -479,6 +526,7 @@ export function Navbar() {
       isOpen={isSellerLoginModalOpen} 
       onClose={handleCloseModals}
       onSwitchToSignup={handleSwitchToSellerSignup}
+      redirectUrl={sellerRedirectUrl}
     />
     </>
   )

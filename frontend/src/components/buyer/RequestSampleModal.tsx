@@ -2,11 +2,14 @@
 
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { useRequestSampleMutation } from "@/services/api/buyerApi";
+import toast from "react-hot-toast";
 
 interface RequestSampleModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: {
+    id: string;
     name: string;
     price: number;
     minQuantity: number;
@@ -16,6 +19,7 @@ interface RequestSampleModalProps {
 }
 
 export default function RequestSampleModal({ isOpen, onClose, product }: RequestSampleModalProps) {
+  const [requestSample, { isLoading }] = useRequestSampleMutation();
   const [formData, setFormData] = useState({
     // Sample Weight Selection (in grams)
     weight: 50,
@@ -56,11 +60,33 @@ export default function RequestSampleModal({ isOpen, onClose, product }: Request
     }));
   };
 
-  const handleSubmit = () => {
-    // Handle sample request submission
-    console.log("Sample request submitted:", formData);
-    onClose();
-    // You can add toast notification here
+  const handleSubmit = async () => {
+    if (!formData.purpose) {
+      toast.error("Please select a purpose for the sample request");
+      return;
+    }
+
+    try {
+      await requestSample({
+        productId: product.id,
+        quantity: formData.weight,
+        purpose: formData.purpose,
+        notes: formData.message || undefined,
+      }).unwrap();
+      
+      toast.success("Sample request submitted successfully! You will be notified once it's processed.");
+      onClose();
+      // Reset form
+      setFormData({
+        weight: 50,
+        purpose: "",
+        message: "",
+        selectedWeightOption: "50",
+      });
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || error?.message || "Failed to submit sample request";
+      toast.error(errorMessage);
+    }
   };
 
   if (!isOpen) return null;
@@ -232,10 +258,10 @@ export default function RequestSampleModal({ isOpen, onClose, product }: Request
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!formData.purpose}
+            disabled={!formData.purpose || isLoading}
             className="px-6 py-2 bg-yogreet-sage text-white hover:bg-yogreet-sage/90 transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Request
+            {isLoading ? "Submitting..." : "Submit Request"}
           </button>
         </div>
       </div>

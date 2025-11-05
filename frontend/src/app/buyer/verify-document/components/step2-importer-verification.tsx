@@ -97,7 +97,12 @@ export default function Step2ImporterVerification({
                 className="text-red-500 hover:text-red-700"
                 onClick={() => {
                   setLocalFiles((prev) => ({ ...prev, [id]: null }));
-                  removeDocument(id);
+                  setUploadedFiles((prev: Record<string, File>) => {
+                    const next = { ...prev };
+                    delete next[id];
+                    return next;
+                  });
+                  if (fileInputRefs.current[id]) fileInputRefs.current[id]!.value = "";
                 }}
               >
                 Remove

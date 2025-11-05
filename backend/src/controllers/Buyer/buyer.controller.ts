@@ -1,0 +1,254 @@
+import { Request, Response } from "express";
+import * as buyerService from "../../services/Buyer/buyer.service";
+
+interface AuthenticatedRequest extends Request {
+  user?: { id: string; role: string };
+  file?: Express.Multer.File;
+}
+
+export const getBuyer = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const buyer = await buyerService.getBuyerById(userId);
+    // Match reference format: return buyer data directly (addresses included)
+    // Reference uses { source: "cache" | "db", data: buyer } but for RTK Query we return data directly
+    res.json(buyer);
+  } catch (error) {
+    res.status(404).json({ error: (error as Error).message });
+  }
+};
+
+export const updateBuyer = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    // Prepare update data
+    const updateData: buyerService.BuyerUpdateData = { ...req.body };
+
+    // If an image was uploaded, use the Cloudinary URL from multer
+    if (req.file) {
+      // Multer with CloudinaryStorage sets req.file.path to the Cloudinary URL
+      updateData.avatar = (req.file as any).path || (req.file as any).location || req.file.path;
+    }
+
+    // Convert dateOfBirth string to Date if provided
+    if (updateData.dateOfBirth && typeof updateData.dateOfBirth === 'string') {
+      updateData.dateOfBirth = new Date(updateData.dateOfBirth);
+    }
+
+    // Remove undefined/null values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key as keyof buyerService.BuyerUpdateData] === undefined || 
+          updateData[key as keyof buyerService.BuyerUpdateData] === null) {
+        delete updateData[key as keyof buyerService.BuyerUpdateData];
+      }
+    });
+
+    const buyer = await buyerService.updateBuyer(userId, updateData);
+    res.json(buyer);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+// Address controllers
+export const getAddresses = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const addresses = await buyerService.getBuyerAddresses(userId);
+    res.json(addresses);
+  } catch (error) {
+    res.status(404).json({ error: (error as Error).message });
+  }
+};
+
+export const createAddress = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const addressData: buyerService.AddressCreateData = req.body;
+    const address = await buyerService.createAddress(userId, addressData);
+    res.status(201).json(address);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const updateAddress = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const addressId = parseInt(req.params.id, 10);
+    if (isNaN(addressId)) throw new Error("Invalid address ID");
+
+    const addressData: buyerService.AddressUpdateData = req.body;
+    const address = await buyerService.updateAddress(userId, addressId, addressData);
+    res.json(address);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const deleteAddress = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const addressId = parseInt(req.params.id, 10);
+    if (isNaN(addressId)) throw new Error("Invalid address ID");
+
+    await buyerService.deleteAddress(userId, addressId);
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const setDefaultAddress = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const addressId = parseInt(req.params.id, 10);
+    if (isNaN(addressId)) throw new Error("Invalid address ID");
+
+    const address = await buyerService.setDefaultAddress(userId, addressId);
+    res.json(address);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+// Cart controllers
+export const getCart = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const cartItems = await buyerService.getCartItems(userId);
+    res.json(cartItems);
+  } catch (error) {
+    res.status(404).json({ error: (error as Error).message });
+  }
+};
+
+export const addToCart = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const cartItem = await buyerService.addToCart(userId, req.body);
+    res.status(201).json(cartItem);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const updateCartItem = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const cartItemId = req.params.id;
+    const cartItem = await buyerService.updateCartItem(userId, cartItemId, req.body);
+    res.json(cartItem);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const removeCartItem = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const cartItemId = req.params.id;
+    await buyerService.removeCartItem(userId, cartItemId);
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const clearCart = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    await buyerService.clearCart(userId);
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+// Sample request controllers
+export const getSamples = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const samples = await buyerService.getSampleRequests(userId);
+    res.json(samples);
+  } catch (error) {
+    res.status(404).json({ error: (error as Error).message });
+  }
+};
+
+export const requestSample = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const sampleRequest = await buyerService.requestSample(userId, req.body);
+    res.status(201).json(sampleRequest);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const updateSampleRequest = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const sampleRequestId = req.params.id;
+    const sampleRequest = await buyerService.updateSampleRequest(userId, sampleRequestId, req.body);
+    res.json(sampleRequest);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const removeSampleRequest = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const sampleRequestId = req.params.id;
+    await buyerService.removeSampleRequest(userId, sampleRequestId);
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const clearSampleRequests = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    await buyerService.clearSampleRequests(userId);
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+

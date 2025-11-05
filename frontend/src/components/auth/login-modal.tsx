@@ -1,7 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi"
+import { useLoginBuyerMutation } from "@/services/api/authApi"
+import toast from "react-hot-toast"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -11,14 +14,14 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
-  console.log("LoginModal rendered, isOpen:", isOpen)
+  const router = useRouter()
+  const [loginBuyer, { isLoading }] = useLoginBuyerMutation()
   
   const [formData, setFormData] = useState({
     companyEmail: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   // Field configs for array-driven rendering
   const fieldConfigs = [
@@ -40,18 +43,52 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Login:", formData)
-      setIsLoading(false)
+    try {
+      const loginData = {
+        email: formData.companyEmail,
+        password: formData.password,
+      }
+
+      const response = await loginBuyer(loginData).unwrap()
+      
+      toast.success(response.message || "Login successful!")
+      
+      // Small delay to ensure cache invalidation completes
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Set buyer login state
+      localStorage.setItem('yogreet-buyer-login-state', 'true')
       onClose()
+      
       // Call the login success callback if provided
       if (onLoginSuccess) {
         onLoginSuccess()
       }
-    }, 1000)
+      
+      // Redirect to verification page after login
+      router.push("/buyer/verify-document/1")
+    } catch (error: any) {
+      const errorMessage = error?.data?.message || error?.message || "Login failed. Please check your credentials."
+      toast.error(errorMessage)
+      
+      // If error is about email verification, show additional message with link
+      if (errorMessage.toLowerCase().includes("verify") || errorMessage.toLowerCase().includes("verification")) {
+        setTimeout(() => {
+          toast((t) => (
+            <div className="flex flex-col gap-2">
+              <span>{errorMessage}</span>
+              <a
+                href="/buyer/verify-document/1"
+                className="text-yogreet-purple hover:underline font-medium text-sm"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                Go to verification →
+              </a>
+            </div>
+          ), { duration: 6000 })
+        }, 500)
+      }
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +125,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         password: "",
       })
       setShowPassword(false)
-      setIsLoading(false)
     }
   }, [isOpen])
 

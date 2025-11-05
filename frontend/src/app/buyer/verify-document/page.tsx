@@ -8,7 +8,7 @@ import Step3PreferencesLogistics from "./components/step3-tax-financial-legitima
 import Step4Summary from "./components/step4-ownership-identity";
 import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
  
 // NOTE: Reference MakeProfile uses API hooks and auth; for buyer verification we stub them
@@ -60,8 +60,6 @@ interface ProfileData {
 
     // Step 4: Ownership & Identity Verification Fields
     director_id_document?: string; // NRIC/Passport
-    director_full_name?: string;
-    director_designation?: string;
     business_address_proof_document?: string;
     business_address?: string;
   businessAddress: {
@@ -115,7 +113,33 @@ export default function VerfiyDocument() {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  
+  // Handle verification status from email verification redirect
+  useEffect(() => {
+    const verified = searchParams?.get("verified");
+    const alreadyVerified = searchParams?.get("alreadyVerified");
+    const error = searchParams?.get("error");
+    
+    if (verified === "true") {
+      if (alreadyVerified === "true") {
+        toast.success("Your email is already verified! Please complete your document verification.");
+      } else {
+        toast.success("Email verified successfully! Please complete your document verification.");
+      }
+      // Clean URL by removing query params
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    } else if (error) {
+      toast.error(decodeURIComponent(error));
+      // Clean URL by removing query params
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, [searchParams, pathname]);
 
   // Stubs to mimic API layer from the reference MakeProfile
   const isLoading = false;
@@ -203,8 +227,6 @@ export default function VerfiyDocument() {
     bank_name: "",
     account_holder_name: "",
     director_id_document: "",
-    director_full_name: "",
-    director_designation: "",
     business_address_proof_document: "",
     business_address: "",
     businessAddress: {
@@ -963,6 +985,28 @@ export default function VerfiyDocument() {
     }
   };
 
+  const handleSave = async () => {
+    let saved = false;
+    if (step === 1) {
+      saved = await saveStep1Data();
+    } else if (step === 2) {
+      saved = await saveStep2Data();
+    } else if (step === 3) {
+      saved = await saveStep3Data();
+    }
+    return saved;
+  };
+
+  const handleSaveAndNext = async () => {
+    const saved = await handleSave();
+    if (saved && step < 4) {
+      const next = step + 1;
+      setStep(next);
+      router.push(`/buyer/verify-document/${next}`);
+      setTimeout(() => scrollToTop(), 100);
+    }
+  };
+
   const nextStep = async () => {
     // Testing mode: allow moving to next step without validation or save
     if (step < 4) {
@@ -1138,7 +1182,13 @@ export default function VerfiyDocument() {
             isLoading={isUpdatingSocialLinks || isUpdating}
           />
         )}
-        {step === 4 && <Step4Summary data={profileData} />}
+        {step === 4 && (
+          <Step4Summary
+            data={profileData}
+            updateData={updateProfileData}
+            setUploadedFiles={setUploadedFiles}
+          />
+        )}
 
         <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-8 pt-6 border-t border-stone-200">
           <button
@@ -1146,15 +1196,26 @@ export default function VerfiyDocument() {
             disabled={step === 1}
             className="px-6 py-2 border border-stone-300 text-stone-700 rounded-md hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer sm:w-auto"
           >
-                    Previous
-                  </button>
-                  {step < 4 ? (
-            <button
-              onClick={nextStep}
-              className="px-6 py-2 bg-yogreet-purple text-white cursor-pointer rounded-md hover:bg-yogreet-purple/90 transition-colors w-full sm:w-auto"
-            >
-                      Next
-                    </button>
+            Previous
+          </button>
+          {step < 4 ? (
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                onClick={handleSave}
+                disabled={isUpdating}
+                className="px-6 py-2 border border-yogreet-purple text-yogreet-purple cursor-pointer rounded-md hover:bg-yogreet-purple/10 transition-colors w-full sm:w-auto disabled:opacity-50"
+              >
+                <Save className="w-4 h-4 inline mr-2" />
+                Save
+              </button>
+              <button
+                onClick={handleSaveAndNext}
+                disabled={isUpdating}
+                className="px-6 py-2 bg-yogreet-purple text-white cursor-pointer rounded-md hover:bg-yogreet-purple/90 transition-colors w-full sm:w-auto disabled:opacity-50"
+              >
+                Save and Next
+              </button>
+            </div>
           ) : (
             <button
               onClick={handleSubmit}

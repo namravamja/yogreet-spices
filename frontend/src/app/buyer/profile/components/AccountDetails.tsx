@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { User, Edit, Save, X, Camera, Check } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
+import { useGetBuyerQuery, useUpdateBuyerMutation } from "@/services/api/buyerApi";
 
 // Helper functions for date handling
 const formatDateForAPI = (dateString: string): string | null => {
@@ -91,25 +92,44 @@ const validateDateOfBirth = (
 };
 
 export default function AccountDetails() {
-  // Mock data - replace with actual API calls
-  const [isFetching, setIsFetching] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [fetchError, setFetchError] = useState<any>(null);
+  const { data: buyerData, isLoading: isFetching, isError, error: fetchError, refetch } = useGetBuyerQuery(undefined);
+  const [updateBuyer, { isLoading: isUpdating }] = useUpdateBuyerMutation();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  
+  // Initialize formData from API data
   const [formData, setFormData] = useState({
-    id: "user-123",
-    email: "john.smith@email.com",
-    firstName: "John",
-    lastName: "Smith",
-    phone: "+1 (555) 123-4567",
+    id: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
     avatar: "",
-    dateOfBirth: "1990-01-15",
-    gender: "male",
+    dateOfBirth: "",
+    gender: "",
   });
+  
   const [originalData, setOriginalData] = useState(formData);
+
+  // Update formData when buyerData changes
+  useEffect(() => {
+    if (buyerData) {
+      const initialData = {
+        id: buyerData.id || "",
+        email: buyerData.email || "",
+        firstName: buyerData.firstName || "",
+        lastName: buyerData.lastName || "",
+        phone: buyerData.phone || "",
+        avatar: buyerData.avatar || "",
+        dateOfBirth: buyerData.dateOfBirth ? formatDateForDisplay(buyerData.dateOfBirth) : "",
+        gender: buyerData.gender || "",
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
+    }
+  }, [buyerData]);
 
   // Image cropping states
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -126,10 +146,36 @@ export default function AccountDetails() {
 
   const handleSave = async () => {
     try {
-      setIsUpdating(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare update data
+      const updateData: any = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        gender: formData.gender,
+      };
+
+      // Add date of birth if provided
+      if (formData.dateOfBirth) {
+        const dateOfBirth = formatDateForAPI(formData.dateOfBirth);
+        if (dateOfBirth) {
+          updateData.dateOfBirth = dateOfBirth;
+        }
+      }
+
+      // Handle avatar upload if there's a new image
+      let finalData: any = updateData;
+      if (croppedImageFile) {
+        const formDataUpload = new FormData();
+        Object.keys(updateData).forEach(key => {
+          if (updateData[key] !== null && updateData[key] !== undefined) {
+            formDataUpload.append(key, updateData[key]);
+          }
+        });
+        formDataUpload.append("avatar", croppedImageFile);
+        finalData = formDataUpload;
+      }
+
+      await updateBuyer(finalData).unwrap();
       
       // Reset states
       setIsEditing(false);
@@ -139,19 +185,22 @@ export default function AccountDetails() {
       setOriginalData(formData);
       setShowSaveConfirm(false);
       
+      // Refetch to get updated data
+      await refetch();
+      
       toast.success("Profile updated successfully");
     } catch (error: any) {
       console.error("=== SAVE ERROR ===", error);
       let errorMessage = "Failed to update profile. Please try again.";
       if (error?.data?.message) {
         errorMessage = error.data.message;
+      } else if (error?.data?.error) {
+        errorMessage = error.data.error;
       } else if (error?.message) {
         errorMessage = error.message;
       }
       toast.error(errorMessage);
       setShowSaveConfirm(false);
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -199,10 +248,7 @@ export default function AccountDetails() {
   };
 
   const handleRetry = () => {
-    setFetchError(null);
-    setIsFetching(true);
-    // Simulate retry
-    setTimeout(() => setIsFetching(false), 1000);
+    refetch();
   };
 
   useEffect(() => {
@@ -215,7 +261,7 @@ export default function AccountDetails() {
   }, [avatarPreview]);
 
   // Error state
-  if (fetchError && !formData) {
+  if (isError && !buyerData) {
     return (
       <div className="bg-white border border-stone-200 shadow-sm">
         <div className="p-6 border-b border-stone-200">
@@ -253,7 +299,7 @@ export default function AccountDetails() {
   }
 
   // Loading state
-  if (isFetching && !formData) {
+  if (isFetching && !buyerData) {
     return (
       <div className="bg-white border border-stone-200 shadow-sm">
         <div className="p-6 border-b border-stone-200">

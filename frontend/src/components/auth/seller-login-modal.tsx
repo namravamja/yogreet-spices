@@ -1,34 +1,80 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi"
+import { useLoginSellerMutation } from "@/services/api/authApi"
+import toast from "react-hot-toast"
 
 interface SellerLoginModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToSignup: () => void
+  onLoginSuccess?: () => void
+  redirectUrl?: string
 }
 
-export function SellerLoginModal({ isOpen, onClose, onSwitchToSignup }: SellerLoginModalProps) {
-  console.log("SellerLoginModal rendered, isOpen:", isOpen)
+export function SellerLoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess, redirectUrl }: SellerLoginModalProps) {
+  const router = useRouter()
+  const [loginSeller, { isLoading }] = useLoginSellerMutation()
   
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Seller Login:", formData)
-      setIsLoading(false)
+    try {
+      const loginData = {
+        email: formData.email,
+        password: formData.password,
+      }
+
+      const response = await loginSeller(loginData).unwrap()
+      
+      toast.success(response.message || "Login successful!")
+      
+      // Small delay to ensure cache invalidation completes
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Set seller login state
+      localStorage.setItem('yogreet-seller-login-state', 'true')
       onClose()
-    }, 1000)
+      
+      if (onLoginSuccess) {
+        onLoginSuccess()
+      }
+      
+      // Redirect to verification page after login (or use redirectUrl if provided)
+      if (redirectUrl) {
+        router.push(redirectUrl)
+      } else {
+        router.push("/seller/verify-document/1")
+      }
+    } catch (error: any) {
+      const errorMessage = error?.data?.message || error?.message || "Login failed. Please check your credentials."
+      toast.error(errorMessage)
+      
+      // If error is about email verification, show additional message with link
+      if (errorMessage.toLowerCase().includes("verify") || errorMessage.toLowerCase().includes("verification")) {
+        setTimeout(() => {
+          toast((t) => (
+            <div className="flex flex-col gap-2">
+              <span>{errorMessage}</span>
+              <a
+                href="/seller/verify-document/1"
+                className="text-yogreet-sage hover:underline font-medium text-sm"
+                onClick={() => toast.dismiss(t.id)}
+              >
+                Go to verification →
+              </a>
+            </div>
+          ), { duration: 6000 })
+        }, 500)
+      }
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +111,6 @@ export function SellerLoginModal({ isOpen, onClose, onSwitchToSignup }: SellerLo
         password: "",
       })
       setShowPassword(false)
-      setIsLoading(false)
     }
   }, [isOpen])
 

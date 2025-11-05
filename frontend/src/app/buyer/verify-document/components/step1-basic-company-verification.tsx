@@ -10,9 +10,6 @@ interface ProfileData {
   company_name?: string;
   date_of_incorporation?: string;
   ssm_company_profile_document?: string;
-  business_activity_description?: string;
-  director_names?: string[];
-  shareholder_names?: string[];
   business_trade_license_document?: string;
   business_license_number?: string;
   business_license_issuing_authority?: string;

@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser } from "react-icons/fi"
+import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser, FiShoppingBag } from "react-icons/fi"
+import { useSignupSellerMutation } from "@/services/api/authApi"
+import toast from "react-hot-toast"
 
 interface SellerSignupModalProps {
   isOpen: boolean
@@ -11,29 +13,40 @@ interface SellerSignupModalProps {
 }
 
 export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSignupModalProps) {
-  console.log("SellerSignupModal rendered, isOpen:", isOpen)
-  
   const router = useRouter()
+  const [signupSeller, { isLoading }] = useSignupSellerMutation()
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
+    companyName: "", // Merged from storeName and companyName
     email: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Seller Signup:", formData)
-      setIsLoading(false)
+    try {
+      const signupData = {
+        email: formData.email.trim(),
+        password: formData.password,
+        fullName: formData.fullName.trim() || undefined,
+        companyName: formData.companyName.trim() || undefined, // Merged from storeName and companyName
+      }
+
+      const response = await signupSeller(signupData).unwrap()
+      
+      toast.success(response.message || "Seller account created successfully! Please check your email to verify your account.")
       onClose()
-      try { localStorage.setItem("yg_just_signed_up", "1") } catch {}
+      try { 
+        localStorage.setItem("yg_just_signed_up", "1") 
+        localStorage.setItem("yg_user_role", "SELLER")
+        localStorage.setItem("yg_signup_email", formData.email)
+      } catch {}
       router.push("/seller/verify-document/1")
-    }, 1000)
+    } catch (error: any) {
+      const errorMessage = error?.data?.message || error?.message || "Failed to create seller account. Please try again."
+      toast.error(errorMessage)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,12 +79,12 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
   useEffect(() => {
         if (!isOpen) {
           setFormData({
-            name: "",
+            fullName: "",
+            companyName: "", // Merged from storeName and companyName
             email: "",
             password: "",
           })
       setShowPassword(false)
-      setIsLoading(false)
     }
   }, [isOpen])
 
@@ -112,21 +125,21 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Name */}
+            {/* Full Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
-                Full Name
+              <label htmlFor="fullName" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
+                Full Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiUser className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="name"
-                  name="name"
+                  id="fullName"
+                  name="fullName"
                   type="text"
                   required
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={handleChange}
                   disabled={isLoading}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
@@ -135,10 +148,33 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
               </div>
             </div>
 
+            {/* Company Name (Store Name) */}
+            <div>
+              <label htmlFor="companyName" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
+                Store/Company Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiShoppingBag className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="companyName"
+                  name="companyName"
+                  type="text"
+                  required
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  placeholder="Enter your store/company name"
+                />
+              </div>
+            </div>
+
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
-                Email address
+                Email Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -161,7 +197,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

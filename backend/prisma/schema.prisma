@@ -1,0 +1,330 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Buyer {
+  id        String  @id @default(uuid())
+  email     String  @unique
+  password  String?
+  firstName String?
+  lastName  String?
+
+  googleId    String? @unique
+  provider    String? @default("local") // "local" or "google"
+  isOAuthUser Boolean @default(false)
+
+  phone                 String?
+  avatar                String?
+  dateOfBirth           DateTime?
+  gender                String?
+  addresses             Address[]
+  cartItems             Cart[]
+  orders                Order[]
+  samples               SampleRequest[]
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  isAuthenticated       Boolean    @default(false)
+  forgotPasswordToken   String?    @unique
+  forgotPasswordExpires DateTime?
+  verifyToken           String?    @unique
+  verifyExpires         DateTime?
+  isVerified            Boolean    @default(false)
+  Review                Review[]
+
+  // Step 1: Basic Company Verification Fields
+  companyRegistrationCertificate  String?
+  companyRegistrationNumber        String?
+  companyName                      String?
+  dateOfIncorporation              DateTime?
+  ssmCompanyProfileDocument        String?
+  businessTradeLicenseDocument     String?
+  businessLicenseNumber            String?
+  businessLicenseIssuingAuthority  String?
+  businessLicenseExpiryDate        DateTime?
+
+  // Step 2: Importer Verification Fields
+  importLicenseDocument           String?
+  importLicenseNumber             String?
+  issuingAuthority                String? // (MOA/MAQIS)
+  importLicenseExpiryDate          DateTime?
+  foodSafetyCertificateDocument   String?
+  foodSafetyAuthority             String? // (MOH/Other)
+  foodSafetyCertificateNumber     String?
+  foodSafetyLicenseExpiryDate     DateTime?
+
+  // Step 3: Tax & Financial Legitimacy Fields
+  taxRegistrationCertificateDocument String?
+  taxRegistrationNumber              String? // TIN/SST
+  taxRegistrationAuthority            String? // LHDN Malaysia
+  bankLetterOrStatementDocument       String?
+  bankName                              String?
+  accountHolderName                    String?
+
+  // Step 4: Ownership & Identity Verification Fields
+  directorIdDocument            String? // NRIC/Passport
+  businessAddressProofDocument  String?
+  businessAddress               String? // Full business address
+}
+
+model Cart {
+  id        String   @id @default(uuid())
+  buyer     Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId   String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  quantity  Float    @default(0) // Weight in kg (supports decimals like 2.5 kg)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([buyerId, productId])
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId       String
+  quantity        Int
+  priceAtPurchase Float
+  seller          Seller  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId        String
+}
+
+model Order {
+  id                String      @id @default(uuid())
+  buyer             Buyer       @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId           String
+  orderItems        OrderItem[]
+  totalAmount       Float
+  status            String      @default("pending")
+  shippingAddress   Address?    @relation("ShippingAddressRelation", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  shippingAddressId Int?
+  paymentMethod     String
+  paymentStatus     String      @default("unpaid")
+  placedAt          DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model Address {
+  id         Int     @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  company    String?
+  street     String?
+  apartment  String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  phone      String?
+  buyer      Buyer   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  isDefault  Boolean @default(false)
+  orders     Order[] @relation("ShippingAddressRelation")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("buyer_addresses")
+}
+
+model Product {
+  id                   String   @id @default(uuid())
+  productName          String
+  category             String
+  shortDescription     String
+  sellingPrice         String
+  mrp                  String
+  availableStock       String
+  skuCode              String
+  productImages        String[]
+  weight               String
+  length               String
+  width                String
+  height               String
+  shippingCost         String
+  deliveryTimeEstimate String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  seller   Seller      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId String
+  Cart     Cart[]
+  OrderItem OrderItem[]
+  Review   Review[]
+  SampleRequests SampleRequest[]
+}
+
+model Seller {
+  id                         String   @id @default(uuid())
+  fullName                   String?
+  email                      String   @unique
+  mobile                     String?
+  password                   String?
+  businessType               String?
+  productCategories          String[]
+  businessLogo               String?
+  
+  // Company/Store Name - merged from storeName and companyName
+  companyName                String?
+
+  googleId    String? @unique
+  provider    String? @default("local") // "local" or "google"
+  isOAuthUser Boolean @default(false)
+
+  businessAddress    BusinessAddress?  @relation(fields: [businessAddressId], references: [id], onDelete: SetNull)
+  businessAddressId  String?           @unique
+  warehouseAddress   WarehouseAddress? @relation(fields: [warehouseAddressId], references: [id], onDelete: SetNull)
+  warehouseAddressId String?           @unique
+  documents          Documents?        @relation(fields: [documentsId], references: [id], onDelete: SetNull)
+  documentsId        String?           @unique
+  socialLinks        SocialLinks?      @relation(fields: [socialLinksId], references: [id], onDelete: SetNull)
+  socialLinksId      String?           @unique
+
+  bankName              String?
+  upiId                 String?
+  gstNumber             String?
+  panNumber             String?
+  shippingType          String?
+  serviceAreas          String[]
+  returnPolicy          String?
+  
+  // Seller Verification Fields - Step 1: Business Identity Verification
+  incorporationCertificate        String?
+  msmeUdyamCertificate           String?
+  businessAddressProof            String?
+  ownerIdDocument                String?
+  ownerIdNumber                  String?
+  
+  // Seller Verification Fields - Step 2: Export Eligibility Verification
+  iecCode                         String?
+  iecCertificate                  String?
+  apedaRegistrationNumber        String?
+  apedaCertificate               String?
+  spicesBoardRegistrationNumber String?
+  spicesBoardCertificate         String?
+  tradeLicense                   String?
+  // Bank Details - merged from bankAccountName/bankAccountHolderName, accountNumber/bankAccountNumber, ifscCode/bankIfscCode
+  bankAccountHolderName          String?
+  bankAccountNumber              String?
+  bankIfscCode                   String?
+  bankProofDocument              String?
+  
+  // Seller Verification Fields - Step 3: Food & Safety Compliance
+  fssaiLicenseNumber             String?
+  fssaiCertificate               String?
+  foodQualityCertifications      String[] // multiple optional certifications
+  labTestingCapability           Boolean  @default(false)
+  sampleLabTestCertificate       String?
+  
+  // Seller Verification Fields - Step 4: Export Documentation & Shipment Capability
+  certificateOfOriginCapability       Boolean  @default(false)
+  phytosanitaryCertificateCapability  Boolean  @default(false)
+  packagingCompliance                 Boolean  @default(false)
+  fumigationCertificateCapability      Boolean  @default(false)
+  exportLogisticsPrepared             Boolean  @default(false)
+  
+  // Verification Status
+  verificationStatus           String?  @default("pending") // pending, approved, rejected, under_review
+  verificationSubmittedAt      DateTime?
+  verificationReviewedAt       DateTime?
+  verificationNotes             String?
+  
+  products     Product[]
+  orderItems   OrderItem[]
+  samples      SampleRequest[]
+  Review       Review[]
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime? @updatedAt
+  isAuthenticated       Boolean   @default(false)
+  forgotPasswordToken   String?   @unique
+  forgotPasswordExpires DateTime?
+  verifyToken           String?   @unique
+  verifyExpires         DateTime?
+  isVerified            Boolean   @default(false)
+}
+
+model BusinessAddress {
+  id      String  @id @default(uuid())
+  street  String
+  city    String?
+  state   String?
+  country String?
+  pinCode String?
+
+  seller Seller?
+}
+
+model WarehouseAddress {
+  id             String   @id @default(uuid())
+  street         String
+  sameAsBusiness Boolean?
+  city           String?
+  state          String?
+  country        String?
+  pinCode        String?
+
+  seller Seller?
+}
+
+model Documents {
+  id              String  @id @default(uuid())
+  gstCertificate  String?
+  panCard         String?
+  businessLicense String?
+  canceledCheque  String?
+
+  seller Seller?
+}
+
+model SocialLinks {
+  id        String  @id @default(uuid())
+  website   String?
+  instagram String?
+  facebook  String?
+  twitter   String?
+
+  seller Seller?
+}
+
+model SampleRequest {
+  id        String   @id @default(uuid())
+  buyer     Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId   String
+  seller    Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId  String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  status    String   @default("pending") // pending, approved, rejected, shipped
+  quantity  Float    @default(50) // Weight in grams (supports decimals, range: 50-500g)
+  purpose   String?  // Purpose of sample: quality-check, testing, evaluation, trial, other
+  notes     String?  // Additional notes or requirements
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id       String   @id @default(uuid())
+  rating   Int
+  title    String
+  text     String
+  date     DateTime @default(now())
+  verified Boolean  @default(false)
+
+  buyer   Buyer  @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId String
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  seller   Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId String
+}
+

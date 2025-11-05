@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Poppins, Inter, Manrope } from "next/font/google";
 import "./globals.css";
+import StoreProvider from "@/lib/store/provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -38,7 +39,9 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
       >
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );

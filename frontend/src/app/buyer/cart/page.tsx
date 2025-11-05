@@ -11,6 +11,13 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import PageHero from "@/components/shared/PageHero";
+import {
+  useGetCartQuery,
+  useUpdateCartItemMutation,
+  useRemoveCartItemMutation,
+  useClearCartMutation,
+} from "@/services/api/buyerApi";
+import { useAuth } from "@/hooks/useAuth";
 
 // Mock data for now - replace with actual API calls later
 const mockCartItems = [
@@ -71,18 +78,40 @@ const mockCartItems = [
 ];
 
 export default function BuyerCartPage() {
+  const { isAuthenticated } = useAuth("buyer");
+  const { data: cartData, isLoading: isLoadingCart, refetch } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const [updateCartItem, { isLoading: isUpdating }] = useUpdateCartItemMutation();
+  const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
+  const [clearCart, { isLoading: isClearing }] = useClearCartMutation();
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [cartItems, setCartItems] = useState(
-    mockCartItems.map(item => ({
-      ...item,
-      weight: item.weight ?? Number.parseFloat(item.product?.minQuantity?.toString() || "1")
-    }))
-  );
+  
+  // Transform backend data to match frontend expectations
+  const cartItems = cartData ? cartData.map((item: any) => ({
+    id: item.id,
+    productId: item.productId,
+    weight: item.quantity, // Backend uses 'quantity', frontend uses 'weight'
+    product: {
+      id: item.product.id,
+      productName: item.product.productName,
+      productImages: item.product.productImages,
+      sellingPrice: item.product.sellingPrice,
+      availableStock: item.product.availableStock,
+      minQuantity: parseFloat(item.product.weight || "1"), // Use weight as minQuantity
+      category: item.product.category,
+      artist: {
+        fullName: item.product.seller?.fullName || "Unknown",
+        storeName: item.product.seller?.companyName || "Unknown",
+      },
+    },
+  })) : [];
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [tempWeight, setTempWeight] = useState<number | null>(null);
 
-  const handleModifyClick = (productId: string, currentWeight: number) => {
-    setEditingItemId(productId);
+  const handleModifyClick = (cartItemId: string, currentWeight: number) => {
+    setEditingItemId(cartItemId);
     setTempWeight(currentWeight);
   };
 
@@ -92,13 +121,11 @@ export default function BuyerCartPage() {
   };
 
   const handleSaveWeight = async (
-    productId: string,
+    cartItemId: string,
     newWeight: number,
     maxStock: number,
     minQuantity: number
   ) => {
-    console.log('handleSaveWeight called:', { productId, newWeight, maxStock, minQuantity, editingItemId });
-    
     if (isNaN(newWeight) || newWeight <= 0) {
       toast.error(`Please enter a valid weight`, {
         duration: 3000,
@@ -115,7 +142,6 @@ export default function BuyerCartPage() {
       return false;
     }
 
-    // Check if new weight exceeds available stock
     if (newWeight > maxStock) {
       toast.error(`Only ${maxStock} kg available in stock`, {
         duration: 3000,
@@ -124,37 +150,13 @@ export default function BuyerCartPage() {
       return false;
     }
 
-    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await updateCartItem({
+        id: cartItemId,
+        quantity: newWeight,
+      }).unwrap();
       
-      // Update cart items and exit edit mode in the same state update cycle
-      setCartItems(prev => 
-        prev.map(item => {
-          if (item.productId === productId) {
-            return { ...item, weight: newWeight };
-          }
-          // Ensure weight exists for all items
-          if (!item.weight && item.product?.minQuantity) {
-            return { ...item, weight: Number.parseFloat(item.product.minQuantity.toString()) || 1 };
-          }
-          if (!item.weight) {
-            return { ...item, weight: 1 };
-          }
-          return item;
-        })
-      );
-      
-      // Edit mode should already be exited by the Save button click handler
-      // But ensure it's cleared here as well as a safety measure
-      setEditingItemId(prevEditingId => {
-        if (prevEditingId === productId) {
-          console.log('Exiting edit mode in handleSaveWeight for product:', productId);
-          return null;
-        }
-        return prevEditingId;
-      });
+      setEditingItemId(null);
       setTempWeight(null);
       
       toast.success("Weight updated", {
@@ -163,57 +165,43 @@ export default function BuyerCartPage() {
       });
       return true;
     } catch (error: any) {
-      console.error("Failed to update weight:", error);
-      toast.error("Failed to update weight", {
+      const errorMessage = error?.data?.error || error?.message || "Failed to update weight";
+      toast.error(errorMessage, {
         duration: 3000,
       });
-      // Don't exit edit mode on error so user can try again
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const removeItem = async (productId: string) => {
-    setIsLoading(true);
+  const removeItem = async (cartItemId: string) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setCartItems(prev => prev.filter(item => item.productId !== productId));
+      await removeCartItem(cartItemId).unwrap();
       
       toast.success("Item removed from cart", {
         duration: 2000,
         icon: "🗑️",
       });
     } catch (error: any) {
-      console.error("Failed to remove item:", error);
-      toast.error("Failed to remove item", {
+      const errorMessage = error?.data?.error || error?.message || "Failed to remove item";
+      toast.error(errorMessage, {
         duration: 3000,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const clearCart = async () => {
-    setIsLoading(true);
+  const handleClearCart = async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await clearCart(undefined).unwrap();
       
-      setCartItems([]);
       toast.success("Cart cleared", {
         duration: 2000,
         icon: "🧹",
       });
     } catch (error: any) {
-      console.error("Failed to clear cart:", error);
-      toast.error("Failed to clear cart", {
+      const errorMessage = error?.data?.error || error?.message || "Failed to clear cart";
+      toast.error(errorMessage, {
         duration: 3000,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -232,7 +220,9 @@ export default function BuyerCartPage() {
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
-  if (isLoading && cartItems.length === 0) {
+  const isLoadingData = isLoadingCart || isUpdating || isRemoving || isClearing;
+
+  if (isLoadingData && cartItems.length === 0) {
     return (
       <main className="pt-10 pb-20">
         <div className="container mx-auto px-2 max-w-7xl">
@@ -323,8 +313,8 @@ export default function BuyerCartPage() {
             </p>
           </div>
           <button
-            onClick={clearCart}
-            disabled={isLoading}
+            onClick={handleClearCart}
+            disabled={isClearing}
             className="text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2 font-medium transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-4 h-4 mr-2 inline" />
@@ -387,7 +377,7 @@ export default function BuyerCartPage() {
                             <div className="flex gap-2">
                               <button
                                 onClick={handleCancelEdit}
-                                disabled={isLoading}
+                                disabled={isUpdating}
                                 className="px-3 py-1.5 text-sm border border-stone-300 text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Cancel
@@ -408,13 +398,13 @@ export default function BuyerCartPage() {
                                   
                                   // Then save the weight
                                   await handleSaveWeight(
-                                    item.productId,
+                                    item.id,
                                     weightToSave,
                                     availableStock,
                                     minQuantity
                                   );
                                 }}
-                                disabled={isLoading}
+                                disabled={isUpdating}
                                 className="px-3 py-1.5 text-sm bg-yogreet-red hover:bg-yogreet-red/90 text-white transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Save
@@ -423,15 +413,15 @@ export default function BuyerCartPage() {
                           ) : (
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleModifyClick(item.productId, weight)}
-                                disabled={isLoading || isOutOfStock}
+                                onClick={() => handleModifyClick(item.id, weight)}
+                                disabled={isUpdating || isOutOfStock}
                                 className="px-3 py-1.5 text-sm border border-stone-300 text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Modify
                               </button>
                               <button
-                                onClick={() => removeItem(item.productId)}
-                                disabled={isLoading}
+                                onClick={() => removeItem(item.id)}
+                                disabled={isRemoving}
                                 className="px-3 py-1.5 text-sm border border-red-300 text-red-600 hover:bg-red-50 transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Remove
@@ -443,7 +433,7 @@ export default function BuyerCartPage() {
                         <div className="flex flex-col gap-3 mt-4">
                           <div className="flex items-center gap-2">
                             <span className="text-base text-stone-600 font-medium">Weight (kg):</span>
-                            {editingItemId === item.productId ? (
+                            {editingItemId === item.id ? (
                               <div className="flex items-center">
                                 <input
                                   type="text"
@@ -486,7 +476,7 @@ export default function BuyerCartPage() {
                                           ? tempWeight
                                           : weight;
                                         await handleSaveWeight(
-                                          item.productId,
+                                          item.id,
                                           weightToSave,
                                           availableStock,
                                           minQuantity
@@ -500,7 +490,7 @@ export default function BuyerCartPage() {
                                     }
                                   }}
                                   autoFocus
-                                  disabled={isLoading || isOutOfStock}
+                                  disabled={isUpdating || isOutOfStock}
                                   className="h-9 w-28 px-3 py-1 text-base font-medium border border-stone-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 disabled:opacity-50 disabled:cursor-not-allowed text-center"
                                   placeholder={`${minQuantity} kg`}
                                 />
