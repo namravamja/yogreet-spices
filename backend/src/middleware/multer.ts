@@ -126,7 +126,6 @@ export const uploadSellerVerificationDocuments = multer(multerConfig).fields([
   { name: "tradeLicense", maxCount: 1 },
   { name: "bankProofDocument", maxCount: 1 },
   { name: "fssaiCertificate", maxCount: 1 },
-  { name: "sampleLabTestCertificate", maxCount: 1 },
 ]);
 
 export const uploadProductImages = multer({

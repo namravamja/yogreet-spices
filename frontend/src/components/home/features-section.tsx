@@ -14,15 +14,10 @@ export function FeaturesSection() {
       description: "Your money is safe with our escrow system - funds are released only when you're satisfied with your order.",
       icon: FiCreditCard,
     },
-    {
-      title: "Free Samples Before Purchase",
-      description: "Test quality and authenticity with complimentary samples before committing to large orders.",
-      icon: FiGift,
-    },
   ]
 
   return (
-    <section className="bg-yogreet-light-gray py-16 md:py-24">
+    <section className="py-16 md:py-24 bg-yogreet-light-gray">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">

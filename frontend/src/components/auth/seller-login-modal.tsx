@@ -47,11 +47,11 @@ export function SellerLoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuc
         onLoginSuccess()
       }
       
-      // Redirect to verification page after login (or use redirectUrl if provided)
+      // Redirect to seller page after login (or use redirectUrl if provided)
       if (redirectUrl) {
         router.push(redirectUrl)
       } else {
-        router.push("/seller/verify-document/1")
+        router.push("/seller")
       }
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Login failed. Please check your credentials."

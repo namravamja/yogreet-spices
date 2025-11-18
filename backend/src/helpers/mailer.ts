@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendVerificationEmail = async (email: string, token: string, role: "BUYER" | "SELLER" = "BUYER") => {
   // Use backend verification endpoint which will redirect to document verification
-  const verificationUrl = `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/api/auth/verify-email?token=${token}`;
+  const verificationUrl = `${process.env.BACKEND_URL}/api/auth/verify-email?token=${token}`;
 
   const roleColor = role === "SELLER" ? "#6b8e6b" : "#8B6B9D"; // sage for seller, purple for buyer
   const roleName = role === "SELLER" ? "seller" : "buyer";

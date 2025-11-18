@@ -20,9 +20,12 @@ import {
   BarChart3,
   Box,
   CheckCircle2,
+  UserCircle,
+  FileCheck,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useSellerVerification } from "@/hooks/useSellerVerification"
 
 const features = [
   {
@@ -42,15 +45,6 @@ const features = [
     color: "sage",
     href: "/seller/orders",
     benefits: ["Real-time tracking", "Order history", "Customer details"],
-  },
-  {
-    title: "Sample Requests",
-    description:
-      "Handle sample requests from buyers and grow your customer base",
-    icon: FileText,
-    color: "sage",
-    href: "/seller/samples",
-    benefits: ["Request tracking", "Automated responses", "Easy approval"],
   },
   {
     title: "Analytics & Insights",
@@ -123,6 +117,13 @@ export default function SellerLanding() {
   const [greeting, setGreeting] = useState("")
   const [isSellerLoggedIn, setIsSellerLoggedIn] = useState(false)
   const router = useRouter()
+  
+  const {
+    isLoading: isVerificationLoading,
+    profileProgress,
+    documentVerificationProgress,
+    isFullyVerified,
+  } = useSellerVerification()
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -192,22 +193,121 @@ export default function SellerLanding() {
               high-quality spices.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/seller/products"
-                className="bg-yogreet-sage text-white px-8 py-4 rounded-lg hover:bg-yogreet-sage/90 transition-all duration-300 font-manrope font-medium flex items-center justify-center group"
-              >
-                Get Started
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/seller/orders"
-                className="bg-white text-yogreet-charcoal px-8 py-4 rounded-lg border border-stone-200 hover:bg-stone-50 transition-all duration-300 font-manrope font-medium flex items-center justify-center group"
-              >
-                <Play className="w-5 h-5 mr-2" />
-                View Orders
-              </Link>
-            </div>
+            {!isVerificationLoading && (
+              <>
+                {!isFullyVerified ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    {/* Profile Completion Card */}
+                    <div className="bg-white rounded-xl border border-stone-200 p-8 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+                      <div className="flex items-start mb-6">
+                        <div className="p-4 bg-blue-500/10 rounded-xl mr-4 shrink-0">
+                          <UserCircle className="w-7 h-7 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-manrope font-semibold text-yogreet-charcoal mb-2">
+                            Profile Completion
+                          </h3>
+                          <p className="text-sm text-stone-600 font-inter leading-relaxed">
+                            {profileProgress < 100
+                              ? "Complete your profile to continue"
+                              : "Profile is complete"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-auto space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-inter font-medium text-stone-700">
+                            Progress
+                          </span>
+                          <span className="text-lg font-manrope font-semibold text-blue-600">
+                            {profileProgress}%
+                          </span>
+                        </div>
+                        <div className="relative h-3 w-full overflow-hidden rounded-full bg-stone-100">
+                          <div
+                            className="h-full bg-blue-600 transition-all duration-500 rounded-full"
+                            style={{ width: `${profileProgress}%` }}
+                          />
+                        </div>
+                        {profileProgress < 100 && (
+                          <Link
+                            href="/seller/edit-profile"
+                            className="inline-flex items-center justify-center w-full mt-5 px-4 py-2.5 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg font-manrope font-medium text-sm transition-all duration-300 group"
+                          >
+                            Complete Profile
+                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Verification Status Card */}
+                    <div className="bg-white rounded-xl border border-stone-200 p-8 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+                      <div className="flex items-start mb-6">
+                        <div className="p-4 bg-yogreet-red/10 rounded-xl mr-4 shrink-0">
+                          <FileCheck className="w-7 h-7 text-yogreet-red" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-manrope font-semibold text-yogreet-charcoal mb-2">
+                            Verification Status
+                          </h3>
+                          <p className="text-sm text-stone-600 font-inter leading-relaxed">
+                            {documentVerificationProgress < 100
+                              ? "Complete verification to start selling"
+                              : "Verification is complete"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-auto space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-inter font-medium text-stone-700">
+                            Progress
+                          </span>
+                          <span className="text-lg font-manrope font-semibold text-yogreet-red">
+                            {documentVerificationProgress}%
+                          </span>
+                        </div>
+                        <div className="relative h-3 w-full overflow-hidden rounded-full bg-stone-100">
+                          <div
+                            className="h-full bg-yogreet-red transition-all duration-500 rounded-full"
+                            style={{ width: `${documentVerificationProgress}%` }}
+                          />
+                        </div>
+                        {documentVerificationProgress < 100 && (
+                          <Link
+                            href="/seller/verify-document"
+                            className="inline-flex items-center justify-center w-full mt-5 px-4 py-2.5 bg-yogreet-red/10 text-yogreet-red hover:bg-yogreet-red hover:text-white rounded-lg font-manrope font-medium text-sm transition-all duration-300 group"
+                          >
+                            Complete Verification
+                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
+                    <Link
+                      href="/seller/products"
+                      className="bg-yogreet-sage text-white px-8 py-4 rounded-lg hover:bg-yogreet-sage/90 transition-all duration-300 font-manrope font-medium flex items-center justify-center group shadow-md hover:shadow-lg"
+                    >
+                      <Package className="w-5 h-5 mr-2" />
+                      Add Products
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                    <Link
+                      href="/seller/orders"
+                      className="bg-white text-yogreet-charcoal px-8 py-4 rounded-lg border-2 border-stone-200 hover:bg-stone-50 hover:border-yogreet-sage transition-all duration-300 font-manrope font-medium flex items-center justify-center group shadow-md hover:shadow-lg"
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      View Orders
+                    </Link>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -73,6 +73,117 @@ export const sellerApi = SellerApi.injectEndpoints({
       },
       invalidatesTags: ["Seller"],
     }),
+
+    // Get seller products
+    getSellerProducts: builder.query({
+      query: () => "/products",
+      providesTags: ["Products"],
+      transformResponse: (response: any) => {
+        // Handle direct array format
+        if (Array.isArray(response)) {
+          return response;
+        }
+        // Handle object with data property
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Get single seller product
+    getSellerProduct: builder.query({
+      query: (productId: string) => `/products/${productId}`,
+      providesTags: (result, error, productId) => [{ type: "Products", id: productId }],
+      transformResponse: (response: any) => {
+        // Handle direct object format
+        if (response && typeof response === "object" && !Array.isArray(response)) {
+          return response;
+        }
+        // Handle object with data property
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Create product
+    createProduct: builder.mutation({
+      query: (productData) => {
+        // Product data should always be FormData (contains images)
+        if (productData instanceof FormData) {
+          return {
+            url: "/products",
+            method: "POST",
+            body: productData,
+          };
+        } else {
+          // If not FormData, convert to FormData
+          const formData = new FormData();
+          Object.entries(productData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              if (Array.isArray(value)) {
+                formData.append(key, JSON.stringify(value));
+              } else {
+                formData.append(key, String(value));
+              }
+            }
+          });
+          return {
+            url: "/products",
+            method: "POST",
+            body: formData,
+          };
+        }
+      },
+      invalidatesTags: ["Seller", "Products"],
+    }),
+
+    // Update product
+    updateProduct: builder.mutation({
+      query: ({ productId, productData }) => {
+        // Product data should always be FormData (contains images)
+        if (productData instanceof FormData) {
+          return {
+            url: `/products/${productId}`,
+            method: "PUT",
+            body: productData,
+          };
+        } else {
+          // If not FormData, convert to FormData
+          const formData = new FormData();
+          Object.entries(productData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              if (Array.isArray(value)) {
+                formData.append(key, JSON.stringify(value));
+              } else {
+                formData.append(key, String(value));
+              }
+            }
+          });
+          return {
+            url: `/products/${productId}`,
+            method: "PUT",
+            body: formData,
+          };
+        }
+      },
+      invalidatesTags: (result, error, { productId }) => [
+        "Seller",
+        "Products",
+        { type: "Products", id: productId },
+      ],
+    }),
+
+    // Delete product
+    deleteProduct: builder.mutation({
+      query: (productId: string) => ({
+        url: `/products/${productId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Seller", "Products"],
+    }),
   }),
 });
 
@@ -81,5 +192,10 @@ export const {
   useUpdateSellerMutation,
   useGetSellerVerificationQuery,
   useUpdateSellerVerificationMutation,
+  useGetSellerProductsQuery,
+  useGetSellerProductQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
 } = sellerApi;
 

@@ -13,11 +13,12 @@ import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Step1ProductBasics from "./components/step1-product-basics";
-import Step2PriceInventory from "./components/step2-price-inventory";
-import Step3ImagesShipping from "./components/step3-images-shipping";
-import Step4Summary from "./components/step4-summary";
+import Step2AboutProduct from "./components/step2-about-product";
+import Step3PriceInventory from "./components/step3-price-inventory";
+import Step4ImagesShipping from "./components/step4-images-shipping";
+import Step5Summary from "./components/step5-summary";
 import { useAuth } from "@/hooks/useAuth";
-import { useGetSellerQuery } from "@/services/api/sellerApi";
+import { useGetSellerQuery, useCreateProductMutation } from "@/services/api/sellerApi";
 
 // Safe data access utilities
 const safeString = (value: any): string => {
@@ -33,18 +34,26 @@ export interface ProductData {
   id: string;
   productName: string;
   category: string;
+  subCategory: string;
+  typeOfSpice: string;
+  form: string;
   shortDescription: string;
-  sellingPrice: string;
-  mrp: string;
-  availableStock: string;
-  skuCode: string;
+  // About Product
+  purityLevel: string;
+  originSource: string;
+  processingMethod: string;
+  shelfLife: string;
+  manufacturingDate: string;
+  expiryDate: string;
+  // Package pricing
+  smallPrice: string;
+  smallWeight: string;
+  mediumPrice: string;
+  mediumWeight: string;
+  largePrice: string;
+  largeWeight: string;
   productImages: string[];
-  weight: string;
-  length: string;
-  width: string;
-  height: string;
   shippingCost: string;
-  deliveryTimeEstimate: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,6 +68,7 @@ export default function AddProductPage() {
   const { data: sellerResponse, isLoading: isSellerLoading } = useGetSellerQuery(undefined, {
     skip: !isAuthenticated,
   });
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
 
   // Extract seller data
   const sellerData = useMemo(() => {
@@ -86,18 +96,26 @@ export default function AddProductPage() {
     updatedAt: "",
     productName: "",
     category: "",
+    subCategory: "",
+    typeOfSpice: "",
+    form: "",
     shortDescription: "",
-    sellingPrice: "",
-    mrp: "",
-    availableStock: "",
-    skuCode: "",
+    // About Product
+    purityLevel: "",
+    originSource: "",
+    processingMethod: "",
+    shelfLife: "",
+    manufacturingDate: "",
+    expiryDate: "",
+    // Package pricing
+    smallPrice: "",
+    smallWeight: "",
+    mediumPrice: "",
+    mediumWeight: "",
+    largePrice: "",
+    largeWeight: "",
     productImages: [],
-    weight: "",
-    length: "",
-    width: "",
-    height: "",
     shippingCost: "",
-    deliveryTimeEstimate: "",
   });
 
   const handleInputChange = (field: string, value: any) => {
@@ -119,26 +137,22 @@ export default function AddProductPage() {
       "productName",
       "category",
       "shortDescription",
-      "sellingPrice",
-      "mrp",
-      "availableStock",
-      "skuCode",
-      "weight",
-      "length",
-      "width",
-      "height",
+      "smallPrice",
+      "smallWeight",
+      "mediumPrice",
+      "mediumWeight",
+      "largePrice",
+      "largeWeight",
       "shippingCost",
-      "deliveryTimeEstimate",
     ];
 
     const numberFields = [
-      "sellingPrice",
-      "mrp",
-      "availableStock",
-      "weight",
-      "length",
-      "width",
-      "height",
+      "smallPrice",
+      "smallWeight",
+      "mediumPrice",
+      "mediumWeight",
+      "largePrice",
+      "largeWeight",
       "shippingCost",
     ];
 
@@ -170,33 +184,46 @@ export default function AddProductPage() {
     }
 
     try {
-      // TODO: Replace with actual API call once backend endpoint is available
-      // const formData = new FormData();
-      // 
-      // for (let i = 0; i < productData.productImages.length; i++) {
-      //   const base64String = productData.productImages[i];
-      //   const response = await fetch(base64String);
-      //   const blob = await response.blob();
-      //   const file = new File([blob], `product-image-${i}.jpg`, {
-      //     type: "image/jpeg",
-      //   });
-      //   formData.append("productImages", file);
-      // }
-      // 
-      // const { productImages, id, createdAt, updatedAt, ...otherData } =
-      //   productData;
-      // Object.entries(otherData).forEach(([key, value]) => {
-      //   formData.append(key, value.toString());
-      // });
-      // 
-      // await createProduct(formData).unwrap();
+      const formData = new FormData();
+      
+      // Convert base64 images to File objects and append to FormData
+      for (let i = 0; i < productData.productImages.length; i++) {
+        const base64String = productData.productImages[i];
+        try {
+          // Convert base64 to blob
+          const response = await fetch(base64String);
+          const blob = await response.blob();
+          const file = new File([blob], `product-image-${i + 1}.jpg`, {
+            type: blob.type || "image/jpeg",
+          });
+          formData.append("productImages", file);
+        } catch (err) {
+          console.error(`Failed to convert image ${i + 1}:`, err);
+          // If conversion fails, try to append as base64 string
+          formData.append("productImages", base64String);
+        }
+      }
+      
+      // Append other product data
+      const { productImages, id, createdAt, updatedAt, ...otherData } = productData;
+      Object.entries(otherData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, value.toString());
+          }
+        }
+      });
+      
+      await createProduct(formData).unwrap();
       
       toast.success("Product created successfully!");
       router.push("/seller/products");
     } catch (error: any) {
       console.error("Failed to create product:", error);
       toast.error(
-        error?.data?.message || "Something went wrong while creating product"
+        error?.data?.error || error?.data?.message || "Something went wrong while creating product"
       );
     }
   };
@@ -204,7 +231,7 @@ export default function AddProductPage() {
   const nextStep = () => {
     // Validation removed for testing purposes
     // TODO: Re-enable validation before production
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
       setTimeout(() => scrollToTop(), 100);
     }
@@ -219,13 +246,15 @@ export default function AddProductPage() {
 
   const stepIcons = [
     <Package key="1" className="w-4 h-4 sm:w-6 sm:h-6" />,
-    <DollarSign key="2" className="w-4 h-4 sm:w-6 sm:h-6" />,
-    <ImageIcon key="3" className="w-4 h-4 sm:w-6 sm:h-6" />,
-    <Check key="4" className="w-4 h-4 sm:w-6 sm:h-6" />,
+    <Package key="2" className="w-4 h-4 sm:w-6 sm:h-6" />,
+    <DollarSign key="3" className="w-4 h-4 sm:w-6 sm:h-6" />,
+    <ImageIcon key="4" className="w-4 h-4 sm:w-6 sm:h-6" />,
+    <Check key="5" className="w-4 h-4 sm:w-6 sm:h-6" />,
   ];
 
   const stepTitles = [
     "Product Basics",
+    "About Product",
     "Price & Inventory",
     "Images & Shipping",
     "Summary",
@@ -285,11 +314,11 @@ export default function AddProductPage() {
           <div className="absolute top-4 sm:top-6 left-0 right-0 h-0.5 bg-stone-200 z-0">
             <div
               className="h-full bg-yogreet-sage transition-all duration-300"
-              style={{ width: `${((step - 1) / 3) * 100}%` }}
+              style={{ width: `${((step - 1) / 4) * 100}%` }}
             ></div>
           </div>
           {/* Step indicators - in front */}
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
               className={`flex flex-col items-center relative z-10 ${
@@ -332,18 +361,24 @@ export default function AddProductPage() {
           />
         )}
         {step === 2 && (
-          <Step2PriceInventory
+          <Step2AboutProduct
             productData={productData}
             handleInputChange={handleInputChange}
           />
         )}
         {step === 3 && (
-          <Step3ImagesShipping
+          <Step3PriceInventory
             productData={productData}
             handleInputChange={handleInputChange}
           />
         )}
-        {step === 4 && <Step4Summary productData={productData} />}
+        {step === 4 && (
+          <Step4ImagesShipping
+            productData={productData}
+            handleInputChange={handleInputChange}
+          />
+        )}
+        {step === 5 && <Step5Summary productData={productData} />}
 
         <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-8 pt-6 border-t border-stone-200">
           <button
@@ -354,7 +389,7 @@ export default function AddProductPage() {
             Previous
           </button>
 
-          {step < 4 ? (
+          {step < 5 ? (
             <button
               onClick={nextStep}
               className="px-6 py-2 bg-yogreet-sage cursor-pointer text-white rounded-md hover:bg-yogreet-sage/90 transition-colors w-full sm:w-auto font-manrope"
@@ -364,11 +399,11 @@ export default function AddProductPage() {
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={false}
+              disabled={isCreating}
               className="px-6 py-2 bg-yogreet-sage cursor-pointer text-white rounded-md hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center sm:justify-start w-full sm:w-auto disabled:opacity-50 font-manrope"
             >
               <Save className="w-4 h-4 mr-2" />
-              Publish Product
+              {isCreating ? "Publishing..." : "Publish Product"}
             </button>
           )}
         </div>

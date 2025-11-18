@@ -13,7 +13,12 @@ export const verifyEmail = async (
     const { token } = req.query;
 
     if (!token || typeof token !== "string") {
+      const acceptsJson = req.headers.accept?.includes("application/json");
+      if (acceptsJson) {
       res.status(400).json({ error: "Verification token is required" });
+      } else {
+        res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Verification token is required")}`);
+      }
       return;
     }
 
@@ -25,7 +30,12 @@ export const verifyEmail = async (
       });
 
       if (!buyer) {
+        const acceptsJson = req.headers.accept?.includes("application/json");
+        if (acceptsJson) {
         res.status(400).json({ error: "Invalid verification token" });
+        } else {
+          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Invalid verification token")}`);
+        }
         return;
       }
       
@@ -39,16 +49,18 @@ export const verifyEmail = async (
             role: payload.role 
           });
         } else {
-          // Redirect directly to buyer document verification page
-          res.redirect(`${process.env.FRONTEND_URL}/buyer/verify-document/1?alreadyVerified=true`);
+          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=already`);
         }
         return;
       }
 
       if (buyer.verifyToken !== token || buyer.verifyExpires! < new Date()) {
-        res
-          .status(400)
-          .json({ error: "Verification token expired or invalid" });
+        const acceptsJson = req.headers.accept?.includes("application/json");
+        if (acceptsJson) {
+          res.status(400).json({ error: "Verification token expired or invalid" });
+        } else {
+          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Verification token expired or invalid")}`);
+        }
         return;
       }
 
@@ -70,8 +82,7 @@ export const verifyEmail = async (
           role: payload.role 
         });
       } else {
-        // Redirect directly to buyer document verification page
-        res.redirect(`${process.env.FRONTEND_URL}/buyer/verify-document/1?verified=true`);
+        res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=success`);
       }
       return;
     } else if (payload.role === "SELLER") {
@@ -80,7 +91,12 @@ export const verifyEmail = async (
       });
 
       if (!seller) {
+        const acceptsJson = req.headers.accept?.includes("application/json");
+        if (acceptsJson) {
         res.status(400).json({ error: "Invalid verification token" });
+        } else {
+          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Invalid verification token")}`);
+        }
         return;
       }
       
@@ -94,16 +110,18 @@ export const verifyEmail = async (
             role: payload.role 
           });
         } else {
-          // Redirect directly to seller document verification page
-          res.redirect(`${process.env.FRONTEND_URL}/seller/verify-document/1?alreadyVerified=true`);
+          res.redirect(`${process.env.FRONTEND_URL}/become-seller?openLogin=true&verified=already`);
         }
         return;
       }
 
       if (seller.verifyToken !== token || seller.verifyExpires! < new Date()) {
-        res
-          .status(400)
-          .json({ error: "Verification token expired or invalid" });
+        const acceptsJson = req.headers.accept?.includes("application/json");
+        if (acceptsJson) {
+          res.status(400).json({ error: "Verification token expired or invalid" });
+        } else {
+          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Verification token expired or invalid")}`);
+        }
         return;
       }
 
@@ -125,12 +143,16 @@ export const verifyEmail = async (
           role: payload.role 
         });
       } else {
-        // Redirect directly to seller document verification page
-        res.redirect(`${process.env.FRONTEND_URL}/seller/verify-document/1?verified=true`);
+        res.redirect(`${process.env.FRONTEND_URL}/become-seller?openLogin=true&verified=true`);
       }
       return;
     } else {
+      const acceptsJson = req.headers.accept?.includes("application/json");
+      if (acceptsJson) {
       res.status(400).json({ error: "Invalid role in token" });
+      } else {
+        res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Invalid role in token")}`);
+      }
       return;
     }
   } catch (err: any) {
@@ -142,21 +164,8 @@ export const verifyEmail = async (
         error: err.message || "Verification failed" 
       });
     } else {
-      // Redirect to appropriate document verification page with error based on token role if available
       const errorParam = encodeURIComponent(err.message || "Verification failed");
-      // Try to get role from token if verification failed during token parsing
-      try {
-        const tokenRole = (req.query.token as string) ? 
-          (JSON.parse(Buffer.from((req.query.token as string).split('.')[1], 'base64').toString()).role) : null;
-        if (tokenRole === "SELLER") {
-          res.redirect(`${process.env.FRONTEND_URL}/seller/verify-document/1?error=${errorParam}`);
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/buyer/verify-document/1?error=${errorParam}`);
-        }
-      } catch {
-        // Fallback to buyer document verification page if can't determine role
-        res.redirect(`${process.env.FRONTEND_URL}/buyer/verify-document/1?error=${errorParam}`);
-      }
+      res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${errorParam}`);
     }
   }
 };

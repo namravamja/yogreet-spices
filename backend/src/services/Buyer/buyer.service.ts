@@ -197,7 +197,12 @@ export const addToCart = async (buyerId: string, data: AddToCartData) => {
     throw new Error("Product not found");
   }
 
-  const availableStock = parseFloat(product.availableStock || "0");
+  // Calculate total available stock from package weights
+  const smallWeight = parseFloat(product.smallWeight || "0");
+  const mediumWeight = parseFloat(product.mediumWeight || "0");
+  const largeWeight = parseFloat(product.largeWeight || "0");
+  const availableStock = smallWeight + mediumWeight + largeWeight;
+  
   if (data.quantity > availableStock) {
     throw new Error(`Only ${availableStock} kg available in stock`);
   }
@@ -277,7 +282,12 @@ export const updateCartItem = async (buyerId: string, cartItemId: string, data: 
     throw new Error("Cart item not found");
   }
 
-  const availableStock = parseFloat(cartItem.product.availableStock || "0");
+  // Calculate total available stock from package weights
+  const smallWeight = parseFloat(cartItem.product.smallWeight || "0");
+  const mediumWeight = parseFloat(cartItem.product.mediumWeight || "0");
+  const largeWeight = parseFloat(cartItem.product.largeWeight || "0");
+  const availableStock = smallWeight + mediumWeight + largeWeight;
+  
   if (data.quantity > availableStock) {
     throw new Error(`Only ${availableStock} kg available in stock`);
   }
@@ -326,177 +336,4 @@ export const clearCart = async (buyerId: string) => {
   });
 };
 
-// Sample request operations
-export const getSampleRequests = async (buyerId: string) => {
-  const samples = await prisma.sampleRequest.findMany({
-    where: { buyerId },
-    include: {
-      product: {
-        include: {
-          seller: {
-            select: {
-              id: true,
-              fullName: true,
-              companyName: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return samples;
-};
-
-export interface RequestSampleData {
-  productId: string;
-  quantity: number; // in grams (50-500g)
-  purpose: string; // Required: quality-check, testing, evaluation, trial, other
-  notes?: string;
-}
-
-export const requestSample = async (buyerId: string, data: RequestSampleData) => {
-  // Check if product exists
-  const product = await prisma.product.findUnique({
-    where: { id: data.productId },
-    include: { seller: true },
-  });
-
-  if (!product) {
-    throw new Error("Product not found");
-  }
-
-  // Validate quantity (50g to 500g)
-  if (data.quantity < 50 || data.quantity > 500) {
-    throw new Error("Sample weight must be between 50g and 500g");
-  }
-
-  // Validate purpose
-  const validPurposes = ["quality-check", "testing", "evaluation", "trial", "other"];
-  if (!data.purpose || !validPurposes.includes(data.purpose)) {
-    throw new Error("Please provide a valid purpose for the sample request");
-  }
-
-  // Check if sample request already exists for this product
-  const existingRequest = await prisma.sampleRequest.findFirst({
-    where: {
-      buyerId,
-      productId: data.productId,
-      status: "pending",
-    },
-  });
-
-  if (existingRequest) {
-    throw new Error("You already have a pending sample request for this product");
-  }
-
-  const sampleRequest = await prisma.sampleRequest.create({
-    data: {
-      buyerId,
-      sellerId: product.sellerId,
-      productId: data.productId,
-      quantity: data.quantity,
-      purpose: data.purpose,
-      notes: data.notes,
-      status: "pending",
-    },
-    include: {
-      product: {
-        include: {
-          seller: {
-            select: {
-              id: true,
-              fullName: true,
-              companyName: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  return sampleRequest;
-};
-
-export interface UpdateSampleRequestData {
-  quantity?: number;
-  purpose?: string;
-  notes?: string;
-}
-
-export const updateSampleRequest = async (buyerId: string, sampleRequestId: string, data: UpdateSampleRequestData) => {
-  const sampleRequest = await prisma.sampleRequest.findUnique({
-    where: { id: sampleRequestId },
-  });
-
-  if (!sampleRequest || sampleRequest.buyerId !== buyerId) {
-    throw new Error("Sample request not found");
-  }
-
-  // Only allow updates if status is pending
-  if (sampleRequest.status !== "pending") {
-    throw new Error("Cannot update sample request that is not pending");
-  }
-
-  const updateData: any = {};
-  if (data.quantity !== undefined) {
-    if (data.quantity < 50 || data.quantity > 500) {
-      throw new Error("Sample weight must be between 50g and 500g");
-    }
-    updateData.quantity = data.quantity;
-  }
-  if (data.purpose !== undefined) {
-    updateData.purpose = data.purpose;
-  }
-  if (data.notes !== undefined) {
-    updateData.notes = data.notes;
-  }
-
-  const updatedRequest = await prisma.sampleRequest.update({
-    where: { id: sampleRequestId },
-    data: updateData,
-    include: {
-      product: {
-        include: {
-          seller: {
-            select: {
-              id: true,
-              fullName: true,
-              companyName: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  return updatedRequest;
-};
-
-export const removeSampleRequest = async (buyerId: string, sampleRequestId: string) => {
-  const sampleRequest = await prisma.sampleRequest.findUnique({
-    where: { id: sampleRequestId },
-  });
-
-  if (!sampleRequest || sampleRequest.buyerId !== buyerId) {
-    throw new Error("Sample request not found");
-  }
-
-  // Only allow deletion if status is pending
-  if (sampleRequest.status !== "pending") {
-    throw new Error("Cannot delete sample request that is not pending");
-  }
-
-  await prisma.sampleRequest.delete({
-    where: { id: sampleRequestId },
-  });
-};
-
-export const clearSampleRequests = async (buyerId: string) => {
-  // Only delete pending requests
-  await prisma.sampleRequest.deleteMany({
-    where: {
-      buyerId,
-      status: "pending",
-    },
-  });
-};
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser, FiShoppingBag } from "react-icons/fi"
 import { useSignupSellerMutation } from "@/services/api/authApi"
 import toast from "react-hot-toast"
+import { useVerificationModal } from "@/components/auth/verification-modal-provider"
 
 interface SellerSignupModalProps {
   isOpen: boolean
@@ -15,6 +16,7 @@ interface SellerSignupModalProps {
 export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSignupModalProps) {
   const router = useRouter()
   const [signupSeller, { isLoading }] = useSignupSellerMutation()
+  const { showVerificationModal } = useVerificationModal()
   const [formData, setFormData] = useState({
     fullName: "",
     companyName: "", // Merged from storeName and companyName
@@ -42,7 +44,11 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
         localStorage.setItem("yg_user_role", "SELLER")
         localStorage.setItem("yg_signup_email", formData.email)
       } catch {}
-      router.push("/seller/verify-document/1")
+      router.push("/")
+      // Show verification modal after navigation
+      setTimeout(() => {
+        showVerificationModal()
+      }, 300)
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Failed to create seller account. Please try again."
       toast.error(errorMessage)
@@ -148,7 +154,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
               </div>
             </div>
 
-            {/* Company Name (Store Name) */}
+            {/* Company Name */}
             <div>
               <label htmlFor="companyName" className="block text-sm font-manrope font-medium text-gray-700 mb-1">
                 Store/Company Name <span className="text-red-500">*</span>

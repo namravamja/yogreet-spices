@@ -1,14 +1,14 @@
-"use client";
+ "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { User, MapPin, Truck, Globe, Save } from "lucide-react";
+import { User, MapPin, Truck, Globe, Save, FileText } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Step1BasicInformation from "./components/step1-basic-information";
+import Step2AboutStore from "./components/step2-about-store";
 import Step2AddressInformation from "./components/step2-address-information";
-import Step3ShippingLogistics from "./components/step3-shipping-logistics";
 import Step4SocialMediaWebsite from "./components/step4-social-media-website";
 import { useGetSellerQuery, useUpdateSellerMutation } from "@/services/api/sellerApi";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,7 +25,11 @@ interface SellerProfileData {
   productCategories: string[];
   businessLogo?: string;
 
-  // Step 2: Address Information
+  // Step 2: About & Store Photos
+  about: string;
+  storePhotos: string[];
+
+  // Step 3: Address Information
   businessAddress: {
     street: string;
     city: string;
@@ -33,19 +37,6 @@ interface SellerProfileData {
     country: string;
     pinCode: string;
   };
-  warehouseAddress: {
-    sameAsBusiness: boolean;
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    pinCode: string;
-  };
-
-  // Step 3: Shipping & Logistics
-  shippingType: string;
-  serviceAreas: string[];
-  returnPolicy: string;
 
   // Step 4: Social Media & Website
   socialLinks: {
@@ -62,6 +53,8 @@ export default function SellerEditProfilePage() {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | File[]>>({});
   const router = useRouter();
   const pathname = usePathname();
+  const [isSavingOnly, setIsSavingOnly] = useState(false);
+  const [isSavingAndNext, setIsSavingAndNext] = useState(false);
 
   const { isAuthenticated } = useAuth("seller");
   const { data: rawData, isLoading, isError: fetchError, refetch } = useGetSellerQuery(undefined, {
@@ -86,6 +79,8 @@ export default function SellerEditProfilePage() {
     businessType: "",
     productCategories: [],
     businessLogo: "",
+    about: "",
+    storePhotos: [],
     businessAddress: {
       street: "",
       city: "",
@@ -93,17 +88,6 @@ export default function SellerEditProfilePage() {
       country: "",
       pinCode: "",
     },
-    warehouseAddress: {
-      sameAsBusiness: true,
-      street: "",
-      city: "",
-      state: "",
-      country: "",
-      pinCode: "",
-    },
-    shippingType: "",
-    serviceAreas: [],
-    returnPolicy: "",
     socialLinks: {
       website: "",
       instagram: "",
@@ -129,7 +113,6 @@ export default function SellerEditProfilePage() {
       try {
         // Properly extract nested data
         const businessAddr = sellerData.businessAddress;
-        const warehouseAddr = sellerData.warehouseAddress;
         const socialLinksData = sellerData.socialLinks;
         
         const loaded: SellerProfileData = {
@@ -140,6 +123,8 @@ export default function SellerEditProfilePage() {
           businessType: sellerData.businessType || "",
           productCategories: Array.isArray(sellerData.productCategories) ? sellerData.productCategories : [],
           businessLogo: sellerData.businessLogo || "",
+          about: sellerData.about || "",
+          storePhotos: Array.isArray(sellerData.storePhotos) ? sellerData.storePhotos : [],
           businessAddress: businessAddr ? {
             street: businessAddr.street || "",
             city: businessAddr.city || "",
@@ -153,24 +138,6 @@ export default function SellerEditProfilePage() {
             country: "",
             pinCode: "",
           },
-          warehouseAddress: warehouseAddr ? {
-            sameAsBusiness: warehouseAddr.sameAsBusiness ?? true,
-            street: warehouseAddr.street || "",
-            city: warehouseAddr.city || "",
-            state: warehouseAddr.state || "",
-            country: warehouseAddr.country || "",
-            pinCode: warehouseAddr.pinCode || "",
-          } : {
-            sameAsBusiness: true,
-            street: "",
-            city: "",
-            state: "",
-            country: "",
-            pinCode: "",
-          },
-          shippingType: sellerData.shippingType || "",
-          serviceAreas: Array.isArray(sellerData.serviceAreas) ? sellerData.serviceAreas : [],
-          returnPolicy: sellerData.returnPolicy || "",
           socialLinks: socialLinksData ? {
             website: socialLinksData.website || "",
             instagram: socialLinksData.instagram || "",
@@ -201,21 +168,86 @@ export default function SellerEditProfilePage() {
     }
   };
 
+  // Utility: deep compare helpers for step-specific fields
+  const arraysEqual = (a?: any[], b?: any[]) => {
+    const aa = Array.isArray(a) ? a : [];
+    const bb = Array.isArray(b) ? b : [];
+    if (aa.length !== bb.length) return false;
+    for (let i = 0; i < aa.length; i++) {
+      if (aa[i] !== bb[i]) return false;
+    }
+    return true;
+  };
+
+  const objectsEqual = (a?: Record<string, any>, b?: Record<string, any>, keys?: string[]) => {
+    const ka = keys ?? Array.from(new Set([...(a ? Object.keys(a) : []), ...(b ? Object.keys(b) : [])]));
+    for (const k of ka) {
+      const av = a ? a[k] : undefined;
+      const bv = b ? b[k] : undefined;
+      if (Array.isArray(av) || Array.isArray(bv)) {
+        if (!arraysEqual(av as any[], bv as any[])) return false;
+      } else if (typeof av === "object" || typeof bv === "object") {
+        if (!objectsEqual(av as any, bv as any)) return false;
+      } else if (av !== bv) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const hasChangesForStep = (currentStep: number): boolean => {
+    if (!originalData) return true;
+    if (currentStep === 1) {
+      // Basic info or logo
+      if (uploadedFiles.businessLogo && uploadedFiles.businessLogo instanceof File) return true;
+      return !objectsEqual(
+        {
+          fullName: data.fullName,
+          companyName: data.companyName,
+          email: data.email,
+          mobile: data.mobile,
+          businessType: data.businessType,
+          productCategories: data.productCategories,
+          businessLogo: data.businessLogo,
+        },
+        {
+          fullName: originalData.fullName,
+          companyName: originalData.companyName,
+          email: originalData.email,
+          mobile: originalData.mobile,
+          businessType: originalData.businessType,
+          productCategories: originalData.productCategories,
+          businessLogo: originalData.businessLogo,
+        }
+      );
+    }
+    if (currentStep === 2) {
+      // About and store photos or new uploads selected
+      if (uploadedFiles.storePhotos && Array.isArray(uploadedFiles.storePhotos) && uploadedFiles.storePhotos.length > 0) {
+        return true;
+      }
+      return !objectsEqual(
+        { about: data.about, storePhotos: data.storePhotos },
+        { about: originalData.about, storePhotos: originalData.storePhotos }
+      );
+    }
+    if (currentStep === 3) {
+      // Address
+      return !objectsEqual(
+        data.businessAddress,
+        originalData.businessAddress,
+        ["street", "city", "state", "country", "pinCode"]
+      );
+    }
+    if (currentStep === 4) {
+      // Social links
+      return !objectsEqual(data.socialLinks, originalData.socialLinks, ["website", "instagram", "facebook", "twitter"]);
+    }
+    return true;
+  };
+
   const saveStep1Data = async (): Promise<boolean> => {
     try {
-      if (!data.fullName?.trim()) {
-        toast.error("Full name is required");
-        return false;
-      }
-      if (!data.companyName?.trim()) {
-        toast.error("Company name is required");
-        return false;
-      }
-      if (!data.email?.trim()) {
-        toast.error("Email is required");
-        return false;
-      }
-
       const formData = new FormData();
       const hasLogoFile = uploadedFiles.businessLogo && uploadedFiles.businessLogo instanceof File;
 
@@ -262,20 +294,28 @@ export default function SellerEditProfilePage() {
     }
   };
 
+  // Step 2: About & Store Photos
   const saveStep2Data = async (): Promise<boolean> => {
     try {
-      if (!data.businessAddress?.street?.trim()) {
-        toast.error("Business address street is required");
-        return false;
-      }
-
+      const hasStorePhotosFiles = Array.isArray(uploadedFiles.storePhotos) && (uploadedFiles.storePhotos as File[]).length > 0;
       const payload: any = {
-        businessAddress: data.businessAddress,
-        warehouseAddress: data.warehouseAddress,
+        about: data.about || "",
+        storePhotos: data.storePhotos || [],
       };
-
-      await updateSeller(payload).unwrap();
-
+      if (hasStorePhotosFiles) {
+        const formData = new FormData();
+        formData.append("about", payload.about);
+        // append existing URLs if any
+        if (payload.storePhotos && payload.storePhotos.length) {
+          formData.append("storePhotos", JSON.stringify(payload.storePhotos));
+        }
+        (uploadedFiles.storePhotos as File[]).forEach((file) => {
+          formData.append("storePhotos", file);
+        });
+        await updateSeller(formData).unwrap();
+      } else {
+        await updateSeller(payload).unwrap();
+      }
       toast.success("Step 2 data saved successfully!");
       return true;
     } catch (err: any) {
@@ -288,9 +328,7 @@ export default function SellerEditProfilePage() {
   const saveStep3Data = async (): Promise<boolean> => {
     try {
       const payload: any = {
-        shippingType: data.shippingType || "",
-        serviceAreas: data.serviceAreas || [],
-        returnPolicy: data.returnPolicy || "",
+        businessAddress: data.businessAddress,
       };
 
       await updateSeller(payload).unwrap();
@@ -341,6 +379,15 @@ export default function SellerEditProfilePage() {
   };
 
   const handleSaveAndNext = async () => {
+    // If no changes in this step, skip saving and go next
+    const changed = hasChangesForStep(step);
+    if (!changed && step < 4) {
+      const next = step + 1;
+      setStep(next);
+      router.push(`/seller/edit-profile/${next}`);
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+      return;
+    }
     const saved = await handleSave();
     if (saved && step < 4) {
       const next = step + 1;
@@ -370,33 +417,32 @@ export default function SellerEditProfilePage() {
 
   const stepIcons = [
     <User key="1" className="w-4 h-4 sm:w-6 sm:h-6" />, // Basic Information
-    <MapPin key="2" className="w-4 h-4 sm:w-6 sm:h-6" />, // Address Information
-    <Truck key="3" className="w-4 h-4 sm:w-6 sm:h-6" />, // Shipping & Logistics
+    <FileText key="2" className="w-4 h-4 sm:w-6 sm:h-6" />, // About & Store Photos
+    <MapPin key="3" className="w-4 h-4 sm:w-6 sm:h-6" />, // Address Information
     <Globe key="4" className="w-4 h-4 sm:w-6 sm:h-6" />, // Social Media & Website
   ];
 
   const stepTitles = [
     "Basic Information",
+    "About & Store Photos",
     "Address Information",
-    "Shipping & Logistics",
     "Social Media & Website",
   ];
 
   const handleSubmit = async () => {
-    // Light validation: ensure essential fields are present
-    if (!data.fullName?.trim()) return toast.error("Full name is required");
-    if (!data.companyName?.trim()) return toast.error("Company name is required");
-    if (!data.email?.trim()) return toast.error("Email is required");
-    if (!data.mobile?.trim()) return toast.error("Mobile number is required");
-    if (!data.businessType?.trim()) return toast.error("Business type is required");
-
     try {
       // Prepare FormData if there's a logo file
       const formData = new FormData();
       const hasLogoFile = uploadedFiles.businessLogo && uploadedFiles.businessLogo instanceof File;
+      const hasStorePhotosFiles = Array.isArray(uploadedFiles.storePhotos) && (uploadedFiles.storePhotos as File[]).length > 0;
       
       if (hasLogoFile) {
         formData.append("businessLogo", uploadedFiles.businessLogo as File);
+      }
+      if (hasStorePhotosFiles) {
+        (uploadedFiles.storePhotos as File[]).forEach((file) => {
+          formData.append("storePhotos", file);
+        });
       }
 
       // Add all other fields to FormData or JSON
@@ -407,11 +453,9 @@ export default function SellerEditProfilePage() {
         mobile: data.mobile,
         businessType: data.businessType,
         productCategories: data.productCategories,
-        shippingType: data.shippingType,
-        serviceAreas: data.serviceAreas,
-        returnPolicy: data.returnPolicy,
+        about: data.about,
+        storePhotos: data.storePhotos,
         businessAddress: data.businessAddress,
-        warehouseAddress: data.warehouseAddress,
         socialLinks: data.socialLinks,
       };
 
@@ -421,7 +465,7 @@ export default function SellerEditProfilePage() {
       }
 
       // Use FormData if there's a file, otherwise use JSON
-      if (hasLogoFile) {
+      if (hasLogoFile || hasStorePhotosFiles) {
         Object.keys(payload).forEach(key => {
           const value = payload[key];
           if (value !== undefined && value !== null) {
@@ -495,7 +539,7 @@ export default function SellerEditProfilePage() {
       <PageHero
         title="Edit Profile"
         subtitle=""
-        description="Update your seller profile information in 4 simple steps."
+        description="Update your seller profile information in 5 simple steps."
         showBackButton={false}
         breadcrumb={{
           items: [
@@ -516,11 +560,18 @@ export default function SellerEditProfilePage() {
               ></div>
             </div>
             {[1, 2, 3, 4].map((i) => (
-              <div
+              <button
                 key={i}
-                className={`flex flex-col items-center relative z-10 ${
+                type="button"
+                onClick={() => {
+                  setStep(i);
+                  router.push(`/seller/edit-profile/${i}`);
+                  setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+                }}
+                className={`flex flex-col items-center relative z-10 cursor-pointer focus:outline-none ${
                   i <= step ? "text-yogreet-sage" : "text-stone-400"
                 }`}
+                aria-label={`Go to ${stepTitles[i - 1]}`}
               >
                 <div
                   className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-1 sm:mb-2 relative z-10 bg-white ${
@@ -545,7 +596,7 @@ export default function SellerEditProfilePage() {
                 >
                   {stepTitles[i - 1]}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -555,43 +606,61 @@ export default function SellerEditProfilePage() {
             <Step1BasicInformation data={data} updateData={updateData} setUploadedFiles={handleSetUploadedFiles} isLoading={isUpdating} />
           )}
           {step === 2 && (
-            <Step2AddressInformation data={data} updateData={updateData} isLoading={isUpdating} />
+            <Step2AboutStore
+              data={{ about: data.about, storePhotos: data.storePhotos }}
+              updateData={updateData}
+              setUploadedFiles={handleSetUploadedFiles}
+              isLoading={isUpdating}
+            />
           )}
           {step === 3 && (
-            <Step3ShippingLogistics data={data} updateData={updateData} isLoading={isUpdating} />
+            <Step2AddressInformation data={data} updateData={updateData} isLoading={isUpdating} />
           )}
           {step === 4 && (
             <Step4SocialMediaWebsite data={data} updateData={updateData} isLoading={isUpdating} />
           )}
 
-          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-8 pt-6 border-t border-stone-200">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 mt-8 pt-6 border-t border-stone-200">
             <button
               onClick={prevStep}
               disabled={step === 1}
-              className="px-6 py-2 border border-stone-300 text-stone-700 rounded-md hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full cursor-pointer sm:w-auto"
+              className="px-6 py-2 border border-stone-300 text-stone-700 rounded-md hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto cursor-pointer"
             >
               Previous
             </button>
             {step < 4 ? (
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
-                  onClick={handleSave}
-                  disabled={isUpdating}
+                  onClick={async () => {
+                    try {
+                      setIsSavingOnly(true);
+                      await handleSave();
+                    } finally {
+                      setIsSavingOnly(false);
+                    }
+                  }}
+                  disabled={isUpdating || isSavingOnly || isSavingAndNext}
                   className="px-6 py-2 border border-yogreet-sage text-yogreet-sage cursor-pointer rounded-md hover:bg-yogreet-sage/10 transition-colors w-full sm:w-auto disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4 inline mr-2" />
-                  Save
+                  {isSavingOnly ? "Saving..." : "Save"}
                 </button>
                 <button
-                  onClick={handleSaveAndNext}
-                  disabled={isUpdating}
+                  onClick={async () => {
+                    try {
+                      setIsSavingAndNext(true);
+                      await handleSaveAndNext();
+                    } finally {
+                      setIsSavingAndNext(false);
+                    }
+                  }}
+                  disabled={isUpdating || isSavingOnly || isSavingAndNext}
                   className="px-6 py-2 bg-yogreet-sage text-white cursor-pointer rounded-md hover:bg-yogreet-sage/90 transition-colors w-full sm:w-auto disabled:opacity-50"
                 >
-                  Save and Next
+                  {isSavingAndNext ? "Saving..." : "Save and Next"}
                 </button>
               </div>
             ) : (
-              <button onClick={handleSubmit} disabled={isUpdating} className="px-6 py-2 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center sm:justify-start w-full sm:w-auto disabled:opacity-50">
+              <button onClick={handleSubmit} disabled={isUpdating} className="px-6 py-2 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center sm:justify-start w-full sm:w-auto disabled:opacity-50 cursor-pointer">
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? "Saving..." : "Save Profile"}
               </button>

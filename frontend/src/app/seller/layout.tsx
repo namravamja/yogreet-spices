@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation"
 import { SellerNavbar } from "@/components/layout/seller-navbar"
 import { Footer } from "@/components/layout"
-import { SellerVerificationPrompt } from "@/components/seller/SellerVerificationPrompt"
 
 interface SellerLayoutProps {
   children: React.ReactNode
@@ -28,8 +27,7 @@ export default function SellerLayout({ children }: SellerLayoutProps) {
       {/* Footer - Hidden on verification pages */}
       {!isVerificationPage && <Footer />}
 
-      {/* Verification Prompt Modal - Show on all seller pages except profile/edit pages */}
-      {!isVerificationPage && !isProfilePage && <SellerVerificationPrompt />}
+      {/* Verification Prompt Modal removed per requirements */}
     </div>
   )
 }

@@ -39,12 +39,6 @@ router.put("/cart/:id", buyerController.updateCartItem as any);
 router.delete("/cart/:id", buyerController.removeCartItem as any);
 router.delete("/cart", buyerController.clearCart as any);
 
-// Sample request routes
-router.get("/samples", buyerController.getSamples as any);
-router.post("/samples", buyerController.requestSample as any);
-router.put("/samples/:id", buyerController.updateSampleRequest as any);
-router.delete("/samples/:id", buyerController.removeSampleRequest as any);
-router.delete("/samples", buyerController.clearSampleRequests as any);
 
 export default router;
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { Globe, Instagram, Facebook, Twitter } from "lucide-react";
+import { Globe, Instagram, Facebook, Twitter, Edit } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface SocialLinks {
   website?: string | null;
@@ -15,18 +16,30 @@ interface SellerData {
 
 interface SocialMediaLinksProps {
   sellerData: SellerData;
+  onEdit?: () => void;
 }
 
 export default function SocialMediaLinks({
   sellerData,
+  onEdit,
 }: SocialMediaLinksProps) {
+  const router = useRouter();
   return (
     <div className="bg-white border border-stone-200 shadow-sm">
       <div className="p-6 border-b border-stone-200">
-        <h2 className="text-xl font-manrope font-medium text-yogreet-charcoal flex items-center">
-          <Globe className="w-5 h-5 mr-2 text-yogreet-sage" />
-          Social Media & Website
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-manrope font-medium text-yogreet-charcoal flex items-center">
+            <Globe className="w-5 h-5 mr-2 text-yogreet-sage" />
+            Social Media & Website
+          </h2>
+          <button
+            onClick={() => (onEdit ? onEdit() : router.push("/seller/edit-profile/5"))}
+            className="px-3 py-1.5 border border-yogreet-sage text-yogreet-sage rounded-md hover:bg-yogreet-sage/10 transition-colors cursor-pointer text-sm font-manrope flex items-center gap-1.5"
+          >
+            <Edit className="w-4 h-4" />
+            Edit
+          </button>
+        </div>
       </div>
 
       <div className="p-6">
@@ -36,7 +49,7 @@ export default function SocialMediaLinks({
               <Globe className="w-4 h-4 mr-2 text-yogreet-sage" />
               Website
             </label>
-            <p className="text-stone-600 py-2 font-inter">
+            <p className={`py-2 font-inter ${sellerData?.socialLinks?.website ? "text-stone-600" : "text-red-500"}`}>
               {sellerData?.socialLinks?.website || "not provided"}
             </p>
           </div>
@@ -45,7 +58,7 @@ export default function SocialMediaLinks({
               <Instagram className="w-4 h-4 mr-2 text-yogreet-sage" />
               Instagram
             </label>
-            <p className="text-stone-600 py-2 font-inter">
+            <p className={`py-2 font-inter ${sellerData?.socialLinks?.instagram ? "text-stone-600" : "text-red-500"}`}>
               {sellerData?.socialLinks?.instagram || "not provided"}
             </p>
           </div>
@@ -54,7 +67,7 @@ export default function SocialMediaLinks({
               <Facebook className="w-4 h-4 mr-2 text-yogreet-sage" />
               Facebook
             </label>
-            <p className="text-stone-600 py-2 font-inter">
+            <p className={`py-2 font-inter ${sellerData?.socialLinks?.facebook ? "text-stone-600" : "text-red-500"}`}>
               {sellerData?.socialLinks?.facebook || "not provided"}
             </p>
           </div>
@@ -63,7 +76,7 @@ export default function SocialMediaLinks({
               <Twitter className="w-4 h-4 mr-2 text-yogreet-sage" />
               Twitter
             </label>
-            <p className="text-stone-600 py-2 font-inter">
+            <p className={`py-2 font-inter ${sellerData?.socialLinks?.twitter ? "text-stone-600" : "text-red-500"}`}>
               {sellerData?.socialLinks?.twitter || "not provided"}
             </p>
           </div>

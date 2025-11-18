@@ -58,7 +58,7 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
                       <FiStar
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(spice.sellerRating) ? "fill-yogreet-red text-yogreet-red" : "text-gray-300"
+                          i < Math.floor(spice.sellerRating) ? "fill-yogreet-red text-yogreet-red" : "text-gray-300 fill-gray-300"
                         }`}
                       />
                     ))}
@@ -71,19 +71,15 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
                 </div>
               </div>
 
-              {/* Price & Quantity */}
+              {/* Price */}
               <div className="mb-6 pb-6 border-b border-gray-200">
                 <p className="text-3xl font-poppins font-semibold text-yogreet-red mb-2">${spice.price}/kg</p>
-                <p className="text-yogreet-charcoal text-opacity-70 mb-4">Minimum order: {spice.minQuantity} kg</p>
               </div>
 
               {/* Buttons */}
               <div className="flex gap-3">
                 <button className="flex-1 bg-yogreet-red text-white py-3 font-manrope font-medium transition-all hover:shadow-lg">
                   Buy in Bulk
-                </button>
-                <button className="flex-1 border-2 border-yogreet-red text-yogreet-red py-3 font-manrope font-medium transition-all hover:bg-yogreet-light-gray">
-                  Request Sample
                 </button>
               </div>
             </div>

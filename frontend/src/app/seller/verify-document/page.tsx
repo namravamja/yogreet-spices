@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, FileText, MapPin, Settings, Save } from "lucide-react";
+import { Check, FileText, MapPin, Settings, Save, Truck } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import Step1BusinessIdentity from "./components/step1-business-identity";
 import Step2ExportEligibility from "./components/step2-export-eligibility";
 import Step3FoodSafetyCompliance from "./components/step3-food-safety-compliance";
+import Step4ShippingLogistics from "./components/step4-shipping-logistics";
 import Step4ExportDocsShipment from "./components/step4-export-docs-shipment";
 import { useGetSellerVerificationQuery, useUpdateSellerVerificationMutation, useGetSellerQuery } from "@/services/api/sellerApi";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,12 +24,10 @@ interface SellerVerificationData {
   msmeUdyamCertificate?: string;
   panNumber: string;
   gstNumber: string;
-  businessAddress: string;
   businessAddressProof?: string;
   fullName: string; // Merged from fullName and ownerFullName (used as ownerFullName in form)
   ownerFullName?: string; // For backward compatibility, derived from fullName
   ownerIdDocument?: string;
-  ownerIdNumber: string;
 
   // Step 2: Export Eligibility Verification
   iecCode: string;
@@ -46,9 +45,6 @@ interface SellerVerificationData {
   // Step 3: Food & Safety Compliance
   fssaiLicenseNumber: string;
   fssaiCertificate?: string;
-  foodQualityCertifications?: string[]; // multiple optional
-  labTestingCapability: boolean;
-  sampleLabTestCertificate?: string; // optional
 
   // Step 4: Export Documentation & Shipment Capability
   certificateOfOriginCapability: boolean;
@@ -56,6 +52,10 @@ interface SellerVerificationData {
   packagingCompliance: boolean;
   fumigationCertificateCapability: boolean;
   exportLogisticsPrepared: boolean;
+  // Shipping & Logistics (moved here)
+  shippingType: string;
+  serviceAreas: string[];
+  returnPolicy: string;
 
   profileProgress?: number;
 }
@@ -103,6 +103,9 @@ export default function SellerVerifyDocumentPage() {
     skip: !isAuthenticated,
   });
   const [updateSellerVerification, { isLoading: isUpdating }] = useUpdateSellerVerificationMutation();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingAndNext, setIsSavingAndNext] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Combine seller profile and verification data
   const sellerData = useMemo(() => {
@@ -125,12 +128,10 @@ export default function SellerVerifyDocumentPage() {
     msmeUdyamCertificate: "",
     panNumber: "",
     gstNumber: "",
-    businessAddress: "",
     businessAddressProof: "",
     fullName: "", // Merged from fullName and ownerFullName
     ownerFullName: "", // Backward compatibility
     ownerIdDocument: "",
-    ownerIdNumber: "",
     iecCode: "",
     iecCertificate: "",
     apedaRegistrationNumber: "",
@@ -144,26 +145,86 @@ export default function SellerVerifyDocumentPage() {
     bankProofDocument: "",
     fssaiLicenseNumber: "",
     fssaiCertificate: "",
-    foodQualityCertifications: [],
-    labTestingCapability: false,
-    sampleLabTestCertificate: "",
     certificateOfOriginCapability: false,
     phytosanitaryCertificateCapability: false,
     packagingCompliance: false,
     fumigationCertificateCapability: false,
     exportLogisticsPrepared: false,
+  shippingType: "",
+  serviceAreas: [],
+  returnPolicy: "",
     profileProgress: 0,
   });
 
   const [originalData, setOriginalData] = useState<SellerVerificationData | null>(null);
 
-  // URL sync: /seller/verify-document/[1-4]
+  // Utils for change detection
+  const arraysEqual = (a?: any[], b?: any[]) => {
+    const aa = Array.isArray(a) ? a : [];
+    const bb = Array.isArray(b) ? b : [];
+    if (aa.length !== bb.length) return false;
+    for (let i = 0; i < aa.length; i++) {
+      if (aa[i] !== bb[i]) return false;
+    }
+    return true;
+  };
+
+  const hasChangesForStep = (currentStep: number): boolean => {
+    if (!originalData) return true;
+    if (currentStep === 1) {
+      return !(
+        (data.companyName || "") === (originalData.companyName || "") &&
+        (data.businessType || "") === (originalData.businessType || "") &&
+        (data.panNumber || "") === (originalData.panNumber || "") &&
+        (data.gstNumber || "") === (originalData.gstNumber || "") &&
+        ((data.fullName || data.ownerFullName || "") === (originalData.fullName || originalData.ownerFullName || "")) &&
+        // Document URL fields diffs (removal or addition)
+        (data.incorporationCertificate || "") === (originalData.incorporationCertificate || "") &&
+        (data.msmeUdyamCertificate || "") === (originalData.msmeUdyamCertificate || "") &&
+        (data.businessAddressProof || "") === (originalData.businessAddressProof || "") &&
+        (data.ownerIdDocument || "") === (originalData.ownerIdDocument || "")
+      );
+    }
+    if (currentStep === 2) {
+      return !(
+        (data.iecCode || "") === (originalData.iecCode || "") &&
+        (data.apedaRegistrationNumber || "") === (originalData.apedaRegistrationNumber || "") &&
+        (data.spicesBoardRegistrationNumber || "") === (originalData.spicesBoardRegistrationNumber || "") &&
+        (data.bankAccountHolderName || "") === (originalData.bankAccountHolderName || "") &&
+        (data.bankAccountNumber || "") === (originalData.bankAccountNumber || "") &&
+        (data.bankIfscCode || "") === (originalData.bankIfscCode || "") &&
+        // Document URL fields diffs
+        (data.iecCertificate || "") === (originalData.iecCertificate || "") &&
+        (data.apedaCertificate || "") === (originalData.apedaCertificate || "") &&
+        (data.spicesBoardCertificate || "") === (originalData.spicesBoardCertificate || "") &&
+        (data.tradeLicense || "") === (originalData.tradeLicense || "") &&
+        (data.bankProofDocument || "") === (originalData.bankProofDocument || "")
+      );
+    }
+    if (currentStep === 3) {
+      return !(
+        (data.fssaiLicenseNumber || "") === (originalData.fssaiLicenseNumber || "") &&
+        // Document URL fields diffs
+        (data.fssaiCertificate || "") === (originalData.fssaiCertificate || "")
+      );
+    }
+    if (currentStep === 4) {
+      return !(
+        (data.shippingType || "") === (originalData.shippingType || "") &&
+        arraysEqual(data.serviceAreas, originalData.serviceAreas) &&
+        (data.returnPolicy || "") === (originalData.returnPolicy || "")
+      );
+    }
+    return true;
+  };
+
+  // URL sync: /seller/verify-document/[1-5]
   useEffect(() => {
     if (!pathname) return;
     const parts = pathname.split("/").filter(Boolean);
     const last = parts[parts.length - 1];
     const n = Number(last);
-    if (!Number.isNaN(n) && n >= 1 && n <= 4) setStep(n);
+    if (!Number.isNaN(n) && n >= 1 && n <= 5) setStep(n);
   }, [pathname]);
 
   // After signup prompt
@@ -181,13 +242,6 @@ export default function SellerVerifyDocumentPage() {
   useEffect(() => {
     if (sellerData && !originalData) {
       try {
-        // Get business address from seller profile if available (businessAddress is an object in profile)
-        const businessAddressStr = typeof sellerData.businessAddress === 'string' 
-          ? sellerData.businessAddress 
-          : sellerData.businessAddress?.street 
-            ? `${sellerData.businessAddress.street}, ${sellerData.businessAddress.city || ''}, ${sellerData.businessAddress.state || ''}, ${sellerData.businessAddress.country || ''} ${sellerData.businessAddress.pinCode || ''}`.trim()
-            : "";
-        
         const loaded: SellerVerificationData = {
           companyName: sellerData.companyName || "",
           businessType: sellerData.businessType || "",
@@ -195,12 +249,10 @@ export default function SellerVerifyDocumentPage() {
           msmeUdyamCertificate: sellerData.msmeUdyamCertificate || "",
           panNumber: sellerData.panNumber || "",
           gstNumber: sellerData.gstNumber || "",
-          businessAddress: businessAddressStr,
           businessAddressProof: sellerData.businessAddressProof || "",
           fullName: sellerData.fullName || "", // Merged from fullName and ownerFullName
           ownerFullName: sellerData.fullName || "", // Backward compatibility alias
           ownerIdDocument: sellerData.ownerIdDocument || "",
-          ownerIdNumber: sellerData.ownerIdNumber || "",
           iecCode: sellerData.iecCode || "",
           iecCertificate: sellerData.iecCertificate || "",
           apedaRegistrationNumber: sellerData.apedaRegistrationNumber || "",
@@ -214,14 +266,14 @@ export default function SellerVerifyDocumentPage() {
           bankProofDocument: sellerData.bankProofDocument || "",
           fssaiLicenseNumber: sellerData.fssaiLicenseNumber || "",
           fssaiCertificate: sellerData.fssaiCertificate || "",
-          foodQualityCertifications: Array.isArray(sellerData.foodQualityCertifications) ? sellerData.foodQualityCertifications : [],
-          labTestingCapability: sellerData.labTestingCapability === true || sellerData.labTestingCapability === "true",
-          sampleLabTestCertificate: sellerData.sampleLabTestCertificate || "",
           certificateOfOriginCapability: sellerData.certificateOfOriginCapability === true || sellerData.certificateOfOriginCapability === "true",
           phytosanitaryCertificateCapability: sellerData.phytosanitaryCertificateCapability === true || sellerData.phytosanitaryCertificateCapability === "true",
           packagingCompliance: sellerData.packagingCompliance === true || sellerData.packagingCompliance === "true",
           fumigationCertificateCapability: sellerData.fumigationCertificateCapability === true || sellerData.fumigationCertificateCapability === "true",
           exportLogisticsPrepared: sellerData.exportLogisticsPrepared === true || sellerData.exportLogisticsPrepared === "true",
+          shippingType: sellerData.shippingType || "",
+          serviceAreas: Array.isArray(sellerData.serviceAreas) ? sellerData.serviceAreas : [],
+          returnPolicy: sellerData.returnPolicy || "",
           profileProgress: 0,
         };
         setData(loaded);
@@ -242,17 +294,60 @@ export default function SellerVerifyDocumentPage() {
     }
   };
 
+  // Calculate document completion percentage
+  const calculateDocumentCompletion = (verificationData: SellerVerificationData): number => {
+    try {
+      let completed = 0;
+      const total = 30; // Updated total based on actual fields (9+11+2+3+5)
+
+      // Step 1: Business Identity (9 fields)
+      if (verificationData?.companyName?.trim()) completed++;
+      if (verificationData?.businessType?.trim()) completed++;
+      if (verificationData?.fullName?.trim() || verificationData?.ownerFullName?.trim()) completed++;
+      if (verificationData?.panNumber?.trim()) completed++;
+      if (verificationData?.gstNumber?.trim()) completed++;
+      if (verificationData?.ownerIdDocument) completed++;
+      if (verificationData?.incorporationCertificate) completed++;
+      if (verificationData?.msmeUdyamCertificate) completed++;
+      if (verificationData?.businessAddressProof) completed++;
+
+      // Step 2: Export Eligibility (11 fields)
+      if (verificationData?.iecCode?.trim()) completed++;
+      if (verificationData?.iecCertificate) completed++;
+      if (verificationData?.tradeLicense) completed++;
+      if (verificationData?.apedaRegistrationNumber?.trim()) completed++;
+      if (verificationData?.apedaCertificate) completed++;
+      if (verificationData?.spicesBoardRegistrationNumber?.trim()) completed++;
+      if (verificationData?.spicesBoardCertificate) completed++;
+      if (verificationData?.bankAccountHolderName?.trim()) completed++;
+      if (verificationData?.bankAccountNumber?.trim()) completed++;
+      if (verificationData?.bankIfscCode?.trim()) completed++;
+      if (verificationData?.bankProofDocument) completed++;
+
+      // Step 3: Food & Safety (2 fields)
+      if (verificationData?.fssaiLicenseNumber?.trim()) completed++;
+      if (verificationData?.fssaiCertificate) completed++;
+
+      // Step 4: Shipping & Logistics (3 fields)
+      if (verificationData?.shippingType?.trim()) completed++;
+      if (Array.isArray(verificationData?.serviceAreas) && verificationData.serviceAreas.length > 0) completed++;
+      if (verificationData?.returnPolicy?.trim()) completed++;
+
+      // Step 5: Export Documentation & Shipment Capability (5 fields)
+      if (verificationData?.certificateOfOriginCapability) completed++;
+      if (verificationData?.phytosanitaryCertificateCapability) completed++;
+      if (verificationData?.packagingCompliance) completed++;
+      if (verificationData?.fumigationCertificateCapability) completed++;
+      if (verificationData?.exportLogisticsPrepared) completed++;
+
+      return Math.round((completed / total) * 100);
+    } catch {
+      return 0;
+    }
+  };
+
   const saveStep1Data = async (): Promise<boolean> => {
     try {
-      if (!data.companyName?.trim()) {
-        toast.error("Company name is required");
-        return false;
-      }
-      if (!data.businessType?.trim()) {
-        toast.error("Business type is required");
-        return false;
-      }
-
       const formData = new FormData();
       const step1Files: string[] = [];
       
@@ -280,25 +375,20 @@ export default function SellerVerifyDocumentPage() {
         businessType: data.businessType,
         panNumber: data.panNumber || "",
         gstNumber: data.gstNumber || "",
-        businessAddress: data.businessAddress || "",
         fullName: data.fullName || data.ownerFullName || "",
         ownerFullName: data.fullName || data.ownerFullName || "",
-        ownerIdNumber: data.ownerIdNumber || "",
+        // Always include document URL fields, so clearing "" persists removal (when no new file)
+        incorporationCertificate: data.incorporationCertificate || "",
+        msmeUdyamCertificate: data.msmeUdyamCertificate || "",
+        businessAddressProof: data.businessAddressProof || "",
+        ownerIdDocument: data.ownerIdDocument || "",
       };
 
-      // Add existing certificate URLs if no new files
-      if (data.incorporationCertificate && !uploadedFiles.incorporationCertificate) {
-        payload.incorporationCertificate = data.incorporationCertificate;
-      }
-      if (data.msmeUdyamCertificate && !uploadedFiles.msmeUdyamCertificate) {
-        payload.msmeUdyamCertificate = data.msmeUdyamCertificate;
-      }
-      if (data.businessAddressProof && !uploadedFiles.businessAddressProof) {
-        payload.businessAddressProof = data.businessAddressProof;
-      }
-      if (data.ownerIdDocument && !uploadedFiles.ownerIdDocument) {
-        payload.ownerIdDocument = data.ownerIdDocument;
-      }
+      // Calculate and include document completion
+      const updatedData = { ...data, ...payload };
+      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+
+      // If a file is being uploaded for any of these, the uploaded file will override the URL on backend
 
       if (step1Files.length > 0) {
         Object.keys(payload).forEach(key => {
@@ -323,23 +413,6 @@ export default function SellerVerifyDocumentPage() {
 
   const saveStep2Data = async (): Promise<boolean> => {
     try {
-      if (!data.iecCode?.trim()) {
-        toast.error("IEC code is required");
-        return false;
-      }
-      if (!data.bankAccountHolderName?.trim()) {
-        toast.error("Bank account holder name is required");
-        return false;
-      }
-      if (!data.bankAccountNumber?.trim()) {
-        toast.error("Bank account number is required");
-        return false;
-      }
-      if (!data.bankIfscCode?.trim()) {
-        toast.error("IFSC code is required");
-        return false;
-      }
-
       const formData = new FormData();
       const step2Files: string[] = [];
       
@@ -373,24 +446,17 @@ export default function SellerVerifyDocumentPage() {
         bankAccountHolderName: data.bankAccountHolderName,
         bankAccountNumber: data.bankAccountNumber,
         bankIfscCode: data.bankIfscCode,
+        // Always include document URL fields so "" clears on backend when no new file
+        iecCertificate: data.iecCertificate || "",
+        apedaCertificate: data.apedaCertificate || "",
+        spicesBoardCertificate: data.spicesBoardCertificate || "",
+        tradeLicense: data.tradeLicense || "",
+        bankProofDocument: data.bankProofDocument || "",
       };
 
-      // Add existing certificate URLs if no new files
-      if (data.iecCertificate && !uploadedFiles.iecCertificate) {
-        payload.iecCertificate = data.iecCertificate;
-      }
-      if (data.apedaCertificate && !uploadedFiles.apedaCertificate) {
-        payload.apedaCertificate = data.apedaCertificate;
-      }
-      if (data.spicesBoardCertificate && !uploadedFiles.spicesBoardCertificate) {
-        payload.spicesBoardCertificate = data.spicesBoardCertificate;
-      }
-      if (data.tradeLicense && !uploadedFiles.tradeLicense) {
-        payload.tradeLicense = data.tradeLicense;
-      }
-      if (data.bankProofDocument && !uploadedFiles.bankProofDocument) {
-        payload.bankProofDocument = data.bankProofDocument;
-      }
+      // Calculate and include document completion
+      const updatedData = { ...data, ...payload };
+      payload.documentCompletion = calculateDocumentCompletion(updatedData);
 
       if (step2Files.length > 0) {
         Object.keys(payload).forEach(key => {
@@ -415,11 +481,6 @@ export default function SellerVerifyDocumentPage() {
 
   const saveStep3Data = async (): Promise<boolean> => {
     try {
-      if (!data.fssaiLicenseNumber?.trim()) {
-        toast.error("FSSAI license number is required");
-        return false;
-      }
-
       const formData = new FormData();
       const step3Files: string[] = [];
       
@@ -428,25 +489,17 @@ export default function SellerVerifyDocumentPage() {
         formData.append("fssaiCertificate", uploadedFiles.fssaiCertificate as File);
         step3Files.push("fssaiCertificate");
       }
-      if (uploadedFiles.sampleLabTestCertificate) {
-        formData.append("sampleLabTestCertificate", uploadedFiles.sampleLabTestCertificate as File);
-        step3Files.push("sampleLabTestCertificate");
-      }
 
       // Prepare step 3 payload
       const payload: any = {
         fssaiLicenseNumber: data.fssaiLicenseNumber,
-        foodQualityCertifications: Array.isArray(data.foodQualityCertifications) ? data.foodQualityCertifications : [],
-        labTestingCapability: data.labTestingCapability || false,
+        // Always include document URL fields so "" clears on backend when no new file
+        fssaiCertificate: data.fssaiCertificate || "",
       };
 
-      // Add existing certificate URLs if no new files
-      if (data.fssaiCertificate && !uploadedFiles.fssaiCertificate) {
-        payload.fssaiCertificate = data.fssaiCertificate;
-      }
-      if (data.sampleLabTestCertificate && !uploadedFiles.sampleLabTestCertificate) {
-        payload.sampleLabTestCertificate = data.sampleLabTestCertificate;
-      }
+      // Calculate and include document completion
+      const updatedData = { ...data, ...payload };
+      payload.documentCompletion = calculateDocumentCompletion(updatedData);
 
       if (step3Files.length > 0) {
         Object.keys(payload).forEach(key => {
@@ -475,6 +528,26 @@ export default function SellerVerifyDocumentPage() {
     }
   };
 
+  const saveStep4Data = async (): Promise<boolean> => {
+    try {
+      const payload: any = {
+        shippingType: data.shippingType,
+        serviceAreas: data.serviceAreas,
+        returnPolicy: data.returnPolicy,
+      };
+      // Calculate and include document completion
+      const updatedData = { ...data, ...payload };
+      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      await updateSellerVerification(payload).unwrap();
+      toast.success("Step 4 data saved successfully!");
+      return true;
+    } catch (err: any) {
+      console.error("Failed to save Step 4 data:", err);
+      toast.error(err?.data?.error || err?.data?.message || "Failed to save Step 4 data");
+      return false;
+    }
+  };
+
   const handleSave = async () => {
     let saved = false;
     if (step === 1) {
@@ -483,22 +556,29 @@ export default function SellerVerifyDocumentPage() {
       saved = await saveStep2Data();
     } else if (step === 3) {
       saved = await saveStep3Data();
+    } else if (step === 4) {
+      saved = await saveStep4Data();
     }
     return saved;
   };
 
   const handleSaveAndNext = async () => {
-    const saved = await handleSave();
-    if (saved && step < 4) {
-      const next = step + 1;
-      setStep(next);
-      router.push(`/seller/verify-document/${next}`);
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    if (step >= 5) return;
+    // If there are uploads or data changes, save first; otherwise just go next
+    const hasUploads = Object.keys(uploadedFiles).length > 0;
+    const changed = hasChangesForStep(step);
+    if (hasUploads || changed) {
+      const saved = await handleSave();
+      if (!saved) return;
     }
+    const next = step + 1;
+    setStep(next);
+    router.push(`/seller/verify-document/${next}`);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const nextStep = () => {
-    if (step < 4) {
+    if (step < 5) {
       const next = step + 1;
       setStep(next);
       router.push(`/seller/verify-document/${next}`);
@@ -519,28 +599,19 @@ export default function SellerVerifyDocumentPage() {
     <FileText key="1" className="w-4 h-4 sm:w-6 sm:h-6" />, // Business Identity
     <MapPin key="2" className="w-4 h-4 sm:w-6 sm:h-6" />, // Export Eligibility
     <Settings key="3" className="w-4 h-4 sm:w-6 sm:h-6" />, // Food & Safety
-    <Check key="4" className="w-4 h-4 sm:w-6 sm:h-6" />, // Shipment Capability
+    <Truck key="4" className="w-4 h-4 sm:w-6 sm:h-6" />, // Shipping & Logistics
+    <Check key="5" className="w-4 h-4 sm:w-6 sm:h-6" />, // Export Docs & Shipment
   ];
 
   const stepTitles = [
     "Business Identity Verification",
     "Export Eligibility Verification",
     "Food & Safety Compliance",
+    "Shipping & Logistics",
     "Export Documentation & Shipment Capability",
   ];
 
   const handleSubmit = async () => {
-    // Light validation: ensure essential fields are present across steps
-    if (!data.companyName?.trim()) return toast.error("Company name is required");
-    if (!data.businessType?.trim()) return toast.error("Business type is required");
-    if (!data.panNumber?.trim()) return toast.error("PAN is required");
-    if (!data.gstNumber?.trim()) return toast.error("GST is required");
-    if (!data.fullName?.trim() && !data.ownerFullName?.trim()) return toast.error("Owner full name is required");
-    if (!data.iecCode?.trim()) return toast.error("IEC code is required");
-    if (!data.bankAccountHolderName?.trim()) return toast.error("Bank account holder name is required");
-    if (!data.bankAccountNumber?.trim()) return toast.error("Bank account number is required");
-    if (!data.bankIfscCode?.trim()) return toast.error("IFSC is required");
-
     try {
       // Prepare FormData if there are uploaded files
       const formData = new FormData();
@@ -562,10 +633,8 @@ export default function SellerVerifyDocumentPage() {
         businessType: data.businessType,
         panNumber: data.panNumber,
         gstNumber: data.gstNumber,
-        businessAddress: data.businessAddress,
         fullName: data.fullName || data.ownerFullName || "", // Merged from fullName and ownerFullName
         ownerFullName: data.fullName || data.ownerFullName, // Backward compatibility
-        ownerIdNumber: data.ownerIdNumber,
         iecCode: data.iecCode,
         apedaRegistrationNumber: data.apedaRegistrationNumber,
         spicesBoardRegistrationNumber: data.spicesBoardRegistrationNumber,
@@ -574,15 +643,20 @@ export default function SellerVerifyDocumentPage() {
         bankAccountNumber: data.bankAccountNumber || (data as any).accountNumber, // Merged fields
         bankIfscCode: data.bankIfscCode || (data as any).ifscCode, // Merged fields
         fssaiLicenseNumber: data.fssaiLicenseNumber,
-        foodQualityCertifications: data.foodQualityCertifications || [],
-        labTestingCapability: data.labTestingCapability || false,
         certificateOfOriginCapability: data.certificateOfOriginCapability || false,
         phytosanitaryCertificateCapability: data.phytosanitaryCertificateCapability || false,
         packagingCompliance: data.packagingCompliance || false,
         fumigationCertificateCapability: data.fumigationCertificateCapability || false,
         exportLogisticsPrepared: data.exportLogisticsPrepared || false,
+        // Shipping moved here
+        shippingType: data.shippingType || "",
+        serviceAreas: data.serviceAreas || [],
+        returnPolicy: data.returnPolicy || "",
         verificationStatus: "pending",
       };
+
+      // Calculate and include document completion
+      payload.documentCompletion = calculateDocumentCompletion(data);
 
       // Add certificate URLs if they exist in data (from previous uploads)
       if (data.incorporationCertificate && !uploadedFiles.incorporationCertificate) {
@@ -615,9 +689,6 @@ export default function SellerVerifyDocumentPage() {
       if (data.fssaiCertificate && !uploadedFiles.fssaiCertificate) {
         payload.fssaiCertificate = data.fssaiCertificate;
       }
-      if (data.sampleLabTestCertificate && !uploadedFiles.sampleLabTestCertificate) {
-        payload.sampleLabTestCertificate = data.sampleLabTestCertificate;
-      }
 
       // Use FormData if there are files, otherwise use JSON
       if (hasFiles) {
@@ -641,7 +712,7 @@ export default function SellerVerifyDocumentPage() {
       }
 
       toast.success("Submitted for verification!");
-      router.push("/seller/profile");
+      router.push("/seller/documents");
     } catch (err: any) {
       console.error("Submit failed:", err);
       toast.error(err?.data?.error || err?.data?.message || "Failed to submit. Please try again.");
@@ -716,15 +787,22 @@ export default function SellerVerifyDocumentPage() {
             <div className="absolute top-4 sm:top-6 left-0 right-0 h-0.5 bg-stone-200 z-0">
               <div
                 className="h-full bg-yogreet-sage transition-all duration-300"
-                style={{ width: `${((step - 1) / 3) * 100}%` }}
+                style={{ width: `${((step - 1) / 4) * 100}%` }}
               ></div>
             </div>
-            {[1, 2, 3, 4].map((i) => (
-              <div
+            {[1, 2, 3, 4, 5].map((i) => (
+              <button
                 key={i}
-                className={`flex flex-col items-center relative z-10 ${
+                type="button"
+                onClick={() => {
+                  setStep(i);
+                  router.push(`/seller/verify-document/${i}`);
+                  setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+                }}
+                className={`flex flex-col items-center relative z-10 cursor-pointer focus:outline-none ${
                   i <= step ? "text-yogreet-sage" : "text-stone-400"
                 }`}
+                aria-label={`Go to ${stepTitles[i - 1]}`}
               >
                 <div
                   className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-1 sm:mb-2 relative z-10 bg-white ${
@@ -749,7 +827,7 @@ export default function SellerVerifyDocumentPage() {
                 >
                   {stepTitles[i - 1]}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -765,6 +843,12 @@ export default function SellerVerifyDocumentPage() {
             <Step3FoodSafetyCompliance data={data} updateData={updateData} setUploadedFiles={handleSetUploadedFiles} isLoading={isUpdating} />
           )}
           {step === 4 && (
+            <Step4ShippingLogistics
+              data={data}
+              updateData={updateData}
+            />
+          )}
+          {step === 5 && (
             <Step4ExportDocsShipment
               data={data}
               updateData={updateData}
@@ -779,28 +863,53 @@ export default function SellerVerifyDocumentPage() {
             >
               Previous
             </button>
-            {step < 4 ? (
+            {step < 5 ? (
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
-                  onClick={handleSave}
-                  disabled={isUpdating}
+                  onClick={async () => {
+                    try {
+                      setIsSaving(true);
+                      await handleSave();
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  disabled={isUpdating || isSaving || isSavingAndNext || isSubmitting}
                   className="px-6 py-2 border border-yogreet-sage text-yogreet-sage cursor-pointer rounded-md hover:bg-yogreet-sage/10 transition-colors w-full sm:w-auto disabled:opacity-50"
                 >
                   <Save className="w-4 h-4 inline mr-2" />
-                  Save
+                  {isSaving ? "Saving..." : "Save"}
                 </button>
                 <button
-                  onClick={handleSaveAndNext}
-                  disabled={isUpdating}
+                  onClick={async () => {
+                    try {
+                      setIsSavingAndNext(true);
+                      await handleSaveAndNext();
+                    } finally {
+                      setIsSavingAndNext(false);
+                    }
+                  }}
+                  disabled={isUpdating || isSaving || isSavingAndNext || isSubmitting}
                   className="px-6 py-2 bg-yogreet-sage text-white cursor-pointer rounded-md hover:bg-yogreet-sage/90 transition-colors w-full sm:w-auto disabled:opacity-50"
                 >
-                  Save and Next
+                  {isSavingAndNext ? "Saving..." : "Save and Next"}
                 </button>
               </div>
             ) : (
-              <button onClick={handleSubmit} disabled={isUpdating} className="px-6 py-2 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center sm:justify-start w-full sm:w-auto disabled:opacity-50">
+              <button
+                onClick={async () => {
+                  try {
+                    setIsSubmitting(true);
+                    await handleSubmit();
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                disabled={isUpdating || isSaving || isSavingAndNext || isSubmitting}
+                className="px-6 py-2 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center sm:justify-start w-full sm:w-auto disabled:opacity-50 cursor-pointer"
+              >
                 <Save className="w-4 h-4 mr-2" />
-                {isUpdating ? "Submitting..." : "Submit for Review"}
+                {isSubmitting || isUpdating ? "Submitting..." : "Go to Documents"}
               </button>
             )}
           </div>

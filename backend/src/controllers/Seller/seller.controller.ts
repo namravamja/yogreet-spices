@@ -46,10 +46,18 @@ export const updateSeller = async (req: AuthenticatedRequest, res: Response) => 
       delete updateData.ifscCode;
     }
 
-    // If an image was uploaded (business logo), use the Cloudinary URL from multer
-    if (req.file) {
-      // Multer with CloudinaryStorage sets req.file.path to the Cloudinary URL
-      updateData.businessLogo = (req.file as any).path || (req.file as any).location || req.file.path;
+    // Handle uploaded images (businessLogo and storePhotos[])
+    const files = req.files as any;
+    if (files?.businessLogo?.[0]) {
+      updateData.businessLogo = files.businessLogo[0].path || (files.businessLogo[0] as any).location || files.businessLogo[0].path;
+    }
+    if (files?.storePhotos && Array.isArray(files.storePhotos)) {
+      const photoUrls = files.storePhotos
+        .map((f: any) => f?.path || f?.location || f?.path)
+        .filter(Boolean);
+      if (photoUrls.length) {
+        updateData.storePhotos = photoUrls;
+      }
     }
 
     // Handle nested objects from FormData (they come as JSON strings)
@@ -60,18 +68,23 @@ export const updateSeller = async (req: AuthenticatedRequest, res: Response) => 
         // If parsing fails, keep as string (shouldn't happen)
       }
     }
-    if (typeof updateData.warehouseAddress === 'string') {
-      try {
-        updateData.warehouseAddress = JSON.parse(updateData.warehouseAddress);
-      } catch {
-        // If parsing fails, keep as string (shouldn't happen)
-      }
-    }
+    // warehouseAddress removed from app
     if (typeof updateData.socialLinks === 'string') {
       try {
         updateData.socialLinks = JSON.parse(updateData.socialLinks);
       } catch {
         // If parsing fails, keep as string (shouldn't happen)
+      }
+    }
+    if (typeof updateData.storePhotos === 'string') {
+      try {
+        updateData.storePhotos = JSON.parse(updateData.storePhotos);
+      } catch {
+        // If not valid JSON, treat as comma-separated string
+        updateData.storePhotos = String(updateData.storePhotos)
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean);
       }
     }
 
@@ -181,9 +194,6 @@ export const updateSellerVerification = async (req: AuthenticatedRequest, res: R
       if (files.fssaiCertificate?.[0]) {
         verificationData.fssaiCertificate = (files.fssaiCertificate[0] as any).path || files.fssaiCertificate[0].path;
       }
-      if (files.sampleLabTestCertificate?.[0]) {
-        verificationData.sampleLabTestCertificate = (files.sampleLabTestCertificate[0] as any).path || files.sampleLabTestCertificate[0].path;
-      }
     }
 
     // Handle foodQualityCertifications if it's a string (convert to array)
@@ -262,4 +272,5 @@ export const getSellerVerification = async (req: AuthenticatedRequest, res: Resp
     res.status(404).json({ error: (error as Error).message });
   }
 };
+
 

@@ -65,8 +65,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         onLoginSuccess()
       }
       
-      // Redirect to verification page after login
-      router.push("/buyer/verify-document/1")
+      // Redirect to buyer profile after login
+      router.push("/buyer/profile")
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Login failed. Please check your credentials."
       toast.error(errorMessage)

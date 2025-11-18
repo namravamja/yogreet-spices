@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FiChevronDown } from "react-icons/fi"
+import { FilterDropdown } from "./filter-dropdown"
 
 interface FilterBarProps {
   onFilterChange: (filters: FilterState) => void
@@ -29,6 +29,40 @@ export function ExploreFilterBar({ onFilterChange, sellers = [], locations = [],
     sortBy: "relevance",
   })
 
+  // Convert single values to arrays for dropdowns
+  const priceRangeSelected = filters.priceRange !== "all" ? [filters.priceRange] : []
+  const locationSelected = filters.location !== "all" ? [filters.location] : []
+  const sellerSelected = filters.seller !== "all" ? [filters.seller] : []
+  const sortBySelected = filters.sortBy !== "relevance" ? [filters.sortBy] : []
+
+  // Prepare options with counts (mock counts for now, can be calculated from products)
+  const priceRangeOptions = [
+    { value: "0-50", label: "$0 - $50/kg", count: 1250 },
+    { value: "50-100", label: "$50 - $100/kg", count: 890 },
+    { value: "100-200", label: "$100 - $200/kg", count: 450 },
+    { value: "200+", label: "$200+/kg", count: 120 },
+  ]
+
+  const locationOptions = locations.map((loc) => ({
+    value: loc,
+    label: loc,
+    count: Math.floor(Math.random() * 500) + 50, // Mock count, replace with actual
+  }))
+
+  const sellerOptions = sellers.map((seller) => ({
+    value: seller,
+    label: seller,
+    count: Math.floor(Math.random() * 300) + 20, // Mock count, replace with actual
+  }))
+
+  const sortByOptions = [
+    { value: "relevance", label: "Relevance", count: undefined },
+    { value: "price-low", label: "Price: Low to High", count: undefined },
+    { value: "price-high", label: "Price: High to Low", count: undefined },
+    { value: "newest", label: "Newest", count: undefined },
+    { value: "popular", label: "Most Popular", count: undefined },
+  ]
+
   const handleClearFilters = () => {
     const clearedFilters: FilterState = {
       category: "all",
@@ -44,104 +78,84 @@ export function ExploreFilterBar({ onFilterChange, sellers = [], locations = [],
   }
 
   const hasActiveFilters = () => {
-    return filters.category !== "all" ||
-      filters.priceRange !== "all" ||
+    return filters.priceRange !== "all" ||
       filters.location !== "all" ||
       filters.country !== "all" ||
       filters.seller !== "all" ||
       filters.sortBy !== "relevance"
   }
 
-  const handleFilterChange = (key: keyof FilterState, value: any) => {
-    const newFilters = { ...filters, [key]: value }
+  const handlePriceRangeChange = (values: string[]) => {
+    const newFilters = { ...filters, priceRange: values.length > 0 ? values[0] : "all" }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  const handleLocationChange = (values: string[]) => {
+    const newFilters = { ...filters, location: values.length > 0 ? values[0] : "all" }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  const handleSellerChange = (values: string[]) => {
+    const newFilters = { ...filters, seller: values.length > 0 ? values[0] : "all" }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  const handleSortByChange = (values: string[]) => {
+    const newFilters = { ...filters, sortBy: values.length > 0 ? values[0] : "relevance" }
     setFilters(newFilters)
     onFilterChange(newFilters)
   }
 
   return (
-    <div className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+    <div className="bg-white mt-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 border-t border-black/10">
         <div className="flex flex-wrap gap-3 items-center">
-          {/* Category Filter */}
-          <div className="relative">
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange("category", e.target.value)}
-              className="appearance-none bg-yogreet-light-gray text-yogreet-charcoal px-4 py-3 text-sm font-medium cursor-pointer pr-8 border border-gray-200 hover:border-yogreet-red transition"
-            >
-              <option value="all">All Categories</option>
-              <option value="whole">Whole Spices</option>
-              <option value="ground">Ground Spices</option>
-              <option value="blends">Spice Blends</option>
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none text-yogreet-charcoal" />
-          </div>
-
           {/* Price Range Filter */}
-          <div className="relative">
-            <select
-              value={filters.priceRange}
-              onChange={(e) => handleFilterChange("priceRange", e.target.value)}
-              className="appearance-none bg-yogreet-light-gray text-yogreet-charcoal px-4 py-3 text-sm font-medium cursor-pointer pr-8 border border-gray-200 hover:border-yogreet-red transition"
-            >
-              <option value="all">All Prices</option>
-              <option value="0-50">$0 - $50/kg</option>
-              <option value="50-100">$50 - $100/kg</option>
-              <option value="100-200">$100 - $200/kg</option>
-              <option value="200+">$200+/kg</option>
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none text-yogreet-charcoal" />
-          </div>
+          <FilterDropdown
+            label="Price Range"
+            options={priceRangeOptions}
+            selectedValues={priceRangeSelected}
+            onSelectionChange={handlePriceRangeChange}
+            showCounts={true}
+            maxVisible={4}
+          />
 
           {/* Location Filter */}
-          <div className="relative">
-            <select
-              value={filters.location}
-              onChange={(e) => handleFilterChange("location", e.target.value)}
-              className="appearance-none bg-yogreet-light-gray text-yogreet-charcoal px-4 py-3 text-sm font-medium cursor-pointer pr-8 border border-gray-200 hover:border-yogreet-red transition"
-            >
-              <option value="all">All Locations</option>
-              {locations.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none text-yogreet-charcoal" />
-          </div>
+          {locations.length > 0 && (
+            <FilterDropdown
+              label="Location"
+              options={locationOptions}
+              selectedValues={locationSelected}
+              onSelectionChange={handleLocationChange}
+              showCounts={true}
+              maxVisible={4}
+            />
+          )}
 
           {/* Seller Filter */}
-          <div className="relative">
-            <select
-              value={filters.seller}
-              onChange={(e) => handleFilterChange("seller", e.target.value)}
-              className="appearance-none bg-yogreet-light-gray text-yogreet-charcoal px-4 py-3 text-sm font-medium cursor-pointer pr-8 border border-gray-200 hover:border-yogreet-red transition"
-            >
-              <option value="all">All Sellers</option>
-              {sellers.map((seller) => (
-                <option key={seller} value={seller}>
-                  {seller}
-                </option>
-              ))}
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none text-yogreet-charcoal" />
-          </div>
+          {sellers.length > 0 && (
+            <FilterDropdown
+              label="Seller"
+              options={sellerOptions}
+              selectedValues={sellerSelected}
+              onSelectionChange={handleSellerChange}
+              showCounts={true}
+              maxVisible={4}
+            />
+          )}
 
           {/* Sort By */}
-          <div className="relative">
-            <select
-              value={filters.sortBy}
-              onChange={(e) => handleFilterChange("sortBy", e.target.value)}
-              className="appearance-none bg-yogreet-light-gray text-yogreet-charcoal px-4 py-3 text-sm font-medium cursor-pointer pr-8 border border-gray-200 hover:border-yogreet-red transition"
-            >
-              <option value="relevance">Relevance</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="newest">Newest</option>
-              <option value="popular">Most Popular</option>
-            </select>
-            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none text-yogreet-charcoal" />
-          </div>
+          <FilterDropdown
+            label="Sort By"
+            options={sortByOptions}
+            selectedValues={sortBySelected}
+            onSelectionChange={handleSortByChange}
+            showCounts={false}
+            maxVisible={5}
+          />
 
           {/* Clear All Filters */}
           <div className="ml-auto">

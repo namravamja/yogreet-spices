@@ -46,7 +46,7 @@ export function SpiceCard({ name, seller, image, pricePerKg, minOrder, rating, r
             {[...Array(5)].map((_, i) => (
               <FiStar
                 key={i}
-                className={`w-3 h-3 ${i < Math.floor(rating) ? "fill-yogreet-red text-yogreet-red" : "text-gray-300"}`}
+                className={`w-3 h-3 ${i < Math.floor(rating) ? "fill-yogreet-red text-yogreet-red" : "text-gray-300 fill-gray-300"}`}
               />
             ))}
           </div>
@@ -56,7 +56,7 @@ export function SpiceCard({ name, seller, image, pricePerKg, minOrder, rating, r
         <div className="space-y-1 mb-3 pb-3 border-b border-yogreet-light-gray">
           <div className="flex justify-between items-center">
             <span className="text-yogreet-charcoal font-inter text-xs">Price</span>
-            <span className="font-poppins font-semibold text-yogreet-red">${pricePerKg}/kg</span>
+            <span className="font-poppins font-semibold text-black">${pricePerKg}/kg</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-yogreet-charcoal font-inter text-xs">Min Order</span>
@@ -65,9 +65,6 @@ export function SpiceCard({ name, seller, image, pricePerKg, minOrder, rating, r
         </div>
 
             <div className="flex gap-2">
-              <button className="flex-1 px-3 py-2 border border-yogreet-red text-yogreet-red font-manrope font-medium text-xs hover:bg-yogreet-beige transition-colors cursor-pointer">
-                Sample
-              </button>
               <button
                 disabled={!inStock}
                 className="flex-1 px-3 py-2 bg-yogreet-red text-white font-manrope font-medium text-xs hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"

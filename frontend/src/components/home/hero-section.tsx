@@ -24,147 +24,93 @@ export function HeroSection() {
       highlight: true,
       badge: "SECURE",
     },
-    {
-      title: "Free Sample Before Bulk Order",
-      description: "Get free samples to verify aroma, texture, and purity before placing large or wholesale orders.",
-      icon: FiGift,
-    },
   ]
   return (
     <section 
-      className="bg-white py-16 md:py-24 bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: "url('/herosection.jpg')" }}
+      className="bg-white py-10 md:py-16 relative overflow-hidden min-h-[600px] md:min-h-[670px] flex items-center"
     >
-      {/* Overlay to reduce image opacity */}
-      <div className="absolute inset-0 bg-white/93"></div>
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      >
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
+      
+      {/* Overlay to reduce video opacity */}
+      <div className="absolute inset-0 bg-black/50 z-10"></div>
+      
+      {/* Left to right gradient overlay - more opacity on left, fading to transparent by middle */}
+      <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent z-15"></div>
       
       {/* Bottom gradient shadow for smooth transition */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-linear-to-t from-white to-transparent"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-20 z-10"></div>
       
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div>
-            <h1 className="text-4xl md:text-5xl font-poppins font-semibold text-yogreet-charcoal mb-6 text-balance">
-              Discover Premium Indian Spices from Trusted Exporters
-            </h1>
-            <p className="text-base font-inter text-yogreet-charcoal leading-relaxed mb-8 text-balance">
-              Buy authentic Indian spices directly from verified exporters. Skip the middleman, get better prices,
-              and enjoy secure transactions with our escrow payment system.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link 
-                href="/explore"
-                className="px-6 py-3 bg-yogreet-red text-white font-manrope font-medium hover:opacity-90 transition-opacity cursor-pointer text-center"
-              >
-                Start Buying Spices
-              </Link>
-              <button 
-                onClick={() => {
-                  const element = document.getElementById('how-it-works');
-                  if (element) {
-                    const elementPosition = element.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - 100; // 100px offset for navbar
-                    window.scrollTo({
-                      top: offsetPosition,
-                      behavior: 'smooth'
-                    });
-                  }
-                }}
-                className="px-6 py-3 border-2 border-yogreet-sage text-yogreet-sage font-manrope font-medium hover:bg-yogreet-sage hover:text-white transition-colors cursor-pointer text-center"
-              >
-                How It Works ?
-              </button>
-            </div>
-          </div>
-
-          {/* Right Visual - Zig-zag Card Flow */}
-          <div className="space-y-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-20 w-full">
+        <div className="max-w-7xl">
+          <h1 className="text-5xl md:text-7xl font-poppins text-white mb-6 text-balance">
+            Discover Premium Indian Spices from Trusted Exporters
+          </h1>
+          {/* Hero Options - Stacked vertically */}
+          <div className="space-y-4 mb-8">
             {heroOptions.map((option, index) => {
               const IconComponent = option.icon
               const iconColors = ['bg-yogreet-red', 'bg-yogreet-sage', 'bg-yogreet-gold', 'bg-yogreet-purple']
               const iconColor = iconColors[index % iconColors.length]
               
-              // Create uneven positioning with different offsets
-              const positions = [
-                { justify: 'justify-start', width: 'w-4/5', margin: '-ml-12' },
-                { justify: 'justify-end', width: 'w-3/4', margin: '-mr-16' },
-                { justify: 'justify-start', width: 'w-5/6', margin: 'ml-4' },
-                { justify: 'justify-end', width: 'w-4/5', margin: 'mr-4' }
-              ]
-              const position = positions[index]
-              
               return (
-                <div key={index} className={`flex ${position.justify}`}>
-                  <div className={`${position.width} ${position.margin}`}>
-                    <div className={`p-6 flex items-start gap-4 h-32 rounded-sm relative ${
-                      option.highlight 
-                        ? 'bg-white/80 border border-yogreet-red shadow-lg transform scale-105' 
-                        : 'bg-white/60 border border-black'
-                    }`}>
-                      {/* Red circle for No Middle Man card */}
-                      {index === 0 && (
-                        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-yogreet-red rounded-full"></div>
-                      )}
-                      {/* Red circle for Verified Indian Exporters card */}
-                      {index === 1 && (
-                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-yogreet-red rounded-full"></div>
-                      )}
-                      {/* Red circles for Free Sample and Escrow Payment cards */}
-                      {(index === 2 || index === 3) && (
-                        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-yogreet-red rounded-full"></div>
-                      )}
-                      {index === 1 ? (
-                        // Swapped layout for Verified Indian Exporters card
-                        <>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-poppins font-semibold text-yogreet-charcoal">{option.title}</h3>
-                              {option.badge && (
-                                <span className="px-2 py-1 bg-yogreet-red text-white text-xs font-bold rounded-full">
-                                  {option.badge}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-yogreet-charcoal font-inter text-sm">
-                              {option.description}
-                            </p>
-                          </div>
-                          <div className={`w-12 h-12 ${iconColor} flex items-center justify-center rounded-xs ${
-                            option.highlight ? 'ring-2 ring-yogreet-red ring-offset-2' : ''
-                          }`}>
-                            <IconComponent className="w-6 h-6 text-white" />
-                          </div>
-                        </>
-                      ) : (
-                        // Default layout for other cards
-                        <>
-                          <div className={`w-12 h-12 ${iconColor} flex items-center justify-center rounded-xs ${
-                            option.highlight ? 'ring-2 ring-yogreet-red ring-offset-2' : ''
-                          }`}>
-                            <IconComponent className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-poppins font-semibold text-yogreet-charcoal">{option.title}</h3>
-                              {option.badge && (
-                                <span className="px-2 py-1 bg-yogreet-red text-white text-xs font-bold rounded-full">
-                                  {option.badge}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-yogreet-charcoal font-inter text-sm">
-                              {option.description}
-                            </p>
-                          </div>
-                        </>
+                <div key={index} className="flex items-start gap-3">
+                  <div className={`w-11 h-11 shrink-0 ${iconColor} flex items-center justify-center rounded-xs ${
+                    option.highlight ? 'ring-2 ring-yogreet-red ring-offset-2' : ''
+                  }`}>
+                    <IconComponent className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <h3 className="font-poppins font-semibold text-white text-sm leading-tight">{option.title}</h3>
+                      {option.badge && (
+                        <span className="px-2 py-0.5 bg-yogreet-red text-white text-xs font-bold rounded-full whitespace-nowrap">
+                          {option.badge}
+                        </span>
                       )}
                     </div>
+                    <p className="text-white/90 font-inter text-xs leading-snug">
+                      {option.description}
+                    </p>
                   </div>
                 </div>
               )
             })}
           </div>
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <Link 
+              href="/explore"
+              className="px-5 py-2.5 bg-yogreet-red/60 border border-yogreet-red text-white font-manrope font-medium hover:bg-yogreet-red/30 transition-all cursor-pointer text-center text-sm rounded-md"
+            >
+              Start Buying Spices
+            </Link>
+            <button 
+              onClick={() => {
+                const element = document.getElementById('how-it-works');
+                if (element) {
+                  const elementPosition = element.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - 100; // 100px offset for navbar
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
+              className="px-5 py-2.5 border-2 bg-white/20 rounded-md border-white text-white font-manrope font-medium hover:bg-white/30 transition-all cursor-pointer text-center text-sm"
+            >
+              How It Works ?
+            </button>
+          </div>
+
+          
         </div>
       </div>
     </section>

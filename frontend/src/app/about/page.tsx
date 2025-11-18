@@ -48,7 +48,7 @@ export default function AboutPage() {
     {
       icon: Zap,
       title: "Easy Trading",
-      description: "Streamlined process from browsing to ordering, with sample requests and secure delivery.",
+      description: "Streamlined process from browsing to ordering with secure delivery.",
     },
   ]
 

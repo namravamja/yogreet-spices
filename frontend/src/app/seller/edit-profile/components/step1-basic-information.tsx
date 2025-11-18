@@ -199,7 +199,7 @@ export default function Step1BasicInformation({ data, updateData, setUploadedFil
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-manrope font-medium text-stone-700 mb-2">
-            Full Name <span className="text-red-500">*</span>
+            Full Name
           </label>
           <input
             type="text"
@@ -210,7 +210,7 @@ export default function Step1BasicInformation({ data, updateData, setUploadedFil
         </div>
         <div>
           <label className="block text-sm font-manrope font-medium text-stone-700 mb-2">
-            Company Name <span className="text-red-500">*</span>
+            Company Name
           </label>
           <input
             type="text"
@@ -225,7 +225,7 @@ export default function Step1BasicInformation({ data, updateData, setUploadedFil
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-manrope font-medium text-stone-700 mb-2">
-            Email Address <span className="text-red-500">*</span>
+            Email Address
           </label>
           <input
             type="email"
@@ -236,7 +236,7 @@ export default function Step1BasicInformation({ data, updateData, setUploadedFil
         </div>
         <div>
           <label className="block text-sm font-manrope font-medium text-stone-700 mb-2">
-            Mobile Number <span className="text-red-500">*</span>
+            Mobile Number
           </label>
           <input
             type="tel"
@@ -251,7 +251,7 @@ export default function Step1BasicInformation({ data, updateData, setUploadedFil
       <div className="mt-6">
         <div>
           <label className="block text-sm font-manrope font-medium text-stone-700 mb-2">
-            Business Type <span className="text-red-500">*</span>
+            Business Type
           </label>
           <input
             type="text"
@@ -266,7 +266,7 @@ export default function Step1BasicInformation({ data, updateData, setUploadedFil
       {/* Product Categories */}
       <div className="mt-6">
         <label className="block text-sm font-manrope font-medium text-stone-700 mb-3">
-          Product Categories <span className="text-red-500">*</span>
+          Product Categories
         </label>
         <div className="flex flex-wrap gap-2">
           {PRODUCT_CATEGORIES.map((category) => (

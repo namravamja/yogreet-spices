@@ -2,10 +2,11 @@
 
 import { useState, useMemo } from "react"
 import { Navbar, Footer } from "@/components/layout"
-import { ExploreHeader, ExploreFilterBar, ExploreSpiceCard, ExplorePagination, type FilterState } from "@/components/explore"
+import { ExploreFilterBar, ExploreSpiceCard, ExplorePagination, type FilterState } from "@/components/explore"
+import { CategoryFilterBar } from "@/components/explore/category-filter-bar"
 import BuyBulkModal from "@/components/buyer/BuyBulkModal"
-import RequestSampleModal from "@/components/buyer/RequestSampleModal"
 import { useGetProductsQuery } from "@/services/api"
+import PageHero from "@/components/shared/PageHero"
 
 const ITEMS_PER_PAGE = 40
 
@@ -19,19 +20,31 @@ function transformProduct(product: any) {
 
   // Get seller name
   const sellerName = product.seller?.companyName || product.seller?.fullName || "Unknown Seller"
+  
+  // Get seller ID
+  const sellerId = product.seller?.id || null
+
+  // Get seller profile picture
+  const sellerProfilePicture = product.seller?.profilePicture || product.seller?.avatar || null
 
   // Get seller location
   const sellerLocation = product.seller?.businessAddress
     ? `${product.seller.businessAddress.city || ""}, ${product.seller.businessAddress.country || ""}`.trim().replace(/^,\s*/, "").replace(/,\s*$/, "")
     : "Unknown Location"
 
-  // Get first product image or placeholder
-  const image = product.productImages && product.productImages.length > 0
-    ? product.productImages[0]
-    : "/placeholder.svg"
+  // Get product images - always return an array
+  const images = product.productImages && product.productImages.length > 0
+    ? product.productImages
+    : ["/placeholder.svg"]
 
-  // Parse price and min quantity
-  const price = parseFloat(product.sellingPrice || "0")
+  // Get small package price and weight
+  const smallPrice = parseFloat(product.smallPrice || "0")
+  const smallWeight = parseFloat(product.smallWeight || "1") // Default to 1 kg if not specified
+  
+  // Calculate price per kg from small package
+  const pricePerKg = smallWeight > 0 ? smallPrice / smallWeight : smallPrice
+  
+  // Get min quantity (available stock)
   const minQuantity = parseFloat(product.availableStock || "0")
 
   // Use category as origin for now (or you can add origin field to Product model)
@@ -41,20 +54,24 @@ function transformProduct(product: any) {
     id: product.id,
     name: product.productName,
     seller: sellerName,
-    price,
+    sellerId,
+    sellerProfilePicture,
+    price: pricePerKg, // Price per kg from small package
+    smallPrice, // Keep small price for display
+    smallWeight, // Keep small weight for display
     minQuantity,
     origin,
     sellerLocation, // Include seller location for filtering
-    image,
+    images,
     rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
     reviews: reviews.length,
+    description: product.shortDescription || product.description || null,
   }
 }
 
 export default function ExplorePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showBulkModal, setShowBulkModal] = useState(false)
-  const [showSampleModal, setShowSampleModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [filters, setFilters] = useState<FilterState>({
     category: "all",
@@ -97,9 +114,15 @@ export default function ExplorePage() {
           return false
         }
       }
-      // Category filter (if you have category in product model)
+      // Category filter
       if (filters.category !== "all") {
-        // You can add category filtering here if needed
+        const productCategory = product.origin?.toLowerCase() || product.name?.toLowerCase() || ""
+        const filterCategory = filters.category.toLowerCase()
+        
+        // Check if product name or origin contains the category
+        if (!productCategory.includes(filterCategory) && !product.name?.toLowerCase().includes(filterCategory)) {
+          return false
+        }
       }
       // Price range filter
       if (filters.priceRange !== "all") {
@@ -141,15 +164,24 @@ export default function ExplorePage() {
     setShowBulkModal(true)
   }
 
-  const handleRequestSample = (spice: any) => {
-    setSelectedProduct(spice)
-    setShowSampleModal(true)
-  }
-
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
-      <ExploreHeader />
+      <PageHero
+        title="Explore Spices from Verified Indian Sellers"
+        subtitle="Browse Authentic Spices"
+        description=""
+        breadcrumb={{
+          items: [
+            { label: "Home", href: "/" },
+            { label: "Explore Spices", isActive: true }
+          ]
+        }}
+      />
+      <CategoryFilterBar
+        selectedCategory={filters.category}
+        onCategoryChange={(category) => handleFilterChange({ ...filters, category })}
+      />
       <ExploreFilterBar 
         onFilterChange={handleFilterChange} 
         sellers={uniqueSellers}
@@ -173,13 +205,11 @@ export default function ExplorePage() {
         ) : paginatedProducts.length > 0 ? (
           <>
             {/* Spice Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-12">
               {paginatedProducts.map((product) => (
                 <ExploreSpiceCard 
                   key={product.id} 
                   {...product} 
-                  onBulkOrder={() => handleBulkOrder(product)}
-                  onRequestSample={() => handleRequestSample(product)}
                 />
               ))}
             </div>
@@ -219,21 +249,6 @@ export default function ExplorePage() {
         />
       )}
 
-      {/* Request Sample Modal */}
-      {selectedProduct && (
-        <RequestSampleModal
-          isOpen={showSampleModal}
-          onClose={() => setShowSampleModal(false)}
-          product={{
-            id: selectedProduct.id,
-            name: selectedProduct.name,
-            price: selectedProduct.price,
-            minQuantity: selectedProduct.minQuantity,
-            origin: selectedProduct.origin,
-            image: selectedProduct.image,
-          }}
-        />
-      )}
     </main>
   )
 }

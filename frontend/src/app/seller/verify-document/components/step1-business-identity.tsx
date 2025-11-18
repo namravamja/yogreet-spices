@@ -10,12 +10,10 @@ interface SellerVerificationDataStep1 {
   msmeUdyamCertificate?: string;
   panNumber: string;
   gstNumber: string;
-  businessAddress: string;
   businessAddressProof?: string;
   fullName: string; // Merged from fullName and ownerFullName
   ownerFullName?: string; // Backward compatibility
   ownerIdDocument?: string;
-  ownerIdNumber: string;
 }
 
 interface Step1Props {
@@ -40,6 +38,7 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
 
   const renderUpload = (id: string, label: string) => {
     const file = localFiles[id] || null;
+    const existingUrl = (data as any)[id] as string | undefined;
     return (
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">{label}</label>
@@ -77,7 +76,7 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
               </div>
               <button
                 type="button"
-                className="text-red-500 hover:text-red-700"
+                className="text-red-500 hover:text-red-700 cursor-pointer"
                 onClick={() => {
                   setLocalFiles((prev) => ({ ...prev, [id]: null }));
                   setUploadedFiles((prev) => {
@@ -93,6 +92,37 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
             </div>
           </div>
         )}
+        {!file && existingUrl ? (
+          <div className="mt-2 p-3 border border-stone-200 rounded-md bg-stone-50">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-stone-700">Current document preview</p>
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-700 text-sm cursor-pointer"
+                onClick={() => {
+                  updateData({ [id]: "" } as any);
+                }}
+              >
+                Remove
+              </button>
+            </div>
+            {/* Inline preview */}
+            {/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(existingUrl) ? (
+              <img src={existingUrl} alt="Document preview" className="max-h-64 w-auto object-contain border border-stone-200 bg-white" />
+            ) : /\.(pdf)(\?.*)?$/i.test(existingUrl) ? (
+              <object data={existingUrl} type="application/pdf" className="w-full h-80 border border-stone-200 bg-white">
+                <iframe src={existingUrl} className="w-full h-80" />
+              </object>
+            ) : (
+              <div className="text-sm text-stone-600">
+                Preview not available. {/* Fallback link for unknown types */}
+                <a href={existingUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-yogreet-sage underline">
+                  Open file
+                </a>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
     );
   };
@@ -174,18 +204,6 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-3">{renderUpload("businessAddressProof", "Business Address Proof")}</div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-3">
-          <label className="block text-sm font-medium text-stone-700 mb-2">Business Address</label>
-          <textarea
-            rows={3}
-            value={data.businessAddress || ""}
-            onChange={(e) => handleChange("businessAddress", e.target.value)}
-            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
-          />
-        </div>
       </div>
     </div>
   );

@@ -15,6 +15,11 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useGetSellerProductsQuery } from "@/services/api/sellerApi";
+import { useSellerVerification } from "@/hooks/useSellerVerification";
+import { Switch } from "@/components/ui/switch";
+import AddProductSidebar from "./components/add-product-sidebar";
+import CompleteProfileModal from "./components/complete-profile-modal";
 
 // Safe data access utilities
 const safeArray = <T,>(value: T[] | undefined | null): T[] => {
@@ -35,17 +40,15 @@ export interface ProductData {
   productName?: string;
   category?: string;
   shortDescription?: string;
-  sellingPrice?: string;
-  mrp?: string;
-  availableStock?: string;
-  skuCode?: string;
+  // Package pricing
+  smallPrice?: string;
+  smallWeight?: string;
+  mediumPrice?: string;
+  mediumWeight?: string;
+  largePrice?: string;
+  largeWeight?: string;
   productImages?: string[];
-  weight?: string;
-  length?: string;
-  width?: string;
-  height?: string;
   shippingCost?: string;
-  deliveryTimeEstimate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -54,17 +57,42 @@ export default function SellerProductsPage() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isAddProductSidebarOpen, setIsAddProductSidebarOpen] = useState(false);
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  
+  // Testing toggle to disable validation (stored in localStorage)
+  const [validationEnabled, setValidationEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("seller-product-validation-enabled");
+      return stored !== "false"; // Default to true (enabled)
+    }
+    return true;
+  });
 
   const { isAuthenticated, isLoading: authLoading } = useAuth("seller");
+  const {
+    isLoading: isVerificationLoading,
+    profileProgress,
+    documentVerificationProgress,
+    isFullyVerified,
+  } = useSellerVerification();
+  const { data: productResponse, isLoading, error } = useGetSellerProductsQuery(undefined, {
+    skip: !isAuthenticated,
+  });
 
-  // TODO: Replace with actual API call once backend endpoint is available
-  // const { data: productResponse, isLoading, error } = useGetProductsBySellerQuery(undefined, {
-  //   skip: !isAuthenticated,
-  // });
+  const handleValidationToggle = (checked: boolean) => {
+    setValidationEnabled(checked);
+    localStorage.setItem("seller-product-validation-enabled", String(checked));
+  };
 
-  const isLoading = false; // TODO: Set from API call
-  const error: any = null; // TODO: Set from API call
-  const productResponse: any = null; // TODO: Get from API call
+  const handleAddProductClick = () => {
+    // Check if both profile and verification are 100% complete (only if validation is enabled)
+    if (validationEnabled && !isVerificationLoading && !isFullyVerified) {
+      setShowCompleteProfileModal(true);
+    } else {
+      setIsAddProductSidebarOpen(true);
+    }
+  };
 
   // Extract products data from cache response format using useMemo
   const products: ProductData[] = useMemo(() => {
@@ -179,19 +207,35 @@ export default function SellerProductsPage() {
             Manage your product catalog
           </p>
         </div>
-        <Link
-          href="/seller/products/add"
-          className="w-full sm:w-auto bg-yogreet-sage text-white rounded-md px-4 py-2.5 hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center text-sm sm:text-base font-manrope"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Product
-        </Link>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Testing Toggle - Validation Control */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-md">
+            <Switch
+              checked={validationEnabled}
+              onCheckedChange={handleValidationToggle}
+              id="validation-toggle"
+            />
+            <label
+              htmlFor="validation-toggle"
+              className="text-xs font-inter text-stone-600 cursor-pointer whitespace-nowrap"
+            >
+              {validationEnabled ? "Validation ON" : "Validation OFF"}
+            </label>
+          </div>
+          <button
+            onClick={handleAddProductClick}
+            className="w-full sm:w-auto bg-yogreet-sage text-white rounded-md px-4 py-2.5 hover:bg-yogreet-sage/90 transition-colors flex items-center justify-center text-sm sm:text-base font-manrope cursor-pointer"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </button>
+        </div>
       </div>
 
       <div className="lg:hidden mb-4">
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="w-full bg-white border border-stone-200 p-3.5 rounded-md flex items-center justify-between text-stone-700 font-inter"
+          className="w-full bg-white border border-stone-200 p-3.5 rounded-md flex items-center justify-between text-stone-700 font-inter cursor-pointer"
         >
           <span className="flex items-center">
             <SlidersHorizontal className="w-4 h-4 mr-2" />
@@ -233,7 +277,7 @@ export default function SellerProductsPage() {
               <div className="bg-stone-100 rounded-md p-1 flex">
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`p-2 rounded ${
+                  className={`p-2 rounded cursor-pointer ${
                     viewMode === "table"
                       ? "bg-white shadow-sm text-yogreet-sage"
                       : "text-stone-500"
@@ -244,7 +288,7 @@ export default function SellerProductsPage() {
                 </button>
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded ${
+                  className={`p-2 rounded cursor-pointer ${
                     viewMode === "grid"
                       ? "bg-white shadow-sm text-yogreet-sage"
                       : "text-stone-500"
@@ -279,15 +323,15 @@ export default function SellerProductsPage() {
                 ? "Try adjusting your filter criteria"
                 : "Get started by adding your first product to the catalog"}
             </p>
-            <Link
-              href="/seller/products/add"
-              className="inline-flex items-center px-5 py-2.5 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors text-sm sm:text-base font-manrope"
+            <button
+              onClick={handleAddProductClick}
+              className="inline-flex items-center px-5 py-2.5 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors text-sm sm:text-base font-manrope cursor-pointer"
             >
               <Plus className="w-4 h-4 mr-2" />
               {filterCategory !== "all"
                 ? "Add Product"
                 : "Add Your First Product"}
-            </Link>
+            </button>
           </div>
         </div>
       ) : viewMode === "grid" ? (
@@ -320,7 +364,10 @@ export default function SellerProductsPage() {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-yogreet-sage font-poppins">
-                    ₹{safeNumber(product.sellingPrice).toFixed(2)}
+                    {(() => {
+                      const price = product.smallPrice || product.mediumPrice || product.largePrice || "0";
+                      return `₹${safeNumber(price).toFixed(2)}`;
+                    })()}
                   </span>
                   <Link
                     href={`/seller/products/${product.id || ""}`}
@@ -389,7 +436,10 @@ export default function SellerProductsPage() {
                     {safeString(product.category || "No category")}
                   </td>
                   <td className="py-4 px-6 text-sm font-medium text-stone-900 font-manrope">
-                    ₹{safeNumber(product.sellingPrice).toFixed(2)}
+                    {(() => {
+                      const price = product.smallPrice || product.mediumPrice || product.largePrice || "0";
+                      return `₹${safeNumber(price).toFixed(2)}`;
+                    })()}
                   </td>
                   <td className="py-4 px-6 text-center hidden md:table-cell">
                     <Link
@@ -407,6 +457,24 @@ export default function SellerProductsPage() {
           </table>
         </div>
       )}
+
+      {/* Add Product Sidebar */}
+      <AddProductSidebar
+        open={isAddProductSidebarOpen}
+        onOpenChange={setIsAddProductSidebarOpen}
+        validationEnabled={validationEnabled}
+        onProductAdded={() => {
+          // Products will automatically refresh due to cache invalidation
+        }}
+      />
+
+      {/* Complete Profile Modal */}
+      <CompleteProfileModal
+        open={showCompleteProfileModal}
+        onOpenChange={setShowCompleteProfileModal}
+        profileProgress={profileProgress}
+        documentVerificationProgress={documentVerificationProgress}
+      />
     </div>
   );
 }

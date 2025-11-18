@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser } from "react-icons/fi"
 import { useSignupBuyerMutation } from "@/services/api/authApi"
 import toast from "react-hot-toast"
+import { useVerificationModal } from "@/components/auth/verification-modal-provider"
 
 interface SignupModalProps {
   isOpen: boolean
@@ -15,6 +16,7 @@ interface SignupModalProps {
 export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
   const router = useRouter()
   const [signupBuyer, { isLoading }] = useSignupBuyerMutation()
+  const { showVerificationModal } = useVerificationModal()
   
   const [formData, setFormData] = useState({
     buyerName: "",
@@ -80,7 +82,11 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
         localStorage.setItem("yg_user_role", "BUYER")
         localStorage.setItem("yg_signup_email", formData.companyEmail)
       } catch {}
-      router.push("/buyer/verify-document/1")
+      router.push("/")
+      // Show verification modal after navigation
+      setTimeout(() => {
+        showVerificationModal()
+      }, 300)
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Failed to create account. Please try again."
       toast.error(errorMessage)

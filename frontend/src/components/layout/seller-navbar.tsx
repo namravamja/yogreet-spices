@@ -4,10 +4,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { FiMenu, FiUser, FiLogOut, FiPackage, FiBox, FiChevronDown, FiCheckCircle, FiGrid } from "react-icons/fi"
+import { useGetSellerQuery } from "@/services/api/sellerApi"
+import { useRouter } from "next/navigation"
+import { FiMenu, FiUser, FiLogOut, FiChevronDown, FiCheckCircle, FiFileText } from "react-icons/fi"
 import { SellerSignupModal, SellerLoginModal } from "../auth"
 
 export function SellerNavbar() {
+  const router = useRouter()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isSellerSignupModalOpen, setIsSellerSignupModalOpen] = useState(false)
@@ -20,81 +23,31 @@ export function SellerNavbar() {
   // Mock: whether seller's document verification is pending
   const [isDocVerificationPending] = useState(true)
   const [profileCompletion, setProfileCompletion] = useState(0)
-
-  // Calculate profile completion percentage
-  const calculateProfileCompletion = () => {
-    try {
-      // Mock seller data - replace with actual API call
-      const sellerData = {
-        fullName: "Rajesh Kumar",
-        storeName: "Premium Spice Exports",
-        email: "rajesh@premiumspice.com",
-        mobile: "+91 98765 43210",
-        businessType: "Exporter",
-        businessRegistrationNumber: "SPICE123456789",
-        productCategories: ["Turmeric", "Cardamom", "Black Pepper", "Cumin"],
-        businessAddress: {
-          street: "123 Spice Market Street",
-          city: "Kochi",
-          state: "Kerala",
-          country: "India",
-          pinCode: "682001"
-        },
-        bankAccountName: "Premium Spice Exports",
-        bankName: "State Bank of India",
-        accountNumber: "1234567890123456",
-        ifscCode: "SBIN0001234",
-        gstNumber: "29ABCDE1234F1Z5",
-        panNumber: "ABCDE1234F",
-        shippingType: "Self Ship",
-        serviceAreas: ["Domestic", "International"],
-        inventoryVolume: "10000+",
-        returnPolicy: "30-day return policy for quality issues",
-        termsAgreed: true
-      };
-
-      let completed = 0;
-      const total = 23;
-
-      if (sellerData?.fullName?.trim()) completed++;
-      if (sellerData?.storeName?.trim()) completed++;
-      if (sellerData?.email?.trim()) completed++;
-      if (sellerData?.mobile?.trim()) completed++;
-      if (sellerData?.businessType?.trim()) completed++;
-      if (sellerData?.businessRegistrationNumber?.trim()) completed++;
-      if (Array.isArray(sellerData?.productCategories) && sellerData.productCategories.length > 0) completed++;
-      if (sellerData?.businessAddress?.street?.trim()) completed++;
-      if (sellerData?.businessAddress?.city?.trim()) completed++;
-      if (sellerData?.businessAddress?.state?.trim()) completed++;
-      if (sellerData?.businessAddress?.country?.trim()) completed++;
-      if (sellerData?.businessAddress?.pinCode?.trim()) completed++;
-      if (sellerData?.bankAccountName?.trim()) completed++;
-      if (sellerData?.bankName?.trim()) completed++;
-      if (sellerData?.accountNumber?.trim()) completed++;
-      if (sellerData?.ifscCode?.trim()) completed++;
-      if (sellerData?.gstNumber?.trim()) completed++;
-      if (sellerData?.panNumber?.trim()) completed++;
-      if (sellerData?.shippingType?.trim()) completed++;
-      if (Array.isArray(sellerData?.serviceAreas) && sellerData.serviceAreas.length > 0) completed++;
-      if (sellerData?.inventoryVolume?.trim()) completed++;
-      if (sellerData?.returnPolicy?.trim()) completed++;
-      if (sellerData?.termsAgreed) completed++;
-
-      return Math.round((completed / total) * 100);
-    } catch (error) {
-      console.error("Error calculating profile completion:", error);
-      return 0;
-    }
-  };
+  const [documentCompletion, setDocumentCompletion] = useState(0)
 
   // Check localStorage on component mount
   useEffect(() => {
     const savedSellerLoginState = localStorage.getItem('yogreet-seller-login-state')
     if (savedSellerLoginState === 'true') {
       setIsSellerLoggedIn(true)
-      setProfileCompletion(calculateProfileCompletion())
     }
   }, [])
+
+  // Fetch real seller data to get stored profileCompletion
+  const { data: sellerDataFromApi } = useGetSellerQuery(undefined, {
+    skip: !isSellerLoggedIn,
+  } as any)
+
+  useEffect(() => {
+    if (sellerDataFromApi) {
+      if (typeof sellerDataFromApi.profileCompletion === "number") {
+        setProfileCompletion(sellerDataFromApi.profileCompletion)
+      }
+      if (typeof sellerDataFromApi.documentCompletion === "number") {
+        setDocumentCompletion(sellerDataFromApi.documentCompletion)
+      }
+    }
+  }, [sellerDataFromApi])
 
   // Navigation menu items - only Explore Spices (no About/Contact)
   const menuItems = [
@@ -222,26 +175,6 @@ export function SellerNavbar() {
                     Home
                   </Link>
                   <Link 
-                    href="/seller/dashboard" 
-                    className={`font-inter text-base transition-colors cursor-pointer ${
-                      pathname?.startsWith("/seller/dashboard") 
-                        ? "text-yogreet-sage font-medium" 
-                        : "text-yogreet-charcoal hover:text-yogreet-sage"
-                    }`}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link 
-                    href="/seller/products" 
-                    className={`font-inter text-base transition-colors cursor-pointer ${
-                      pathname?.startsWith("/seller/products") 
-                        ? "text-yogreet-sage font-medium" 
-                        : "text-yogreet-charcoal hover:text-yogreet-sage"
-                    }`}
-                  >
-                    My Products
-                  </Link>
-                  <Link 
                     href="/seller/orders" 
                     className={`font-inter text-base transition-colors cursor-pointer ${
                       pathname?.startsWith("/seller/orders") 
@@ -252,14 +185,14 @@ export function SellerNavbar() {
                     Orders
                   </Link>
                   <Link 
-                    href="/seller/samples" 
+                    href="/seller/products" 
                     className={`font-inter text-base transition-colors cursor-pointer ${
-                      pathname?.startsWith("/seller/samples") 
+                      pathname?.startsWith("/seller/products") 
                         ? "text-yogreet-sage font-medium" 
                         : "text-yogreet-charcoal hover:text-yogreet-sage"
                     }`}
                   >
-                    Sample Requests
+                    My Products
                   </Link>
                 </div>
               </>
@@ -344,8 +277,14 @@ export function SellerNavbar() {
                       onMouseLeave={handleMouseLeave}
                     >
                       <div className="py-2">
-                        <Link 
-                          href="/seller/profile" 
+                        <Link
+                          href={profileCompletion < 25 ? "/seller/edit-profile/1" : "/seller/profile"}
+                          onClick={(e) => {
+                            if (profileCompletion < 25) {
+                              e.preventDefault()
+                              router.push("/seller/edit-profile/1")
+                            }
+                          }}
                           className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
                         >
                           <FiUser className="w-4 h-4" />
@@ -356,6 +295,18 @@ export function SellerNavbar() {
                             </span>
                           )}
                         </Link>
+                         <Link 
+                           href="/seller/documents" 
+                           className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                         >
+                           <FiFileText className="w-4 h-4" />
+                           <span className="flex-1">Documents</span>
+                           {documentCompletion > 0 && (
+                             <span className="text-xs font-medium text-yogreet-sage">
+                               {documentCompletion}%
+                             </span>
+                           )}
+                         </Link>
                         <Link 
                           href="/seller/verify-document" 
                           className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
@@ -437,26 +388,6 @@ export function SellerNavbar() {
                     Home
                   </Link>
                   <Link 
-                    href="/seller/dashboard" 
-                    className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
-                      pathname?.startsWith("/seller/dashboard")
-                        ? "text-yogreet-sage bg-yogreet-sage/10 font-medium" 
-                        : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
-                    }`}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link 
-                    href="/seller/products" 
-                    className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
-                      pathname?.startsWith("/seller/products")
-                        ? "text-yogreet-sage bg-yogreet-sage/10 font-medium" 
-                        : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
-                    }`}
-                  >
-                    My Products
-                  </Link>
-                  <Link 
                     href="/seller/orders" 
                     className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
                       pathname?.startsWith("/seller/orders")
@@ -467,14 +398,14 @@ export function SellerNavbar() {
                     Orders
                   </Link>
                   <Link 
-                    href="/seller/samples" 
+                    href="/seller/products" 
                     className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
-                      pathname?.startsWith("/seller/samples")
+                      pathname?.startsWith("/seller/products")
                         ? "text-yogreet-sage bg-yogreet-sage/10 font-medium" 
                         : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
                     }`}
                   >
-                    Sample Requests
+                    My Products
                   </Link>
                 </div>
               ) : (
@@ -530,8 +461,14 @@ export function SellerNavbar() {
               {isSellerLoggedIn ? (
                 /* Mobile Seller Profile Options */
                 <div className="space-y-2">
-                  <Link 
-                    href="/seller/profile" 
+                  <Link
+                    href={profileCompletion < 25 ? "/seller/edit-profile/1" : "/seller/profile"}
+                    onClick={(e) => {
+                      if (profileCompletion < 25) {
+                        e.preventDefault()
+                        router.push("/seller/edit-profile/1")
+                      }
+                    }}
                     className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
                   >
                     <FiUser className="w-4 h-4" />
@@ -539,6 +476,18 @@ export function SellerNavbar() {
                     {profileCompletion > 0 && (
                       <span className="text-xs font-medium text-yogreet-sage">
                         {profileCompletion}%
+                      </span>
+                    )}
+                  </Link>
+                  <Link 
+                    href="/seller/documents" 
+                    className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer"
+                  >
+                    <FiFileText className="w-4 h-4" />
+                    <span className="flex-1">Documents</span>
+                    {documentCompletion > 0 && (
+                      <span className="text-xs font-medium text-yogreet-sage">
+                        {documentCompletion}%
                       </span>
                     )}
                   </Link>

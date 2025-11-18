@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Poppins, Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "@/lib/store/provider";
+import { VerificationModalProviderWithModal } from "@/components/auth/verification-modal-provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -40,7 +41,9 @@ export default function RootLayout({
         className={`${poppins.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
       >
         <StoreProvider>
-          {children}
+          <VerificationModalProviderWithModal>
+            {children}
+          </VerificationModalProviderWithModal>
         </StoreProvider>
       </body>
     </html>

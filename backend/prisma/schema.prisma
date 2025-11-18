@@ -15,7 +15,7 @@ model Buyer {
   lastName  String?
 
   googleId    String? @unique
-  provider    String? @default("local") // "local" or "google"
+  provider    String? @default("local")
   isOAuthUser Boolean @default(false)
 
   phone                 String?
@@ -25,7 +25,6 @@ model Buyer {
   addresses             Address[]
   cartItems             Cart[]
   orders                Order[]
-  samples               SampleRequest[]
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   isAuthenticated       Boolean    @default(false)
@@ -135,30 +134,40 @@ model Address {
 }
 
 model Product {
-  id                   String   @id @default(uuid())
-  productName          String
-  category             String
-  shortDescription     String
-  sellingPrice         String
-  mrp                  String
-  availableStock       String
-  skuCode              String
-  productImages        String[]
-  weight               String
-  length               String
-  width                String
-  height               String
-  shippingCost         String
-  deliveryTimeEstimate String
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id               String   @id @default(uuid())
+  productName      String
+  category         String
+  subCategory      String?
+  typeOfSpice      String?
+  form             String?  // Whole, Powder, Ground, Blended
+  shortDescription String
+  productImages    String[]
+  shippingCost     String
+  
+  // About Product
+  purityLevel      String?
+  originSource     String?
+  processingMethod String?
+  shelfLife        String?
+  manufacturingDate DateTime?
+  expiryDate       DateTime?
+  
+  // Package pricing
+  smallPrice       String?
+  smallWeight      String?
+  mediumPrice      String?
+  mediumWeight     String?
+  largePrice       String?
+  largeWeight      String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   seller   Seller      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   sellerId String
   Cart     Cart[]
   OrderItem OrderItem[]
   Review   Review[]
-  SampleRequests SampleRequest[]
 }
 
 model Seller {
@@ -170,6 +179,10 @@ model Seller {
   businessType               String?
   productCategories          String[]
   businessLogo               String?
+  about                      String?
+  storePhotos                String[]
+  profileCompletion          Int      @default(0)
+  documentCompletion         Int      @default(0)
   
   // Company/Store Name - merged from storeName and companyName
   companyName                String?
@@ -180,8 +193,6 @@ model Seller {
 
   businessAddress    BusinessAddress?  @relation(fields: [businessAddressId], references: [id], onDelete: SetNull)
   businessAddressId  String?           @unique
-  warehouseAddress   WarehouseAddress? @relation(fields: [warehouseAddressId], references: [id], onDelete: SetNull)
-  warehouseAddressId String?           @unique
   documents          Documents?        @relation(fields: [documentsId], references: [id], onDelete: SetNull)
   documentsId        String?           @unique
   socialLinks        SocialLinks?      @relation(fields: [socialLinksId], references: [id], onDelete: SetNull)
@@ -221,7 +232,6 @@ model Seller {
   fssaiCertificate               String?
   foodQualityCertifications      String[] // multiple optional certifications
   labTestingCapability           Boolean  @default(false)
-  sampleLabTestCertificate       String?
   
   // Seller Verification Fields - Step 4: Export Documentation & Shipment Capability
   certificateOfOriginCapability       Boolean  @default(false)
@@ -238,7 +248,6 @@ model Seller {
   
   products     Product[]
   orderItems   OrderItem[]
-  samples      SampleRequest[]
   Review       Review[]
   
   createdAt             DateTime  @default(now())
@@ -262,18 +271,6 @@ model BusinessAddress {
   seller Seller?
 }
 
-model WarehouseAddress {
-  id             String   @id @default(uuid())
-  street         String
-  sameAsBusiness Boolean?
-  city           String?
-  state          String?
-  country        String?
-  pinCode        String?
-
-  seller Seller?
-}
-
 model Documents {
   id              String  @id @default(uuid())
   gstCertificate  String?
@@ -292,22 +289,6 @@ model SocialLinks {
   twitter   String?
 
   seller Seller?
-}
-
-model SampleRequest {
-  id        String   @id @default(uuid())
-  buyer     Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  buyerId   String
-  seller    Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  sellerId  String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String
-  status    String   @default("pending") // pending, approved, rejected, shipped
-  quantity  Float    @default(50) // Weight in grams (supports decimals, range: 50-500g)
-  purpose   String?  // Purpose of sample: quality-check, testing, evaluation, trial, other
-  notes     String?  // Additional notes or requirements
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Review {

@@ -48,16 +48,6 @@ export function BuyerSidebar() {
             My Orders
           </Link>
           <Link
-            href="/buyer/samples"
-            className={`block px-4 py-3 font-inter text-sm transition-colors ${
-              isActive("/buyer/samples")
-                ? "bg-yogreet-red text-white"
-                : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
-            }`}
-          >
-            Sample Requests
-          </Link>
-          <Link
             href="/buyer/favorites"
             className={`block px-4 py-3 font-inter text-sm transition-colors ${
               isActive("/buyer/favorites")

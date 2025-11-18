@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { User } from "lucide-react";
+import { User, Edit } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface SellerData {
   fullName?: string | null;
-  storeName?: string | null;
+  companyName?: string | null;
   email?: string;
   mobile?: string | null;
   businessType?: string | null;
@@ -15,18 +16,30 @@ interface SellerData {
 
 interface BasicInformationProps {
   sellerData: SellerData;
+  onEdit?: () => void;
 }
 
 export default function BasicInformation({
   sellerData,
+  onEdit,
 }: BasicInformationProps) {
+  const router = useRouter();
   return (
     <div className="bg-white border border-stone-200 shadow-sm">
       <div className="p-6 border-b border-stone-200">
-        <h2 className="text-xl font-manrope font-medium text-yogreet-charcoal flex items-center">
-          <User className="w-5 h-5 mr-2 text-yogreet-sage" />
-          Basic Information
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-manrope font-medium text-yogreet-charcoal flex items-center">
+            <User className="w-5 h-5 mr-2 text-yogreet-sage" />
+            Basic Information
+          </h2>
+          <button
+            onClick={() => (onEdit ? onEdit() : router.push("/seller/edit-profile/1"))}
+            className="px-3 py-1.5 border border-yogreet-sage text-yogreet-sage rounded-md hover:bg-yogreet-sage/10 transition-colors cursor-pointer text-sm font-manrope flex items-center gap-1.5"
+          >
+            <Edit className="w-4 h-4" />
+            Edit
+          </button>
+        </div>
       </div>
 
       <div className="p-6 space-y-6">
@@ -50,23 +63,23 @@ export default function BasicInformation({
               <label className="block text-sm font-manrope font-medium text-stone-700 mb-1">
                 Full Name *
               </label>
-              <p className="text-stone-600 py-2 font-inter">
+              <p className={`py-2 font-inter ${sellerData.fullName ? "text-stone-600" : "text-red-500"}`}>
                 {sellerData.fullName || "not provided"}
               </p>
             </div>
             <div>
               <label className="block text-sm font-manrope font-medium text-stone-700 mb-1">
-                Store Name *
+                Company Name *
               </label>
-              <p className="text-stone-600 py-2 font-inter">
-                {sellerData.storeName || "not provided"}
+              <p className={`py-2 font-inter ${sellerData.companyName ? "text-stone-600" : "text-red-500"}`}>
+                {sellerData.companyName || "not provided"}
               </p>
             </div>
             <div>
               <label className="block text-sm font-manrope font-medium text-stone-700 mb-1">
                 Email Address *
               </label>
-              <p className="text-stone-600 py-2 font-inter">
+              <p className={`py-2 font-inter ${sellerData.email ? "text-stone-600" : "text-red-500"}`}>
                 {sellerData.email || "not provided"}
               </p>
             </div>
@@ -74,7 +87,7 @@ export default function BasicInformation({
               <label className="block text-sm font-manrope font-medium text-stone-700 mb-1">
                 Mobile Number *
               </label>
-              <p className="text-stone-600 py-2 font-inter">
+              <p className={`py-2 font-inter ${sellerData.mobile ? "text-stone-600" : "text-red-500"}`}>
                 {sellerData.mobile || "not provided"}
               </p>
             </div>
@@ -82,7 +95,7 @@ export default function BasicInformation({
               <label className="block text-sm font-manrope font-medium text-stone-700 mb-1">
                 Business Type *
               </label>
-              <p className="text-stone-600 py-2 font-inter">
+              <p className={`py-2 font-inter ${sellerData.businessType ? "text-stone-600" : "text-red-500"}`}>
                 {sellerData.businessType || "not provided"}
               </p>
             </div>
@@ -99,7 +112,7 @@ export default function BasicInformation({
               (sellerData.productCategories || []).map((category, index) => (
                 <span
                   key={index}
-                  className="bg-yogreet-sage/10 text-yogreet-sage px-3 py-1 rounded-full text-sm font-inter"
+                  className={`px-3 py-1 rounded-full text-sm font-inter ${category ? "bg-yogreet-sage/10 text-yogreet-sage" : "bg-red-50 text-red-500"}`}
                 >
                   {category || "not provided"}
                 </span>

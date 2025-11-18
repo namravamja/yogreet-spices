@@ -7,6 +7,7 @@ import { FiMenu, FiUser, FiLogOut, FiPackage, FiTruck, FiShoppingCart, FiBox, Fi
 import { LoginModal, SignupModal, SellerSignupModal, SellerLoginModal } from "../auth"
 import { useAuth } from "@/hooks/useAuth"
 import { useLogoutMutation } from "@/services/api/authApi"
+import { useGetCartQuery } from "@/services/api/buyerApi"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 
@@ -14,6 +15,11 @@ export function Navbar() {
   const router = useRouter()
   const { isAuthenticated, isLoading: isAuthLoading, user, refetch } = useAuth("buyer")
   const [logout] = useLogoutMutation()
+  const { data: cartData } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated,
+  })
+  
+  const cartItemsCount = cartData?.length || 0
   
   const [isOpen, setIsOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
@@ -186,72 +192,24 @@ export function Navbar() {
             {/* Auth Buttons */}
             <div className="flex items-center gap-6">
               {isAuthenticated && !isAuthLoading ? (
-                /* Cart and Samples Icons */
+                /* Cart Icon */
                 <div className="flex items-center gap-4">
                   <Link href="/buyer/cart" className="w-10 h-10 bg-yogreet-light-gray rounded-full flex items-center justify-center hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
                     <FiShoppingCart className="w-5 h-5 text-yogreet-charcoal" />
                     {/* Cart badge */}
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-red text-white text-xs rounded-full flex items-center justify-center">3</span>
-                  </Link>
-                  <Link href="/buyer/samples" className="w-10 h-10 bg-yogreet-light-gray rounded-full flex items-center justify-center hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
-                    <FiBox className="w-5 h-5 text-yogreet-charcoal" />
-                    {/* Samples badge */}
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-sage text-white text-xs rounded-full flex items-center justify-center">5</span>
+                    {cartItemsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-red text-white text-xs rounded-full flex items-center justify-center">{cartItemsCount}</span>
+                    )}
                   </Link>
                 </div>
               ) : (
-                /* Become a seller button when not logged in */
-                <div 
-                  className="relative"
-                  onMouseEnter={handleSellerMouseEnter}
-                  onMouseLeave={handleSellerMouseLeave}
+                /* Become a seller link when not logged in (no dropdown) */
+                <Link 
+                  href="/become-seller"
+                  className="flex items-center gap-2 px-4 py-2 text-yogreet-sage font-manrope font-medium hover:text-yogreet-sage/80 transition-colors cursor-pointer"
                 >
-                  <button 
-                    onClick={handleBecomeSellerClick}
-                    className="flex items-center gap-2 px-4 py-2 text-yogreet-sage font-manrope font-medium hover:text-yogreet-sage/80 transition-colors cursor-pointer"
-                  >
-                    Become a seller
-                    <FiChevronDown className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Seller Dropdown Menu */}
-                  {showSellerDropdown && (
-                    <div 
-                      className="absolute left-0 top-12 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
-                      onMouseEnter={handleSellerMouseEnter}
-                      onMouseLeave={handleSellerMouseLeave}
-                    >
-                      <div className="py-2">
-                        <Link
-                          href="/become-seller"
-                          onClick={() => setShowSellerDropdown(false)}
-                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
-                        >
-                          How to become a seller ?
-                        </Link>
-                        <button 
-                          onClick={() => {
-                            setSellerRedirectUrl("/seller")
-                            setIsSellerLoginModalOpen(true)
-                            setShowSellerDropdown(false)
-                          }}
-                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
-                        >
-                          Go to profile
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setIsSellerSignupModalOpen(true)
-                            setShowSellerDropdown(false)
-                          }}
-                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
-                        >
-                          Build profile
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  Become a seller
+                </Link>
               )}
               
               {isAuthenticated && !isAuthLoading ? (
@@ -386,67 +344,20 @@ export function Navbar() {
                   <Link href="/buyer/cart" className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yogreet-light-gray rounded-lg hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
                     <FiShoppingCart className="w-4 h-4 text-yogreet-charcoal" />
                     <span className="text-yogreet-charcoal font-manrope font-medium">Cart</span>
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-red text-white text-xs rounded-full flex items-center justify-center">3</span>
-                  </Link>
-                  <Link href="/buyer/samples" className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-yogreet-light-gray rounded-lg hover:bg-yogreet-light-gray/80 transition-colors cursor-pointer relative">
-                    <FiBox className="w-4 h-4 text-yogreet-charcoal" />
-                    <span className="text-yogreet-charcoal font-manrope font-medium">Samples</span>
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-sage text-white text-xs rounded-full flex items-center justify-center">5</span>
+                    {cartItemsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-yogreet-red text-white text-xs rounded-full flex items-center justify-center">{cartItemsCount}</span>
+                    )}
                   </Link>
                 </div>
               ) : (
-                /* Become Seller button when not logged in */
-                <div 
-                  className="relative"
-                  onMouseEnter={handleSellerMouseEnter}
-                  onMouseLeave={handleSellerMouseLeave}
+                /* Become Seller link when not logged in (no dropdown) */
+                <Link 
+                  href="/become-seller"
+                  onClick={() => setIsOpen(false)}
+                  className="block w-full text-center px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-red transition-colors cursor-pointer"
                 >
-                  <button 
-                    onClick={handleBecomeSellerClick}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-yogreet-charcoal font-manrope font-medium hover:text-yogreet-red transition-colors cursor-pointer"
-                  >
-                    Become Seller
-                    <FiChevronDown className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Mobile Seller Dropdown Menu */}
-                  {showSellerDropdown && (
-                    <div 
-                      className="absolute left-0 top-12 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50"
-                      onMouseEnter={handleSellerMouseEnter}
-                      onMouseLeave={handleSellerMouseLeave}
-                    >
-                      <div className="py-2">
-                        <Link
-                          href="/become-seller"
-                          onClick={() => setShowSellerDropdown(false)}
-                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
-                        >
-                          How to become a seller
-                        </Link>
-                        <button 
-                          onClick={() => {
-                            setSellerRedirectUrl("/seller")
-                            setIsSellerLoginModalOpen(true)
-                            setShowSellerDropdown(false)
-                          }}
-                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
-                        >
-                          Go to profile
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setIsSellerSignupModalOpen(true)
-                            setShowSellerDropdown(false)
-                          }}
-                          className="block w-full px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer text-left"
-                        >
-                          Build profile
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  Become Seller
+                </Link>
               )}
               
               {isAuthenticated && !isAuthLoading ? (

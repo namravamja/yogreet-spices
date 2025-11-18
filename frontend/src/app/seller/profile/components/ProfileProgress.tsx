@@ -3,12 +3,15 @@
 interface ProfileData {
   // Step 1: Seller Account & Business Basics
   fullName?: string | null;
-  storeName?: string | null;
+  companyName?: string | null;
   email?: string;
   mobile?: string | null;
   businessType?: string | null;
   productCategories?: string[] | null;
   businessLogo?: string | null;
+  // Step 2: About & Store Photos
+  about?: string | null;
+  storePhotos?: string[] | null;
 
   // Step 2: Address, Banking & Tax Details
   businessAddress?: {
@@ -54,11 +57,11 @@ export default function ProfileProgress({ profileData }: ProfileProgressProps) {
   const calculateProgress = () => {
     try {
       let completed = 0;
-      const total = 20; // Total required fields across all steps
+      const total = 13; // Basic (6) + About & Photos (2) + Address (5)
 
       // Step 1: Seller Account & Business Basics (6 fields)
       if (profileData?.fullName?.trim()) completed++;
-      if (profileData?.storeName?.trim()) completed++;
+      if (profileData?.companyName?.trim()) completed++;
       if (profileData?.email?.trim()) completed++;
       if (profileData?.mobile?.trim()) completed++;
       if (profileData?.businessType?.trim()) completed++;
@@ -68,27 +71,21 @@ export default function ProfileProgress({ profileData }: ProfileProgressProps) {
       )
         completed++;
 
-      // Step 2: Address, Banking & Tax Details (11 fields)
+      // Step 2: About & Store Photos (2 fields)
+      if (profileData?.about?.trim()) completed++;
+      if (
+        Array.isArray(profileData?.storePhotos) &&
+        profileData.storePhotos.length > 0
+      )
+        completed++;
+
+      // Step 2: Address Details only (5 fields) - Banking & Tax excluded
       if (profileData?.businessAddress?.street?.trim()) completed++;
       if (profileData?.businessAddress?.city?.trim()) completed++;
       if (profileData?.businessAddress?.state?.trim()) completed++;
       if (profileData?.businessAddress?.country?.trim()) completed++;
       if (profileData?.businessAddress?.pinCode?.trim()) completed++;
-      if (profileData?.bankAccountName?.trim()) completed++;
-      if (profileData?.bankName?.trim()) completed++;
-      if (profileData?.accountNumber?.trim()) completed++;
-      if (profileData?.ifscCode?.trim()) completed++;
-      if (profileData?.gstNumber?.trim()) completed++;
-      if (profileData?.panNumber?.trim()) completed++;
-
-      // Step 3: Preferences, Logistics & Agreement (3 fields)
-      if (profileData?.shippingType?.trim()) completed++;
-      if (
-        Array.isArray(profileData?.serviceAreas) &&
-        profileData.serviceAreas.length > 0
-      )
-        completed++;
-      if (profileData?.returnPolicy?.trim()) completed++;
+      // Shipping & Logistics excluded from progress
 
       return Math.round((completed / total) * 100);
     } catch (error) {
@@ -118,8 +115,8 @@ export default function ProfileProgress({ profileData }: ProfileProgressProps) {
 
       // Step 1 missing fields
       if (!profileData?.fullName?.trim()) missing.push("• Add your full name");
-      if (!profileData?.storeName?.trim())
-        missing.push("• Add your store name");
+      if (!profileData?.companyName?.trim())
+        missing.push("• Add your company name");
       if (!profileData?.email?.trim()) missing.push("• Add your email address");
       if (!profileData?.mobile?.trim())
         missing.push("• Add your mobile number");
@@ -131,7 +128,16 @@ export default function ProfileProgress({ profileData }: ProfileProgressProps) {
       )
         missing.push("• Add product categories");
 
-      // Step 2 missing fields
+      // About & Store Photos missing fields
+      if (!profileData?.about?.trim())
+        missing.push("• Add your About description");
+      if (
+        !Array.isArray(profileData?.storePhotos) ||
+        profileData.storePhotos.length === 0
+      )
+        missing.push("• Add store photos");
+
+      // Step 2 missing fields (Address only)
       if (!profileData?.businessAddress?.street?.trim())
         missing.push("• Add business street address");
       if (!profileData?.businessAddress?.city?.trim())
@@ -142,25 +148,7 @@ export default function ProfileProgress({ profileData }: ProfileProgressProps) {
         missing.push("• Add business country");
       if (!profileData?.businessAddress?.pinCode?.trim())
         missing.push("• Add business pin code");
-      if (!profileData?.bankAccountName?.trim())
-        missing.push("• Add bank account name");
-      if (!profileData?.bankName?.trim()) missing.push("• Add bank name");
-      if (!profileData?.accountNumber?.trim())
-        missing.push("• Add account number");
-      if (!profileData?.ifscCode?.trim()) missing.push("• Add IFSC code");
-      if (!profileData?.gstNumber?.trim()) missing.push("• Add GST number");
-      if (!profileData?.panNumber?.trim()) missing.push("• Add PAN number");
-
-      // Step 3 missing fields
-      if (!profileData?.shippingType?.trim())
-        missing.push("• Select shipping type");
-      if (
-        !Array.isArray(profileData?.serviceAreas) ||
-        profileData.serviceAreas.length === 0
-      )
-        missing.push("• Add service areas");
-      if (!profileData?.returnPolicy?.trim())
-        missing.push("• Add return policy");
+      // Banking & Tax and Shipping & Logistics missing prompts removed
 
       return missing;
     } catch (error) {

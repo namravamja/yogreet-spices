@@ -29,7 +29,7 @@ export default function PageHero({
   breadcrumb,
 }: PageHeroProps) {
   return (
-    <div className="bg-yogreet-light-gray py-8 px-4 md:px-8 mb-10">
+    <div className="py-8 px-4 md:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         {(showBackButton || breadcrumb) && (
@@ -70,14 +70,25 @@ export default function PageHero({
         )}
         
         {/* Main Content */}
+        {(title || subtitle || description) && (
         <div>
+            {title && (
           <h1 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-2">
             {title}
           </h1>
+            )}
+            {subtitle && (
+              <p className="text-lg text-yogreet-charcoal text-opacity-80 mb-2">
+                {subtitle}
+              </p>
+            )}
+            {description && (
           <p className="text-yogreet-charcoal text-opacity-70 max-w-2xl">
             {description}
           </p>
+            )}
         </div>
+        )}
       </div>
     </div>
   );

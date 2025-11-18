@@ -121,45 +121,6 @@ export const buyerApi = BuyerApi.injectEndpoints({
       invalidatesTags: ["Cart"],
     }),
 
-    // Sample request operations
-    getSamples: builder.query({
-      query: () => "/samples",
-      providesTags: ["Samples"],
-    }),
-
-    requestSample: builder.mutation({
-      query: (data) => ({
-        url: "/samples",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Samples"],
-    }),
-
-    updateSampleRequest: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/samples/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Samples"],
-    }),
-
-    removeSampleRequest: builder.mutation({
-      query: (id) => ({
-        url: `/samples/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Samples"],
-    }),
-
-    clearSampleRequests: builder.mutation({
-      query: () => ({
-        url: "/samples",
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Samples"],
-    }),
   }),
 });
 
@@ -176,10 +137,5 @@ export const {
   useUpdateCartItemMutation,
   useRemoveCartItemMutation,
   useClearCartMutation,
-  useGetSamplesQuery,
-  useRequestSampleMutation,
-  useUpdateSampleRequestMutation,
-  useRemoveSampleRequestMutation,
-  useClearSampleRequestsMutation,
 } = buyerApi;
 

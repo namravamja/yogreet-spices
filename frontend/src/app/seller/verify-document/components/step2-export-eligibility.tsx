@@ -39,6 +39,7 @@ export default function Step2ExportEligibility({ data, updateData, setUploadedFi
 
   const renderUpload = (id: string, label: string) => {
     const file = localFiles[id] || null;
+    const existingUrl = (data as any)[id] as string | undefined;
     return (
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">{label}</label>
@@ -76,7 +77,7 @@ export default function Step2ExportEligibility({ data, updateData, setUploadedFi
               </div>
               <button
                 type="button"
-                className="text-red-500 hover:text-red-700"
+                className="text-red-500 hover:text-red-700 cursor-pointer"
                 onClick={() => {
                   setLocalFiles((prev) => ({ ...prev, [id]: null }));
                   setUploadedFiles((prev) => {
@@ -92,6 +93,36 @@ export default function Step2ExportEligibility({ data, updateData, setUploadedFi
             </div>
           </div>
         )}
+        {!file && existingUrl ? (
+          <div className="mt-2 p-3 border border-stone-200 rounded-md bg-stone-50">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-stone-700">Current document preview</p>
+              <button
+                type="button"
+                className="text-red-500 hover:text-red-700 text-sm cursor-pointer"
+                onClick={() => {
+                  updateData({ [id]: "" } as any);
+                }}
+              >
+                Remove
+              </button>
+            </div>
+            {/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(existingUrl) ? (
+              <img src={existingUrl} alt="Document preview" className="max-h-64 w-auto object-contain border border-stone-200 bg-white" />
+            ) : /\.(pdf)(\?.*)?$/i.test(existingUrl) ? (
+              <object data={existingUrl} type="application/pdf" className="w-full h-80 border border-stone-200 bg-white">
+                <iframe src={existingUrl} className="w-full h-80" />
+              </object>
+            ) : (
+              <div className="text-sm text-stone-600">
+                Preview not available.
+                <a href={existingUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-yogreet-sage underline">
+                  Open file
+                </a>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
     );
   };

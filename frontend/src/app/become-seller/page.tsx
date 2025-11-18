@@ -1,11 +1,32 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { CheckCircle, ArrowRight, FileText, Globe, Shield, Truck, Users, TrendingUp, Clock, Award, Zap } from "lucide-react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { CheckCircle, ArrowRight, FileText, Globe, Shield, Users, TrendingUp, Clock, Award, Zap, ChevronDown } from "lucide-react"
 import { Navbar, Footer } from "@/components/layout"
-import PageHero from "@/components/shared/PageHero"
 import { SellerSignupModal, SellerLoginModal } from "@/components/auth"
+import toast from "react-hot-toast"
+
+function LoginModalHandler({ setIsLoginModalOpen }: { setIsLoginModalOpen: (open: boolean) => void }) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const openLogin = searchParams.get("openLogin")
+    const verified = searchParams.get("verified")
+
+    if (openLogin === "true") {
+      setIsLoginModalOpen(true)
+      
+      if (verified === "true") {
+        toast.success("Email verified successfully! Please log in to continue.")
+      } else if (verified === "already") {
+        toast.success("Your email is already verified. Please log in to continue.")
+      }
+    }
+  }, [searchParams, setIsLoginModalOpen])
+
+  return null
+}
 
 export default function BecomeSellerPage() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
@@ -153,18 +174,193 @@ export default function BecomeSellerPage() {
     },
   ]
 
+  const topSellers = [
+    {
+      name: "SpiceWorld Exports",
+      country: "Kochi, India",
+      image: "/professional-man-1.jpg",
+      stats: { products: 24, rating: 4.9, years: 8 },
+    },
+    {
+      name: "Golden Masala Co.",
+      country: "Surat, India",
+      image: "/professional-woman-1.jpg",
+      stats: { products: 18, rating: 4.8, years: 6 },
+    },
+    {
+      name: "Heritage Spices",
+      country: "Guntur, India",
+      image: "/professional-man-2.png",
+      stats: { products: 30, rating: 5.0, years: 10 },
+    },
+    {
+      name: "Saffron Valley",
+      country: "Jammu, India",
+      image: "/professional-woman-2.png",
+      stats: { products: 12, rating: 4.7, years: 5 },
+    },
+    {
+      name: "Deccan Traders",
+      country: "Hyderabad, India",
+      image: "/professional-man-1.jpg",
+      stats: { products: 22, rating: 4.8, years: 7 },
+    },
+    {
+      name: "Coastal Spices",
+      country: "Mangalore, India",
+      image: "/professional-woman-1.jpg",
+      stats: { products: 16, rating: 4.6, years: 4 },
+    },
+    {
+      name: "Himalayan Spice House",
+      country: "Dehradun, India",
+      image: "/professional-woman-1.jpg",
+      stats: { products: 14, rating: 4.7, years: 5 },
+    },
+  ]
+
+  const faqs = [
+    {
+      question: "How long does verification take?",
+      answer:
+        "Once you submit all required documents, our team typically reviews and verifies your account within 2-5 business days. The timeline may vary based on the completeness of your documentation.",
+    },
+    {
+      question: "What happens if my documents are rejected?",
+      answer:
+        "If your documents don't meet our requirements, our team will provide specific feedback on what needs to be corrected. You can resubmit updated documents for review.",
+    },
+    {
+      question: "Is there a fee to become a seller?",
+      answer:
+        "Creating a seller account and going through verification is free. We only charge a commission on successful sales, ensuring you only pay when you make money.",
+    },
+    {
+      question: "Can I sell if I don't have all certifications?",
+      answer:
+        "Some certifications are mandatory (like IEC, FSSAI), while others are optional but recommended. Our verification process will guide you on what's required for your specific business type.",
+    },
+    {
+      question: "How do I get paid?",
+      answer:
+        "Payments are securely processed through our escrow system. Funds are held until the buyer confirms receipt and satisfaction, then released to your registered bank account.",
+    },
+  ]
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
+
   return (
     <>
+      <Suspense fallback={null}>
+        <LoginModalHandler setIsLoginModalOpen={setIsLoginModalOpen} />
+      </Suspense>
       <main className="min-h-screen bg-white">
         <Navbar />
-        
-        <PageHero
-          title="Become a Seller on Yogreet"
-          subtitle="Join India's Premier Spice Export Platform"
-          description="Connect with global buyers, expand your business, and grow your spice export business with Yogreet's trusted marketplace."
-        />
+        {/* Hero Section with Background Video */}
+        <section className="relative overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0"
+          >
+            <source src="/seller-hero.mp4" type="video/mp4" />
+          </video>
+          {/* Overlay for readability */}
+          <div className="absolute inset-0 bg-black/50 z-10"></div>
+          {/* Optional left-to-right gradient emphasis */}
+          <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/20 to-transparent z-10"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 min-h-[520px] md:min-h-[680px] z-20 flex items-center">
+            <div className="max-w-3xl">
+              <h1 className="text-3xl md:text-5xl font-poppins font-semibold text-white leading-tight mb-4">
+                Become a Seller on Yogreet
+              </h1>
+              <p className="text-white/90 font-inter text-base md:text-lg mb-8 max-w-2xl">
+                Join India’s premier spice export platform. Showcase your products, reach verified buyers worldwide, and grow with secure escrow payments.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleSignupClick}
+                  className="px-6 py-3 bg-white text-yogreet-sage font-manrope font-semibold hover:bg-white/90 transition-colors cursor-pointer rounded-md"
+                >
+                  Create Seller Account
+                </button>
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-6 py-3 border-2 border-white text-white font-manrope font-semibold hover:bg-white/10 transition-colors cursor-pointer rounded-md"
+                >
+                  I already have an account
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Community / Top Sellers Section */}
+          <section className="mb-20">
+            <div className="text-center mb-10">
+              <p className="text-yogreet-sage font-manrope font-semibold tracking-wide">
+                Join our consistent community
+              </p>
+              <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mt-2">
+                Trusted by Top Exporters
+              </h2>
+              <p className="text-yogreet-charcoal/80 font-inter max-w-2xl mx-auto mt-3">
+                Become part of a verified network of high-performing sellers growing globally on Yogreet.
+              </p>
+            </div>
+
+            <div className="group/cards grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {topSellers.map((seller, idx) => (
+                <div
+                  key={idx}
+                  className="group relative bg-white border border-yogreet-light-gray overflow-hidden hover:shadow-lg hover:cursor-pointer transition-shadow max-w-xs mx-auto"
+                >
+                  <div className="relative h-80 w-72 overflow-hidden bg-yogreet-light-gray">
+                    <img
+                      src={seller.image}
+                      alt={seller.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover/cards:opacity-100 hover:opacity-0"></div>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-white text-xs md:text-sm font-manrope px-2 py-1 rounded">
+                        ★ {seller.stats.rating.toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 p-4 flex items-center justify-between">
+                      <h3 className="text-lg md:text-3xl font-poppins font-semibold text-white/50 group-hover:text-white transition-colors">
+                        {seller.name}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {/* 8th CTA Card - Yogreet Sage */}
+              <div className="relative bg-yogreet-sage overflow-hidden transition-shadow max-w-xs mx-auto">
+                <div className="relative h-80 w-72 overflow-hidden bg-yogreet-sage flex items-center justify-center">
+                  <div className="text-center px-6">
+                    <h3 className="text-2xl md:text-3xl font-poppins font-semibold text-white mb-3">
+                      Become a Seller
+                    </h3>
+                    <p className="text-base md:text-lg text-white/90 font-inter mb-5">
+                      Join our exporter community and grow your business.
+                    </p>
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={handleSignupClick}
+                        className="bg-white text-yogreet-sage px-4 py-2 font-manrope font-semibold hover:bg-white/90 transition-colors cursor-pointer"
+                      >
+                        Join
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Benefits Section */}
           <section className="mb-20">
             <div className="text-center mb-12">
@@ -376,13 +572,12 @@ export default function BecomeSellerPage() {
               </div>
             </div>
           </section>
-
+        </div>
+        
           {/* CTA Section */}
-          <section className="text-center mb-20">
-            <div className="bg-yogreet-sage rounded-xs p-12 text-white">
-              <h2 className="text-3xl md:text-4xl font-poppins font-semibold mb-4">
-                Ready to Start Selling?
-              </h2>
+          <section className="text-center mb-20 w-full bg-black/80 py-12 md:py-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
+              <h2 className="text-3xl md:text-4xl font-poppins font-semibold mb-4">Ready to Start Selling?</h2>
               <p className="text-white/90 font-inter text-lg mb-8 max-w-2xl mx-auto">
                 Join Yogreet today and connect with buyers from around the world. Get started in minutes.
               </p>
@@ -404,6 +599,7 @@ export default function BecomeSellerPage() {
             </div>
           </section>
 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* FAQ Section */}
           <section className="mb-20">
             <div className="text-center mb-12">
@@ -412,51 +608,33 @@ export default function BecomeSellerPage() {
               </h2>
             </div>
 
-            <div className="max-w-3xl mx-auto space-y-6">
-              <div className="bg-yogreet-light-gray p-6 rounded-lg">
-                <h3 className="text-xl font-poppins font-semibold text-yogreet-charcoal mb-2">
-                  How long does verification take?
-                </h3>
-                <p className="text-yogreet-charcoal font-inter">
-                  Once you submit all required documents, our team typically reviews and verifies your account within 2-5 business days. The timeline may vary based on the completeness of your documentation.
-                </p>
-              </div>
-
-              <div className="bg-yogreet-light-gray p-6 rounded-lg">
-                <h3 className="text-xl font-poppins font-semibold text-yogreet-charcoal mb-2">
-                  What happens if my documents are rejected?
-                </h3>
-                <p className="text-yogreet-charcoal font-inter">
-                  If your documents don't meet our requirements, our team will provide specific feedback on what needs to be corrected. You can resubmit updated documents for review.
-                </p>
-              </div>
-
-              <div className="bg-yogreet-light-gray p-6 rounded-lg">
-                <h3 className="text-xl font-poppins font-semibold text-yogreet-charcoal mb-2">
-                  Is there a fee to become a seller?
-                </h3>
-                <p className="text-yogreet-charcoal font-inter">
-                  Creating a seller account and going through verification is free. We only charge a commission on successful sales, ensuring you only pay when you make money.
-                </p>
-              </div>
-
-              <div className="bg-yogreet-light-gray p-6 rounded-lg">
-                <h3 className="text-xl font-poppins font-semibold text-yogreet-charcoal mb-2">
-                  Can I sell if I don't have all certifications?
-                </h3>
-                <p className="text-yogreet-charcoal font-inter">
-                  Some certifications are mandatory (like IEC, FSSAI), while others are optional but recommended. Our verification process will guide you on what's required for your specific business type.
-                </p>
-              </div>
-
-              <div className="bg-yogreet-light-gray p-6 rounded-lg">
-                <h3 className="text-xl font-poppins font-semibold text-yogreet-charcoal mb-2">
-                  How do I get paid?
-                </h3>
-                <p className="text-yogreet-charcoal font-inter">
-                  Payments are securely processed through our escrow system. Funds are held until the buyer confirms receipt and satisfaction, then released to your registered bank account.
-                </p>
-              </div>
+            <div className="max-w-3xl mx-auto space-y-4">
+              {faqs.map((faq, idx) => {
+                const isOpen = openFaqIndex === idx
+                return (
+                  <div key={idx} className="bg-yogreet-light-gray rounded-lg">
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <h3 className="text-base md:text-lg font-poppins font-semibold text-yogreet-charcoal">
+                        {faq.question}
+                      </h3>
+                      <button
+                        aria-label={isOpen ? 'Collapse answer' : 'Expand answer'}
+                        onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                        className="p-2 rounded-md text-yogreet-charcoal hover:bg-white/40 cursor-pointer"
+                      >
+                        <ChevronDown className={`w-5 h-5 ${isOpen ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+                    {isOpen && (
+                      <div className="px-4 pb-4">
+                        <p className="text-yogreet-charcoal font-inter">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </section>
         </div>

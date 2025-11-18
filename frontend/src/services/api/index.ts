@@ -19,7 +19,7 @@ export const BuyerApi = createApi({
     baseUrl: `${BASE_API_URL}/buyer`,
     credentials: "include",
   }),
-  tagTypes: ["Buyer", "Cart", "Samples"],
+  tagTypes: ["Buyer", "Cart"],
   endpoints: () => ({}),
 });
 
@@ -29,9 +29,10 @@ export const SellerApi = createApi({
     baseUrl: `${BASE_API_URL}/seller`,
     credentials: "include",
   }),
-  tagTypes: ["Seller"],
+  tagTypes: ["Seller", "Products"],
   endpoints: () => ({}),
 });
 
 export { ProductApi, useGetProductsQuery } from "./productApi";
+export { PublicApi, useGetPublicSellerProfileQuery } from "./publicApi";
 

@@ -8,6 +8,7 @@ import authRoutes from "./routes/common/auth.routes";
 import buyerRoutes from "./routes/Buyer/buyer.routes";
 import sellerRoutes from "./routes/Seller/seller.routes";
 import productRoutes from "./routes/common/product.routes";
+import publicSellerRoutes from "./routes/common/seller.routes";
 
 // Load .env variables
 dotenv.config();
@@ -45,6 +46,9 @@ app.use("/api/auth", authRoutes);
 
 // Product routes (public)
 app.use("/api/products", productRoutes);
+
+// Public seller routes (for buyers to view seller profiles)
+app.use("/api/sellers", publicSellerRoutes);
 
 // Buyer routes
 app.use("/api/buyer", buyerRoutes);
