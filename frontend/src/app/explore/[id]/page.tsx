@@ -20,14 +20,16 @@ function transformProductForDetail(product: any) {
 
   const sellerName = product.seller?.companyName || product.seller?.fullName || "Unknown Seller"
   const sellerId = product.seller?.id || null
+  const sellerEmail = product.seller?.email || null
   const sellerProfilePicture = product.seller?.profilePicture || product.seller?.avatar || null
   const sellerLocation = product.seller?.businessAddress
     ? `${product.seller.businessAddress.city || ""}, ${product.seller.businessAddress.country || ""}`.trim().replace(/^,\s*/, "").replace(/,\s*$/, "")
     : "Unknown Location"
-  const sellerAboutStore = product.seller?.aboutStore || null
+  const sellerAbout = product.seller?.about || null
   const sellerBusinessType = product.seller?.businessType || null
   const sellerBusinessLogo = product.seller?.businessLogo || null
   const sellerCreatedAt = product.seller?.createdAt || null
+  const sellerProductCategories = product.seller?.productCategories || []
 
   // Get product images - always return an array
   const images = product.productImages && product.productImages.length > 0
@@ -58,6 +60,7 @@ function transformProductForDetail(product: any) {
     name: product.productName,
     seller: sellerName,
     sellerId,
+    sellerEmail,
     sellerProfilePicture,
     price, // Default price (small package price per kg)
     // Package pricing
@@ -80,10 +83,11 @@ function transformProductForDetail(product: any) {
     qualityGrade: product.qualityGrade || "Standard Grade",
     sellerRating: 4.8, // You can calculate this from seller reviews if available
     sellerLocation,
-    sellerAboutStore,
+    sellerAbout,
     sellerBusinessType,
     sellerBusinessLogo,
     sellerCreatedAt,
+    sellerProductCategories,
     reviewsList: reviews.map((review: any) => ({
       id: review.id,
       userId: review.buyerId || review.id,
@@ -505,7 +509,10 @@ export default function ProductDetailPage() {
                     </div>
                     
                     <p className="text-sm text-yogreet-warm-gray mb-3">
-                      {product.sellerBusinessType || "Spice Seller"} | Premium Quality Spices
+                      {product.sellerBusinessType || "Spice Exporter"}
+                      {product.sellerProductCategories && product.sellerProductCategories.length > 0 && (
+                        <span> • {product.sellerProductCategories.slice(0, 2).join(", ")}</span>
+                      )}
                     </p>
 
                     {/* Rating and Level */}
@@ -533,11 +540,20 @@ export default function ProductDetailPage() {
                     </div>
 
                     {/* Contact Button */}
-                    <button
-                      className="mt-4 px-5 py-2 border-2 border-yogreet-charcoal text-yogreet-charcoal font-medium hover:bg-yogreet-charcoal hover:text-white transition-colors cursor-pointer text-sm"
-                    >
-                      Contact me
-                    </button>
+                    {product.sellerEmail ? (
+                      <a
+                        href={`mailto:${product.sellerEmail}`}
+                        className="mt-4 inline-block px-5 py-2 border-2 border-yogreet-charcoal text-yogreet-charcoal font-medium hover:bg-yogreet-charcoal hover:text-white transition-colors cursor-pointer text-sm"
+                      >
+                        Contact me
+                      </a>
+                    ) : (
+                      <button
+                        className="mt-4 px-5 py-2 border-2 border-yogreet-charcoal text-yogreet-charcoal font-medium hover:bg-yogreet-charcoal hover:text-white transition-colors cursor-pointer text-sm"
+                      >
+                        Contact me
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -552,14 +568,6 @@ export default function ProductDetailPage() {
                           {product.sellerLocation || "India"}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-yogreet-warm-gray mb-1">Avg. response time</p>
-                        <p className="text-sm font-semibold text-yogreet-charcoal">1 hour</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-yogreet-warm-gray mb-1">Languages</p>
-                        <p className="text-sm font-semibold text-yogreet-charcoal">English, Hindi</p>
-                      </div>
                     </div>
 
                     {/* Right Column */}
@@ -572,10 +580,6 @@ export default function ProductDetailPage() {
                             : "N/A"}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-yogreet-warm-gray mb-1">Last delivery</p>
-                        <p className="text-sm font-semibold text-yogreet-charcoal">about 2 hours</p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -584,27 +588,12 @@ export default function ProductDetailPage() {
                 <div>
                   <h4 className="text-lg font-semibold text-yogreet-charcoal mb-3">About</h4>
                   <div className="text-sm text-yogreet-warm-gray leading-relaxed space-y-2">
-                    {product.sellerAboutStore ? (
-                      <p className="whitespace-pre-line">{product.sellerAboutStore}</p>
+                    {product.sellerAbout ? (
+                      <p className="whitespace-pre-line">{product.sellerAbout}</p>
                     ) : (
-                      <>
-                        <p>
-                          Hello Spice Lovers,
-                        </p>
-                        <p>
-                          I'm {product.seller}, a verified spice seller with years of experience in providing premium quality spices directly from India. I specialize in sourcing and exporting authentic Indian spices that meet international quality standards.
-                        </p>
-                        <p>
-                          Whether you're looking for bulk orders or premium quality spices, I'm committed to delivering the finest products that elevate your culinary experiences. My spices are carefully selected, processed, and packaged to maintain their freshness and flavor.
-                        </p>
-                        <p>
-                          Ready to explore premium Indian spices? Let's discuss your requirements in detail.
-                        </p>
-                        <p>
-                          Regards,<br />
-                          {product.seller}
-                        </p>
-                      </>
+                      <p className="text-yogreet-warm-gray italic">
+                        No description available.
+                      </p>
                     )}
                   </div>
                 </div>
@@ -1014,12 +1003,22 @@ export default function ProductDetailPage() {
                     Continue
                     <FiArrowLeft className="w-4 h-4 rotate-180" />
                   </button>
-                  <button
-                    className="w-full border-2 border-gray-300 text-yogreet-charcoal py-3 font-medium hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    Contact me
-                    <FiChevronDown className="w-4 h-4" />
-                  </button>
+                  {product.sellerEmail ? (
+                    <a
+                      href={`mailto:${product.sellerEmail}`}
+                      className="w-full border-2 border-gray-300 text-yogreet-charcoal py-3 font-medium hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      Contact me
+                      <FiChevronDown className="w-4 h-4" />
+                    </a>
+                  ) : (
+                    <button
+                      className="w-full border-2 border-gray-300 text-yogreet-charcoal py-3 font-medium hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      Contact me
+                      <FiChevronDown className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

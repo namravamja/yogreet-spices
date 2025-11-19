@@ -4,16 +4,13 @@ import type React from "react";
 import { useRef, useState } from "react";
 
 interface SellerVerificationDataStep1 {
-  companyName: string;
-  businessType: string;
-  incorporationCertificate?: string;
-  msmeUdyamCertificate?: string;
   panNumber: string;
   gstNumber: string;
-  businessAddressProof?: string;
-  fullName: string; // Merged from fullName and ownerFullName
-  ownerFullName?: string; // Backward compatibility
   ownerIdDocument?: string;
+  incorporationCertificate?: string;
+  msmeUdyamCertificate?: string;
+  businessAddressProof?: string;
+  ownerIdNumber?: string;
 }
 
 interface Step1Props {
@@ -131,21 +128,9 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
     <div>
       <h2 className="text-xl sm:text-2xl font-light text-yogreet-charcoal mb-4 sm:mb-6">Business Identity Verification</h2>
 
-      {/* Top priority fields moved to the top: PAN, GST, Owner Full Name, Owner ID Document */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <label className="block text-sm font-medium text-stone-700 mb-2">Owner Full Name</label>
-          <input
-            type="text"
-            value={data.fullName || data.ownerFullName || ""}
-            onChange={(e) => {
-              handleChange("fullName", e.target.value);
-              if (data.ownerFullName !== undefined) handleChange("ownerFullName", e.target.value);
-            }}
-            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
-          />
-        </div>
-        <div className="md:col-span-1">
+      {/* PAN Number and GST Number */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">PAN Number</label>
           <input
             type="text"
@@ -154,7 +139,7 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
             className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
           />
         </div>
-        <div className="md:col-span-1">
+        <div>
           <label className="block text-sm font-medium text-stone-700 mb-2">GST Number</label>
           <input
             type="text"
@@ -165,30 +150,15 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
         </div>
       </div>
 
-      {/* Company Name and Business Type moved to second place */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-stone-700 mb-2">Company Name</label>
+      {/* Owner ID Number */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-stone-700 mb-2">Owner ID Number</label>
               <input
                 type="text"
-                value={data.companyName || ""}
-                onChange={(e) => handleChange("companyName", e.target.value)}
+          value={data.ownerIdNumber || ""}
+          onChange={(e) => handleChange("ownerIdNumber", e.target.value)}
                 className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
               />
-            </div>
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-stone-700 mb-2">Business Type</label>
-              <input
-                type="text"
-                value={data.businessType || ""}
-                onChange={(e) => handleChange("businessType", e.target.value)}
-                className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">

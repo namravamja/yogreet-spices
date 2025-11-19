@@ -1,6 +1,6 @@
 "use client";
 
-import { Truck, Package, Globe, Shield, Edit } from "lucide-react";
+import { Truck, Package, Globe, Shield, Edit, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SellerData {
@@ -19,6 +19,17 @@ export default function ShippingLogistics({
   onEdit,
 }: ShippingLogisticsProps) {
   const router = useRouter();
+  
+  // Check if all required fields are complete (Step 4: 3 fields)
+  const isComplete = 
+    sellerData?.shippingType?.trim() &&
+    Array.isArray(sellerData?.serviceAreas) &&
+    sellerData.serviceAreas.length > 0 &&
+    sellerData?.returnPolicy?.trim();
+  
+  const buttonText = isComplete ? "Edit" : "Upload";
+  const ButtonIcon = isComplete ? Edit : Upload;
+  
   return (
     <div className="bg-white border border-stone-200 shadow-sm">
       <div className="p-6 border-b border-stone-200">
@@ -31,8 +42,8 @@ export default function ShippingLogistics({
             onClick={() => (onEdit ? onEdit() : router.push("/seller/verify-document/4"))}
             className="px-3 py-1.5 border border-yogreet-sage text-yogreet-sage rounded-md hover:bg-yogreet-sage/10 transition-colors cursor-pointer text-sm font-manrope flex items-center gap-1.5"
           >
-            <Edit className="w-4 h-4" />
-            Edit
+            <ButtonIcon className="w-4 h-4" />
+            {buttonText}
           </button>
         </div>
       </div>

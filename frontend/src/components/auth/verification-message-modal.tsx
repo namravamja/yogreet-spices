@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { FiX, FiMail } from "react-icons/fi"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface VerificationMessageModalProps {
   isOpen: boolean
@@ -28,13 +29,24 @@ export function VerificationMessageModal({ isOpen, onClose }: VerificationMessag
     }
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <motion.div
+          key="modal-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-none transition-opacity cursor-pointer"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-none cursor-pointer"
         onClick={(e) => {
           e.stopPropagation()
           onClose()
@@ -42,7 +54,15 @@ export function VerificationMessageModal({ isOpen, onClose }: VerificationMessag
       />
 
       {/* Modal Content */}
-      <div 
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 30 }}
+            transition={{ 
+              duration: 0.25, 
+              ease: [0.4, 0, 0.2, 1],
+              opacity: { duration: 0.2 }
+            }}
         className="relative bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -83,8 +103,10 @@ export function VerificationMessageModal({ isOpen, onClose }: VerificationMessag
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 

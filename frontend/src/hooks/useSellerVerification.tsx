@@ -30,7 +30,6 @@ interface SellerData {
   // Document verification fields (from verify-document)
   companyName?: string;
   ownerFullName?: string;
-  ownerIdNumber?: string;
   iecCode?: string;
   apedaRegistrationNumber?: string;
   spicesBoardRegistrationNumber?: string;
@@ -38,6 +37,10 @@ interface SellerData {
   bankAccountNumber?: string;
   bankIfscCode?: string;
   fssaiLicenseNumber?: string;
+
+  // Completion percentages from database
+  profileCompletion?: number | null;
+  documentCompletion?: number | null;
 }
 
 interface UseSellerVerificationResult {
@@ -88,89 +91,30 @@ export function useSellerVerification(): UseSellerVerificationResult {
     return null;
   }, [sellerResponse]);
 
-  // Calculate profile completion percentage
+  // Use profile completion percentage from database
   const profileProgress = useMemo(() => {
     if (!sellerData) return 0;
 
-    try {
-      let completed = 0;
-      const total = 20; // Total required fields across all steps
-
-      // Step 1: Seller Account & Business Basics (6 fields)
-      if (safeString(sellerData.fullName)) completed++;
-      if (safeString(sellerData.storeName)) completed++;
-      if (safeString(sellerData.email)) completed++;
-      if (safeString(sellerData.mobile)) completed++;
-      if (safeString(sellerData.businessType)) completed++;
-      if (
-        safeArray(sellerData.productCategories).length > 0
-      )
-        completed++;
-
-      // Step 2: Address, Banking & Tax Details (11 fields)
-      if (safeString(sellerData.businessAddress?.street)) completed++;
-      if (safeString(sellerData.businessAddress?.city)) completed++;
-      if (safeString(sellerData.businessAddress?.state)) completed++;
-      if (safeString(sellerData.businessAddress?.country)) completed++;
-      if (safeString(sellerData.businessAddress?.pinCode)) completed++;
-      if (safeString(sellerData.bankAccountName)) completed++;
-      if (safeString(sellerData.bankName)) completed++;
-      if (safeString(sellerData.accountNumber)) completed++;
-      if (safeString(sellerData.ifscCode)) completed++;
-      // GST and PAN may be in documents, check if available in profile
-      if (safeString((sellerData as any).gstNumber)) completed++;
-      if (safeString((sellerData as any).panNumber)) completed++;
-
-      // Step 3: Preferences, Logistics & Agreement (3 fields)
-      if (safeString(sellerData.shippingType)) completed++;
-      if (
-        safeArray(sellerData.serviceAreas).length > 0
-      )
-        completed++;
-      if (safeString(sellerData.returnPolicy)) completed++;
-
-      return Math.round((completed / total) * 100);
-    } catch (error) {
-      console.error("Error calculating profile progress:", error);
-      return 0;
+    // Use the actual value from database if available
+    if (typeof sellerData.profileCompletion === "number") {
+      return Math.max(0, Math.min(100, sellerData.profileCompletion));
     }
+
+    // Fallback to 0 if not available
+    return 0;
   }, [sellerData]);
 
-  // Calculate document verification completion percentage
+  // Use document verification completion percentage from database
   const documentVerificationProgress = useMemo(() => {
     if (!sellerData) return 0;
 
-    try {
-      let completed = 0;
-      
-      // Required fields from verify-document steps
-      // Note: businessType and panNumber/gstNumber may come from profile or verification
-      const requiredFields = [
-        safeString(sellerData.companyName),
-        safeString(sellerData.businessType || ""), // Can be from profile or verification
-        safeString((sellerData as any).panNumber || ""), // Check both places
-        safeString((sellerData as any).gstNumber || ""), // Check both places
-        safeString(sellerData.ownerFullName),
-        safeString(sellerData.ownerIdNumber),
-        safeString(sellerData.iecCode),
-        safeString(sellerData.apedaRegistrationNumber),
-        safeString(sellerData.spicesBoardRegistrationNumber),
-        safeString(sellerData.bankAccountHolderName),
-        safeString(sellerData.bankAccountNumber),
-        safeString(sellerData.bankIfscCode),
-        safeString(sellerData.fssaiLicenseNumber),
-      ];
-
-      // Count completed required fields
-      completed = requiredFields.filter((field) => field.length > 0).length;
-
-      // Calculate percentage (13 required fields total)
-      const total = 13;
-      return Math.round((completed / total) * 100);
-    } catch (error) {
-      console.error("Error calculating document verification progress:", error);
-      return 0;
+    // Use the actual value from database if available
+    if (typeof sellerData.documentCompletion === "number") {
+      return Math.max(0, Math.min(100, sellerData.documentCompletion));
     }
+
+    // Fallback to 0 if not available
+    return 0;
   }, [sellerData]);
 
   // Check if profile is 100% complete

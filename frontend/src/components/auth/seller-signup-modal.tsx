@@ -6,6 +6,7 @@ import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser, FiShoppingBag } from "rea
 import { useSignupSellerMutation } from "@/services/api/authApi"
 import toast from "react-hot-toast"
 import { useVerificationModal } from "@/components/auth/verification-modal-provider"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface SellerSignupModalProps {
   isOpen: boolean
@@ -94,13 +95,24 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
     }
   }, [isOpen])
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <motion.div
+          key="modal-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-100 flex items-center justify-center p-4"
+        >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-none transition-opacity cursor-pointer"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-none cursor-pointer"
         onClick={(e) => {
           e.stopPropagation()
           onClose()
@@ -108,7 +120,15 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
       />
 
       {/* Modal Content */}
-      <div 
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 30 }}
+            transition={{ 
+              duration: 0.25, 
+              ease: [0.4, 0, 0.2, 1],
+              opacity: { duration: 0.2 }
+            }}
         className="relative bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -148,7 +168,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.fullName}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Enter your full name"
                 />
               </div>
@@ -171,7 +191,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.companyName}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Enter your store/company name"
                 />
               </div>
@@ -194,7 +214,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Enter your email"
                 />
               </div>
@@ -217,7 +237,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Create a password"
                 />
                 <button
@@ -239,7 +259,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center gap-2 mt-6 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-sage hover:bg-yogreet-sage/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-sage disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
+              className="w-full flex justify-center items-center gap-2 mt-6 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-[#212121] hover:bg-[#212121]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#212121] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
             >
               {isLoading ? (
                 <>
@@ -255,13 +275,15 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
           <div className="mt-6 text-center">
             <button
               onClick={onSwitchToLogin}
-              className="font-medium text-yogreet-sage hover:text-yogreet-charcoal cursor-pointer font-inter"
+              className="font-medium text-[#212121] hover:text-yogreet-charcoal cursor-pointer font-inter"
             >
               Already have a seller account? Sign in
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

@@ -61,7 +61,7 @@ const quickStart = [
     step: "01",
     title: "Verify Your Documents",
     description: "Complete seller verification to start exporting",
-    href: "/seller/verify-document",
+    href: "/seller/verify-document", // Will be dynamically updated based on progress
     icon: CheckCircle2,
   },
   {
@@ -232,10 +232,10 @@ export default function SellerLanding() {
                         </div>
                         {profileProgress < 100 && (
                           <Link
-                            href="/seller/edit-profile"
+                            href={profileProgress > 40 ? "/seller/profile" : "/seller/edit-profile"}
                             className="inline-flex items-center justify-center w-full mt-5 px-4 py-2.5 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg font-manrope font-medium text-sm transition-all duration-300 group"
                           >
-                            Complete Profile
+                            {profileProgress > 40 ? "View Profile" : "Complete Profile"}
                             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                           </Link>
                         )}
@@ -277,10 +277,10 @@ export default function SellerLanding() {
                         </div>
                         {documentVerificationProgress < 100 && (
                           <Link
-                            href="/seller/verify-document"
+                            href={documentVerificationProgress > 40 ? "/seller/documents" : "/seller/verify-document"}
                             className="inline-flex items-center justify-center w-full mt-5 px-4 py-2.5 bg-yogreet-red/10 text-yogreet-red hover:bg-yogreet-red hover:text-white rounded-lg font-manrope font-medium text-sm transition-all duration-300 group"
                           >
-                            Complete Verification
+                            {documentVerificationProgress > 40 ? "View Documents" : "Complete Verification"}
                             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                           </Link>
                         )}
@@ -406,10 +406,14 @@ export default function SellerLanding() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {quickStart.map((item, index) => {
                 const Icon = item.icon
+                // Dynamically set href for "Verify Your Documents" based on progress
+                const href = item.href === "/seller/verify-document" && documentVerificationProgress > 40
+                  ? "/seller/documents"
+                  : item.href
                 return (
                   <Link
                     key={index}
-                    href={item.href}
+                    href={href}
                     className="group bg-white rounded-lg p-6 border border-stone-200 hover:shadow-md hover:border-yogreet-sage/30 transition-all duration-300"
                   >
                     <div className="flex items-start">
@@ -490,10 +494,10 @@ export default function SellerLanding() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/seller/verify-document"
+                href={documentVerificationProgress > 40 ? "/seller/documents" : "/seller/verify-document"}
                 className="bg-yogreet-sage text-white px-8 py-4 rounded-lg hover:bg-yogreet-sage/90 transition-all duration-300 font-manrope font-medium flex items-center justify-center group"
               >
-                Verify Documents
+                {documentVerificationProgress > 40 ? "View Documents" : "Verify Documents"}
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link

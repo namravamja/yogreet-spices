@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, FileCheck2, Edit } from "lucide-react";
+import { Globe, FileCheck2, Edit, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface ExportEligibilityVerificationProps {
@@ -13,6 +13,24 @@ export default function ExportEligibilityVerification({
   onEdit,
 }: ExportEligibilityVerificationProps) {
   const router = useRouter();
+  
+  // Check if all required fields are complete (Step 2: 11 fields)
+  const isComplete = 
+    sellerData?.iecCode?.trim() &&
+    sellerData?.iecCertificate &&
+    sellerData?.tradeLicense &&
+    sellerData?.apedaRegistrationNumber?.trim() &&
+    sellerData?.apedaCertificate &&
+    sellerData?.spicesBoardRegistrationNumber?.trim() &&
+    sellerData?.spicesBoardCertificate &&
+    sellerData?.bankAccountHolderName?.trim() &&
+    sellerData?.bankAccountNumber?.trim() &&
+    sellerData?.bankIfscCode?.trim() &&
+    sellerData?.bankProofDocument;
+  
+  const buttonText = isComplete ? "Edit" : "Upload";
+  const ButtonIcon = isComplete ? Edit : Upload;
+  
   return (
     <div className="bg-white border border-stone-200 shadow-sm">
       <div className="p-6 border-b border-stone-200">
@@ -25,8 +43,8 @@ export default function ExportEligibilityVerification({
             onClick={() => (onEdit ? onEdit() : router.push("/seller/verify-document/2"))}
             className="px-3 py-1.5 border border-yogreet-sage text-yogreet-sage rounded-md hover:bg-yogreet-sage/10 transition-colors cursor-pointer text-sm font-manrope flex items-center gap-1.5"
           >
-            <Edit className="w-4 h-4" />
-            Edit
+            <ButtonIcon className="w-4 h-4" />
+            {buttonText}
           </button>
         </div>
       </div>

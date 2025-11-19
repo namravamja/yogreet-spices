@@ -2,71 +2,80 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useGetTopSellersQuery } from "@/services/api/publicApi"
+import { Star, Store, Package } from "lucide-react"
+import Image from "next/image"
 
 export function TopSpicesSection() {
   const [isHovered, setIsHovered] = useState(false)
   const router = useRouter()
-  
-  const spices = [
-    {
-      id: "1",
-      name: "Turmeric Powder",
-      origin: "Telangana, India",
-      image: "/turmeric-powder-spice.jpg",
-    },
-    {
-      id: "2",
-      name: "Cumin Seeds",
-      origin: "Gujarat, India",
-      image: "/cumin-seeds-spice.jpg",
-    },
-    {
-      id: "3",
-      name: "Red Chili Powder",
-      origin: "Andhra Pradesh, India",
-      image: "/red-chili-powder-spice.jpg",
-    },
-    {
-      id: "4",
-      name: "Coriander Powder",
-      origin: "Rajasthan, India",
-      image: "/coriander-powder-spice.jpg",
-    },
-    {
-      id: "5",
-      name: "Cardamom Pods",
-      origin: "Kerala, India",
-      image: "/cardamom-pods-spice.jpg",
-    },
-    {
-      id: "6",
-      name: "Cloves",
-      origin: "Kerala, India",
-      image: "/cloves-whole-spice.jpg",
-    },
-  ]
+  const { data: sellers = [], isLoading } = useGetTopSellersQuery(12)
 
-  const handleCardClick = (id: string) => {
-    router.push(`/explore/${id}`)
+  const handleCardClick = (sellerId: string) => {
+    router.push(`/buyer/seller/${sellerId}`)
   }
 
-  const handleViewDetailsClick = (e: React.MouseEvent, id: string) => {
+  const handleViewDetailsClick = (e: React.MouseEvent, sellerId: string) => {
     e.stopPropagation()
-    router.push(`/explore/${id}`)
+    router.push(`/buyer/seller/${sellerId}`)
   }
 
-  // Duplicate spices for infinite scroll effect
-  const duplicatedSpices = [...spices, ...spices]
+  // Duplicate sellers for infinite scroll effect
+  const duplicatedSellers = sellers.length > 0 ? [...sellers, ...sellers] : []
+
+  if (isLoading) {
+    return (
+      <section className="bg-yogreet-light-gray py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
+              Our Top Sellers
+            </h2>
+            <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
+              Discover trusted spice exporters from India with verified credentials and quality products.
+            </p>
+          </div>
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yogreet-red mx-auto mb-4"></div>
+              <p className="text-stone-600 font-inter">Loading top sellers...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (sellers.length === 0) {
+    return (
+      <section className="bg-yogreet-light-gray py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
+              Our Top Sellers
+            </h2>
+            <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
+              Discover trusted spice exporters from India with verified credentials and quality products.
+            </p>
+          </div>
+          <div className="text-center py-16">
+            <Store className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+            <p className="text-stone-600 font-inter">No sellers available at the moment.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="bg-yogreet-light-gray py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
-            Top Exported Spices
+            Our Top Sellers
           </h2>
           <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
-            Discover the most sought-after Indian spices from verified sellers worldwide.
+            Discover trusted spice exporters from India with verified credentials and quality products.
           </p>
         </div>
       </div>
@@ -85,27 +94,74 @@ export function TopSpicesSection() {
               width: 'calc(200% + 2rem)' // Double width for seamless loop
             }}
           >
-            {duplicatedSpices.map((spice, index) => (
+            {duplicatedSellers.map((seller, index) => (
               <div 
-                key={index} 
-                onClick={() => handleCardClick(spice.id)}
+                key={`${seller.id}-${index}`} 
+                onClick={() => handleCardClick(seller.id)}
                 className="shrink-0 w-80 bg-white overflow-hidden hover:shadow-lg transition-shadow rounded-xs cursor-pointer"
               >
                 <div className="relative aspect-square bg-gray-200 overflow-hidden">
-                  <img
-                    src={spice.image || "/placeholder.svg"}
-                    alt={spice.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
+                  {seller.logo ? (
+                    <Image
+                      src={seller.logo}
+                      alt={seller.name}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-stone-200">
+                      <Store className="w-16 h-16 text-stone-400" />
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-poppins font-semibold text-yogreet-charcoal text-base mb-2">{spice.name}</h3>
-                  <p className="text-yogreet-charcoal font-inter text-sm mb-3">{spice.origin}</p>
+                  <h3 className="font-poppins font-semibold text-yogreet-charcoal text-base mb-2 line-clamp-1">
+                    {seller.name}
+                  </h3>
+                  <p className="text-yogreet-charcoal font-inter text-sm mb-3 line-clamp-1">
+                    {seller.location}
+                  </p>
+                  
+                  {/* Rating and Stats */}
+                  <div className="flex items-center gap-4 mb-3">
+                    {seller.averageRating > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-medium text-yogreet-charcoal font-manrope">
+                          {seller.averageRating.toFixed(1)}
+                        </span>
+                        {seller.totalReviews > 0 && (
+                          <span className="text-xs text-stone-500 font-inter">
+                            ({seller.totalReviews})
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {seller.totalProducts > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Package className="w-4 h-4 text-stone-500" />
+                        <span className="text-sm text-stone-600 font-inter">
+                          {seller.totalProducts} {seller.totalProducts === 1 ? 'Product' : 'Products'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {seller.about && (
+                    <p className="text-yogreet-charcoal font-inter text-xs mb-3 line-clamp-2">
+                      {seller.about}
+                    </p>
+                  )}
+
                   <button 
-                    onClick={(e) => handleViewDetailsClick(e, spice.id)}
+                    onClick={(e) => handleViewDetailsClick(e, seller.id)}
                     className="w-full px-4 py-2 bg-yogreet-red text-white font-manrope font-medium hover:opacity-90 transition-opacity cursor-pointer"
                   >
-                    View Details
+                    View Profile
                   </button>
                 </div>
               </div>

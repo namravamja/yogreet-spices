@@ -18,16 +18,13 @@ type CacheResponse<T> = { source: "cache" | "api"; data: T };
 
 interface SellerVerificationData {
   // Step 1: Business Identity Verification
-  companyName: string; // Merged from storeName and companyName
-  businessType: string;
-  incorporationCertificate?: string;
-  msmeUdyamCertificate?: string;
   panNumber: string;
   gstNumber: string;
-  businessAddressProof?: string;
-  fullName: string; // Merged from fullName and ownerFullName (used as ownerFullName in form)
-  ownerFullName?: string; // For backward compatibility, derived from fullName
   ownerIdDocument?: string;
+  incorporationCertificate?: string;
+  msmeUdyamCertificate?: string;
+  businessAddressProof?: string;
+  ownerIdNumber?: string;
 
   // Step 2: Export Eligibility Verification
   iecCode: string;
@@ -46,16 +43,17 @@ interface SellerVerificationData {
   fssaiLicenseNumber: string;
   fssaiCertificate?: string;
 
-  // Step 4: Export Documentation & Shipment Capability
+  // Step 4: Shipping & Logistics
+  shippingType: string;
+  serviceAreas: string[];
+  returnPolicy: string;
+
+  // Step 5: Export Documentation & Shipment Capability
   certificateOfOriginCapability: boolean;
   phytosanitaryCertificateCapability: boolean;
   packagingCompliance: boolean;
   fumigationCertificateCapability: boolean;
   exportLogisticsPrepared: boolean;
-  // Shipping & Logistics (moved here)
-  shippingType: string;
-  serviceAreas: string[];
-  returnPolicy: string;
 
   profileProgress?: number;
 }
@@ -122,16 +120,15 @@ export default function SellerVerifyDocumentPage() {
   }, [rawSellerData, rawVerificationData]);
 
   const [data, setData] = useState<SellerVerificationData>({
-    companyName: "",
-    businessType: "",
-    incorporationCertificate: "",
-    msmeUdyamCertificate: "",
+    // Step 1: Business Identity Verification
     panNumber: "",
     gstNumber: "",
-    businessAddressProof: "",
-    fullName: "", // Merged from fullName and ownerFullName
-    ownerFullName: "", // Backward compatibility
     ownerIdDocument: "",
+    incorporationCertificate: "",
+    msmeUdyamCertificate: "",
+    businessAddressProof: "",
+    ownerIdNumber: "",
+    // Step 2: Export Eligibility Verification
     iecCode: "",
     iecCertificate: "",
     apedaRegistrationNumber: "",
@@ -143,16 +140,19 @@ export default function SellerVerifyDocumentPage() {
     bankAccountNumber: "",
     bankIfscCode: "",
     bankProofDocument: "",
+    // Step 3: Food & Safety Compliance
     fssaiLicenseNumber: "",
     fssaiCertificate: "",
+    // Step 4: Shipping & Logistics
+    shippingType: "",
+    serviceAreas: [],
+    returnPolicy: "",
+    // Step 5: Export Documentation & Shipment Capability
     certificateOfOriginCapability: false,
     phytosanitaryCertificateCapability: false,
     packagingCompliance: false,
     fumigationCertificateCapability: false,
     exportLogisticsPrepared: false,
-  shippingType: "",
-  serviceAreas: [],
-  returnPolicy: "",
     profileProgress: 0,
   });
 
@@ -173,16 +173,13 @@ export default function SellerVerifyDocumentPage() {
     if (!originalData) return true;
     if (currentStep === 1) {
       return !(
-        (data.companyName || "") === (originalData.companyName || "") &&
-        (data.businessType || "") === (originalData.businessType || "") &&
         (data.panNumber || "") === (originalData.panNumber || "") &&
         (data.gstNumber || "") === (originalData.gstNumber || "") &&
-        ((data.fullName || data.ownerFullName || "") === (originalData.fullName || originalData.ownerFullName || "")) &&
-        // Document URL fields diffs (removal or addition)
+        (data.ownerIdDocument || "") === (originalData.ownerIdDocument || "") &&
         (data.incorporationCertificate || "") === (originalData.incorporationCertificate || "") &&
         (data.msmeUdyamCertificate || "") === (originalData.msmeUdyamCertificate || "") &&
         (data.businessAddressProof || "") === (originalData.businessAddressProof || "") &&
-        (data.ownerIdDocument || "") === (originalData.ownerIdDocument || "")
+        (data.ownerIdNumber || "") === (originalData.ownerIdNumber || "")
       );
     }
     if (currentStep === 2) {
@@ -215,6 +212,15 @@ export default function SellerVerifyDocumentPage() {
         (data.returnPolicy || "") === (originalData.returnPolicy || "")
       );
     }
+    if (currentStep === 5) {
+      return !(
+        data.certificateOfOriginCapability === originalData.certificateOfOriginCapability &&
+        data.phytosanitaryCertificateCapability === originalData.phytosanitaryCertificateCapability &&
+        data.packagingCompliance === originalData.packagingCompliance &&
+        data.fumigationCertificateCapability === originalData.fumigationCertificateCapability &&
+        data.exportLogisticsPrepared === originalData.exportLogisticsPrepared
+      );
+    }
     return true;
   };
 
@@ -243,16 +249,15 @@ export default function SellerVerifyDocumentPage() {
     if (sellerData && !originalData) {
       try {
         const loaded: SellerVerificationData = {
-          companyName: sellerData.companyName || "",
-          businessType: sellerData.businessType || "",
-          incorporationCertificate: sellerData.incorporationCertificate || "",
-          msmeUdyamCertificate: sellerData.msmeUdyamCertificate || "",
+          // Step 1: Business Identity Verification
           panNumber: sellerData.panNumber || "",
           gstNumber: sellerData.gstNumber || "",
-          businessAddressProof: sellerData.businessAddressProof || "",
-          fullName: sellerData.fullName || "", // Merged from fullName and ownerFullName
-          ownerFullName: sellerData.fullName || "", // Backward compatibility alias
           ownerIdDocument: sellerData.ownerIdDocument || "",
+          incorporationCertificate: sellerData.incorporationCertificate || "",
+          msmeUdyamCertificate: sellerData.msmeUdyamCertificate || "",
+          businessAddressProof: sellerData.businessAddressProof || "",
+          ownerIdNumber: sellerData.ownerIdNumber || "",
+          // Step 2: Export Eligibility Verification
           iecCode: sellerData.iecCode || "",
           iecCertificate: sellerData.iecCertificate || "",
           apedaRegistrationNumber: sellerData.apedaRegistrationNumber || "",
@@ -264,16 +269,19 @@ export default function SellerVerifyDocumentPage() {
           bankAccountNumber: sellerData.bankAccountNumber || (sellerData as any).accountNumber || "", // Merged from accountNumber and bankAccountNumber
           bankIfscCode: sellerData.bankIfscCode || (sellerData as any).ifscCode || "", // Merged from ifscCode and bankIfscCode
           bankProofDocument: sellerData.bankProofDocument || "",
+          // Step 3: Food & Safety Compliance
           fssaiLicenseNumber: sellerData.fssaiLicenseNumber || "",
           fssaiCertificate: sellerData.fssaiCertificate || "",
+          // Step 4: Shipping & Logistics
+          shippingType: sellerData.shippingType || "",
+          serviceAreas: Array.isArray(sellerData.serviceAreas) ? sellerData.serviceAreas : [],
+          returnPolicy: sellerData.returnPolicy || "",
+          // Step 5: Export Documentation & Shipment Capability
           certificateOfOriginCapability: sellerData.certificateOfOriginCapability === true || sellerData.certificateOfOriginCapability === "true",
           phytosanitaryCertificateCapability: sellerData.phytosanitaryCertificateCapability === true || sellerData.phytosanitaryCertificateCapability === "true",
           packagingCompliance: sellerData.packagingCompliance === true || sellerData.packagingCompliance === "true",
           fumigationCertificateCapability: sellerData.fumigationCertificateCapability === true || sellerData.fumigationCertificateCapability === "true",
           exportLogisticsPrepared: sellerData.exportLogisticsPrepared === true || sellerData.exportLogisticsPrepared === "true",
-          shippingType: sellerData.shippingType || "",
-          serviceAreas: Array.isArray(sellerData.serviceAreas) ? sellerData.serviceAreas : [],
-          returnPolicy: sellerData.returnPolicy || "",
           profileProgress: 0,
         };
         setData(loaded);
@@ -294,16 +302,13 @@ export default function SellerVerifyDocumentPage() {
     }
   };
 
-  // Calculate document completion percentage
+  // Calculate document completion percentage (matches DocumentProgress component)
   const calculateDocumentCompletion = (verificationData: SellerVerificationData): number => {
     try {
       let completed = 0;
-      const total = 30; // Updated total based on actual fields (9+11+2+3+5)
+      const total = 27; // Updated total after removing companyName, businessType, and fullName/ownerFullName (6+11+2+3+5)
 
-      // Step 1: Business Identity (9 fields)
-      if (verificationData?.companyName?.trim()) completed++;
-      if (verificationData?.businessType?.trim()) completed++;
-      if (verificationData?.fullName?.trim() || verificationData?.ownerFullName?.trim()) completed++;
+      // Step 1: Business Identity (6 fields) - excludes companyName, businessType, fullName
       if (verificationData?.panNumber?.trim()) completed++;
       if (verificationData?.gstNumber?.trim()) completed++;
       if (verificationData?.ownerIdDocument) completed++;
@@ -371,12 +376,9 @@ export default function SellerVerifyDocumentPage() {
 
       // Prepare step 1 payload
       const payload: any = {
-        companyName: data.companyName,
-        businessType: data.businessType,
         panNumber: data.panNumber || "",
         gstNumber: data.gstNumber || "",
-        fullName: data.fullName || data.ownerFullName || "",
-        ownerFullName: data.fullName || data.ownerFullName || "",
+        ownerIdNumber: data.ownerIdNumber || "",
         // Always include document URL fields, so clearing "" persists removal (when no new file)
         incorporationCertificate: data.incorporationCertificate || "",
         msmeUdyamCertificate: data.msmeUdyamCertificate || "",
@@ -548,6 +550,28 @@ export default function SellerVerifyDocumentPage() {
     }
   };
 
+  const saveStep5Data = async (): Promise<boolean> => {
+    try {
+      const payload: any = {
+        certificateOfOriginCapability: data.certificateOfOriginCapability,
+        phytosanitaryCertificateCapability: data.phytosanitaryCertificateCapability,
+        packagingCompliance: data.packagingCompliance,
+        fumigationCertificateCapability: data.fumigationCertificateCapability,
+        exportLogisticsPrepared: data.exportLogisticsPrepared,
+      };
+      // Calculate and include document completion
+      const updatedData = { ...data, ...payload };
+      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      await updateSellerVerification(payload).unwrap();
+      toast.success("Step 5 data saved successfully!");
+      return true;
+    } catch (err: any) {
+      console.error("Failed to save Step 5 data:", err);
+      toast.error(err?.data?.error || err?.data?.message || "Failed to save Step 5 data");
+      return false;
+    }
+  };
+
   const handleSave = async () => {
     let saved = false;
     if (step === 1) {
@@ -558,6 +582,8 @@ export default function SellerVerifyDocumentPage() {
       saved = await saveStep3Data();
     } else if (step === 4) {
       saved = await saveStep4Data();
+    } else if (step === 5) {
+      saved = await saveStep5Data();
     }
     return saved;
   };
@@ -629,12 +655,11 @@ export default function SellerVerifyDocumentPage() {
 
       // Prepare verification payload
       const payload: any = {
-        companyName: data.companyName,
-        businessType: data.businessType,
+        // Step 1: Business Identity Verification
         panNumber: data.panNumber,
         gstNumber: data.gstNumber,
-        fullName: data.fullName || data.ownerFullName || "", // Merged from fullName and ownerFullName
-        ownerFullName: data.fullName || data.ownerFullName, // Backward compatibility
+        ownerIdNumber: data.ownerIdNumber || "",
+        // Step 2: Export Eligibility Verification
         iecCode: data.iecCode,
         apedaRegistrationNumber: data.apedaRegistrationNumber,
         spicesBoardRegistrationNumber: data.spicesBoardRegistrationNumber,

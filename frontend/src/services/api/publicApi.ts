@@ -11,6 +11,11 @@ export const PublicApi = createApi({
   }),
   tagTypes: ["Seller", "Product"],
   endpoints: (builder) => ({
+    // Get top sellers
+    getTopSellers: builder.query({
+      query: (limit: number = 10) => `/sellers/top?limit=${limit}`,
+      providesTags: ["Seller"],
+    }),
     // Get public seller profile (for buyers to view)
     getPublicSellerProfile: builder.query({
       query: (sellerId: string) => `/sellers/${sellerId}`,
@@ -19,5 +24,5 @@ export const PublicApi = createApi({
   }),
 });
 
-export const { useGetPublicSellerProfileQuery } = PublicApi;
+export const { useGetTopSellersQuery, useGetPublicSellerProfileQuery } = PublicApi;
 

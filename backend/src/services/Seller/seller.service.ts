@@ -69,12 +69,12 @@ export interface SellerUpdateData {
 
 export interface SellerVerificationData {
   // Step 1: Business Identity Verification
-  companyName?: string; // Merged from storeName and companyName
+  panNumber?: string;
+  gstNumber?: string;
+  ownerIdDocument?: string;
   incorporationCertificate?: string;
   msmeUdyamCertificate?: string;
   businessAddressProof?: string;
-  fullName?: string; // Merged from fullName and ownerFullName (owner is the seller)
-  ownerIdDocument?: string;
   ownerIdNumber?: string;
   
   // Step 2: Export Eligibility Verification
@@ -93,19 +93,18 @@ export interface SellerVerificationData {
   // Step 3: Food & Safety Compliance
   fssaiLicenseNumber?: string;
   fssaiCertificate?: string;
-  foodQualityCertifications?: string[];
-  labTestingCapability?: boolean;
   
-  // Step 4: Export Documentation & Shipment Capability
+  // Step 4: Shipping & Logistics
+  shippingType?: string;
+  serviceAreas?: string[];
+  returnPolicy?: string;
+  
+  // Step 5: Export Documentation & Shipment Capability
   certificateOfOriginCapability?: boolean;
   phytosanitaryCertificateCapability?: boolean;
   packagingCompliance?: boolean;
   fumigationCertificateCapability?: boolean;
   exportLogisticsPrepared?: boolean;
-  // Shipping & Logistics (moved from edit-profile to verification)
-  shippingType?: string;
-  serviceAreas?: string[];
-  returnPolicy?: string;
   
   // Verification Status
   verificationStatus?: string;
@@ -176,7 +175,6 @@ const defaultSelect = {
   msmeUdyamCertificate: true,
   businessAddressProof: true,
   ownerIdDocument: true,
-  ownerIdNumber: true,
   iecCode: true,
   iecCertificate: true,
   apedaRegistrationNumber: true,
@@ -187,8 +185,6 @@ const defaultSelect = {
   bankProofDocument: true,
   fssaiLicenseNumber: true,
   fssaiCertificate: true,
-  foodQualityCertifications: true,
-  labTestingCapability: true,
   certificateOfOriginCapability: true,
   phytosanitaryCertificateCapability: true,
   packagingCompliance: true,
@@ -373,6 +369,16 @@ export const updateSellerVerification = async (id: string, data: SellerVerificat
     updatePayload.verificationSubmittedAt = new Date();
   }
 
+  // Ensure documentCompletion is a number (not a string)
+  if (updatePayload.documentCompletion !== undefined) {
+    const completionValue = Number(updatePayload.documentCompletion);
+    if (!isNaN(completionValue)) {
+      updatePayload.documentCompletion = Math.round(Math.max(0, Math.min(100, completionValue)));
+    } else {
+      delete updatePayload.documentCompletion;
+    }
+  }
+
   const seller = await prisma.seller.update({
     where: { id },
     data: updatePayload,
@@ -385,14 +391,15 @@ export const getSellerVerification = async (id: string) => {
   const seller = await prisma.seller.findUnique({
     where: { id },
     select: {
-      // Verification fields
-      companyName: true, // Merged from storeName and companyName
+      // Step 1: Business Identity Verification
+      panNumber: true,
+      gstNumber: true,
+      ownerIdDocument: true,
       incorporationCertificate: true,
       msmeUdyamCertificate: true,
       businessAddressProof: true,
-      fullName: true, // Merged from fullName and ownerFullName (owner is the seller)
-      ownerIdDocument: true,
       ownerIdNumber: true,
+      // Step 2: Export Eligibility Verification
       iecCode: true,
       iecCertificate: true,
       apedaRegistrationNumber: true,
@@ -404,15 +411,20 @@ export const getSellerVerification = async (id: string) => {
       bankAccountNumber: true,
       bankIfscCode: true,
       bankProofDocument: true,
+      // Step 3: Food & Safety Compliance
       fssaiLicenseNumber: true,
       fssaiCertificate: true,
-      foodQualityCertifications: true,
-      labTestingCapability: true,
+      // Step 4: Shipping & Logistics
+      shippingType: true,
+      serviceAreas: true,
+      returnPolicy: true,
+      // Step 5: Export Documentation & Shipment Capability
       certificateOfOriginCapability: true,
       phytosanitaryCertificateCapability: true,
       packagingCompliance: true,
       fumigationCertificateCapability: true,
       exportLogisticsPrepared: true,
+      // Verification Status
       verificationStatus: true,
       verificationSubmittedAt: true,
       verificationReviewedAt: true,

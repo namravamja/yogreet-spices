@@ -188,7 +188,7 @@ export default function ProfileProgress({ profileData }: ProfileProgressProps) {
             </p>
             <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
               {getMissingFields().map((field, index) => (
-                <div key={index} className="font-inter">{field}</div>
+                <div key={index} className="font-inter text-red-600">{field}</div>
               ))}
             </div>
           </div>

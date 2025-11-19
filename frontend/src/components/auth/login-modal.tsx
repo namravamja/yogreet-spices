@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi"
 import { useLoginBuyerMutation } from "@/services/api/authApi"
 import toast from "react-hot-toast"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -79,7 +80,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
               <span>{errorMessage}</span>
               <a
                 href="/buyer/verify-document/1"
-                className="text-yogreet-purple hover:underline font-medium text-sm"
+                className="text-[#212121] hover:underline font-medium text-sm"
                 onClick={() => toast.dismiss(t.id)}
               >
                 Go to verification →
@@ -128,24 +129,43 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
     }
   }, [isOpen])
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-none transition-opacity cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation()
-          onClose()
-        }}
-      />
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <motion.div
+          key="modal-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-100 flex items-center justify-center p-4"
+        >
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-none cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClose()
+            }}
+          />
 
-      {/* Modal Content */}
-      <div 
-        className="relative bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+          {/* Modal Content */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 30 }}
+            transition={{ 
+              duration: 0.25, 
+              ease: [0.4, 0, 0.2, 1],
+              opacity: { duration: 0.2 }
+            }}
+            className="relative bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -182,7 +202,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                     value={(formData as any)[name]}
                     onChange={handleChange}
                     disabled={isLoading}
-                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-purple focus:border-yogreet-purple disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
+                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
                     placeholder={placeholder}
                   />
                   {name === "password" && (
@@ -206,7 +226,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-yogreet-purple focus:ring-yogreet-purple border-gray-300 rounded cursor-pointer"
+                  className="h-4 w-4 text-[#212121] focus:ring-[#212121] border-gray-300 rounded cursor-pointer"
                 />
                 <label
                   htmlFor="remember-me"
@@ -217,7 +237,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
               </div>
               <button
                 type="button"
-                className="text-sm text-yogreet-purple hover:text-yogreet-charcoal font-medium cursor-pointer font-inter"
+                className="text-sm text-[#212121] hover:text-yogreet-charcoal font-medium cursor-pointer font-inter"
               >
                 Forgot password?
               </button>
@@ -227,7 +247,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-purple hover:bg-yogreet-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-purple disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
+              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-[#212121] hover:bg-[#212121]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#212121] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
             >
               {isLoading ? (
                 <>
@@ -243,13 +263,15 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           <div className="mt-6 text-center">
             <button
               onClick={onSwitchToSignup}
-              className="font-medium text-yogreet-purple hover:text-yogreet-charcoal cursor-pointer font-inter"
+              className="font-medium text-[#212121] hover:text-yogreet-charcoal cursor-pointer font-inter"
             >
               New to Yogreet? Create your account
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

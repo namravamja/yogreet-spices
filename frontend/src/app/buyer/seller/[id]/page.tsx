@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import {
   Store,
   Star,
@@ -15,17 +17,12 @@ import {
   Twitter,
   CheckCircle2,
   Truck,
-  Calendar,
   Award,
   Users,
   Phone,
-  Mail,
-  CreditCard,
-  FileText,
-  Shield,
-  Box,
-  Globe2,
-  Building2,
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useGetPublicSellerProfileQuery } from "@/services/api/publicApi";
 
@@ -41,8 +38,15 @@ const safeNumber = (value: any): number => {
 
 export default function SellerProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const sellerId = params.id as string;
   const [selectedProductCategory, setSelectedProductCategory] = useState<string>("all");
+  const [showFullAbout, setShowFullAbout] = useState(false);
+  const [currentStorePhotoIndex, setCurrentStorePhotoIndex] = useState(0);
+  const [storePhotoDirection, setStorePhotoDirection] = useState<"left" | "right">("left");
+  const [productImageIndices, setProductImageIndices] = useState<{ [key: string]: number }>({});
+  const [productHoverStates, setProductHoverStates] = useState<{ [key: string]: boolean }>({});
+  const [productDirections, setProductDirections] = useState<{ [key: string]: "left" | "right" }>({});
 
   const {
     data: seller,
@@ -67,6 +71,53 @@ export default function SellerProfilePage() {
     const categories = new Set(seller.products.map((p: any) => p.category));
     return Array.from(categories) as string[];
   }, [seller?.products]);
+
+  // Get seller level based on reviews/rating
+  const getSellerLevel = () => {
+    const reviews = seller?.totalReviews || 0;
+    if (reviews >= 100) return "Level 2";
+    if (reviews >= 20) return "Level 1";
+    return null;
+  };
+
+  // Truncate about text
+  const aboutText = seller?.about || "";
+  const truncatedAbout = aboutText.length > 200 ? aboutText.substring(0, 200) + "..." : aboutText;
+  const displayAbout = showFullAbout ? aboutText : truncatedAbout;
+
+  // Store photos navigation
+  const storePhotos = seller?.storePhotos || [];
+  const hasMultipleStorePhotos = storePhotos.length > 1;
+
+  const handlePreviousStorePhoto = () => {
+    if (hasMultipleStorePhotos) {
+      setStorePhotoDirection("right");
+      setCurrentStorePhotoIndex((prev) => (prev === 0 ? storePhotos.length - 1 : prev - 1));
+    }
+  };
+
+  const handleNextStorePhoto = () => {
+    if (hasMultipleStorePhotos) {
+      setStorePhotoDirection("left");
+      setCurrentStorePhotoIndex((prev) => (prev === storePhotos.length - 1 ? 0 : prev + 1));
+    }
+  };
+
+  // Slide variants for store photos
+  const slideVariants = {
+    enter: (direction: "left" | "right") => ({
+      x: direction === "left" ? "100%" : "-100%",
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: "left" | "right") => ({
+      x: direction === "left" ? "-100%" : "100%",
+      opacity: 0,
+    }),
+  };
 
   // Loading state
   if (isLoading) {
@@ -107,18 +158,36 @@ export default function SellerProfilePage() {
     );
   }
 
+  const sellerName = safeString(seller.companyName || seller.fullName || "Seller");
+  const sellerHandle = seller.email ? `@${seller.email.split("@")[0]}` : "@seller";
+  const averageRating = seller.averageRating || 0;
+  const totalReviews = seller.totalReviews || 0;
+  const location = seller.businessAddress
+    ? [
+        seller.businessAddress.city,
+        seller.businessAddress.state,
+        seller.businessAddress.country,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+
   return (
+    <div className="min-h-screen bg-gray-50">
     <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
-      {/* Header Section */}
-      <div className="bg-white border border-stone-200 p-6 sm:p-8 mb-6 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8">
-          {/* Seller Logo/Image */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Profile Header Section */}
+            <div className="bg-white border border-gray-200 p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row gap-6">
+                {/* Profile Picture */}
           <div className="shrink-0">
-            <div className="relative w-32 h-32 sm:w-40 sm:h-40 bg-stone-100 border border-stone-200 overflow-hidden">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gray-100 border-2 border-gray-200 overflow-hidden">
               {seller.businessLogo ? (
                 <Image
                   src={seller.businessLogo}
-                  alt={safeString(seller.companyName || seller.fullName || "Seller")}
+                        alt={sellerName}
                   fill
                   className="object-cover"
                   onError={(e) => {
@@ -127,177 +196,120 @@ export default function SellerProfilePage() {
                   }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-stone-200">
-                  <Store className="w-16 h-16 text-stone-400" />
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <Store className="w-12 h-12 text-gray-400" />
                 </div>
               )}
             </div>
           </div>
 
-          {/* Seller Info */}
+                {/* Profile Info */}
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl sm:text-3xl font-light text-stone-900 font-poppins">
-                    {safeString(seller.companyName || seller.fullName || "Seller")}
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-2xl font-semibold text-gray-900 font-poppins">
+                      {sellerName}
                   </h1>
                   {seller.verificationStatus === "approved" && (
-                    <div title="Verified Seller">
-                      <CheckCircle2 className="w-6 h-6 text-green-600" />
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    )}
                     </div>
+                  {seller.fullName && (
+                    <p className="text-gray-700 text-sm mb-2 font-inter">
+                      @{safeString(seller.fullName)}
+                    </p>
                   )}
+                  
+                  {/* Rating and Reviews */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                      <span className="text-lg font-semibold text-gray-900 font-poppins">
+                        {averageRating.toFixed(1)}
+                      </span>
                 </div>
-                {seller.businessType && (
-                  <p className="text-stone-600 font-inter mb-2">
-                    {safeString(seller.businessType)}
-                  </p>
-                )}
-                {seller.businessAddress && (
-                  <div className="flex items-center gap-2 text-stone-600 font-inter mb-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>
-                      {[
-                        seller.businessAddress.city,
-                        seller.businessAddress.state,
-                        seller.businessAddress.country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
+                    <span className="text-gray-600 text-sm font-inter">
+                      ({totalReviews} {totalReviews === 1 ? "review" : "reviews"})
                     </span>
-                  </div>
-                )}
               </div>
 
-              {/* Rating & Stats */}
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-5 h-5 ${
-                          i < Math.floor(seller.averageRating || 0)
-                            ? "text-yellow-500 fill-yellow-500"
-                            : "text-stone-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-lg font-medium text-stone-900 font-manrope">
-                    {seller.averageRating?.toFixed(1) || "0.0"}
+                  {/* Seller Level */}
+                  {getSellerLevel() && (
+                    <div className="mb-2">
+                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold font-inter">
+                        {getSellerLevel()}
                   </span>
                 </div>
-                <p className="text-sm text-stone-600 font-inter">
-                  {seller.totalReviews || 0} {seller.totalReviews === 1 ? "review" : "reviews"}
-                </p>
-              </div>
-            </div>
+                  )}
 
-            {/* Stats Row */}
-            <div className="flex flex-wrap gap-6 mb-4">
-              <div className="flex items-center gap-2 text-stone-700 font-inter">
-                <Package className="w-5 h-5 text-stone-500" />
-                <span className="font-medium">{seller.totalProducts || 0}</span>
-                <span className="text-stone-600">Products</span>
-              </div>
-              <div className="flex items-center gap-2 text-stone-700 font-inter">
-                <Users className="w-5 h-5 text-stone-500" />
-                <span className="font-medium">{seller.totalReviews || 0}</span>
-                <span className="text-stone-600">Reviews</span>
-              </div>
-              {seller.profileCompletion && (
-                <div className="flex items-center gap-2 text-stone-700 font-inter">
-                  <Award className="w-5 h-5 text-stone-500" />
-                  <span className="font-medium">{seller.profileCompletion}%</span>
-                  <span className="text-stone-600">Profile Complete</span>
+                  {/* Business Type */}
+                  {seller.businessType && (
+                    <p className="text-gray-700 mb-2 font-inter italic">
+                      {safeString(seller.businessType)}
+                    </p>
+                  )}
+
+                  {/* Location */}
+                  {location && (
+                    <div className="flex items-center gap-1 text-gray-600 text-sm mb-2 font-inter">
+                      <MapPin className="w-4 h-4" />
+                      <span>{location}</span>
                 </div>
               )}
-            </div>
 
-            {/* Social Links */}
-            {seller.socialLinks && (
-              <div className="flex items-center gap-4">
-                {seller.socialLinks.website && (
-                  <a
-                    href={seller.socialLinks.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-600 hover:text-yogreet-sage transition-colors"
-                    aria-label="Website"
-                  >
-                    <Globe className="w-5 h-5" />
-                  </a>
-                )}
-                {seller.socialLinks.facebook && (
-                  <a
-                    href={seller.socialLinks.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-600 hover:text-blue-600 transition-colors"
-                    aria-label="Facebook"
-                  >
-                    <Facebook className="w-5 h-5" />
-                  </a>
-                )}
-                {seller.socialLinks.instagram && (
-                  <a
-                    href={seller.socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-600 hover:text-pink-600 transition-colors"
-                    aria-label="Instagram"
-                  >
-                    <Instagram className="w-5 h-5" />
-                  </a>
-                )}
-                {seller.socialLinks.twitter && (
-                  <a
-                    href={seller.socialLinks.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-stone-600 hover:text-blue-400 transition-colors"
-                    aria-label="Twitter"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </a>
-                )}
+                  {/* Joined Date */}
+                  {seller.createdAt && (
+                    <div className="text-gray-600 text-sm font-inter">
+                      Joined {new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Content */}
-        <div className="lg:col-span-2 space-y-6">
           {/* About Section */}
           {seller.about && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h2 className="text-xl font-medium text-stone-900 mb-4 font-poppins">
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 font-poppins">
                 About
               </h2>
-              <p className="text-stone-700 font-inter leading-relaxed whitespace-pre-line">
-                {safeString(seller.about)}
-              </p>
+                <p className="text-gray-700 leading-relaxed font-inter whitespace-pre-line">
+                  {displayAbout}
+                </p>
+                {aboutText.length > 200 && (
+                  <button
+                    onClick={() => setShowFullAbout(!showFullAbout)}
+                    className="text-yogreet-sage hover:text-yogreet-sage/80 text-sm font-medium mt-2 font-inter transition-colors cursor-pointer"
+                  >
+                    {showFullAbout ? "Read less" : "Read more"}
+                  </button>
+                )}
             </div>
           )}
 
-          {/* Store Photos */}
-          {seller.storePhotos && seller.storePhotos.length > 0 && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h2 className="text-xl font-medium text-stone-900 mb-4 font-poppins">
+            {/* Store Photos Section */}
+            {storePhotos.length > 0 && (
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 font-poppins">
                 Store Photos
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {seller.storePhotos.map((photo: string, index: number) => (
-                  <div
-                    key={index}
-                    className="relative aspect-square bg-stone-100 border border-stone-200 overflow-hidden"
+                <div className="relative w-full h-64 sm:h-80 bg-gray-100 overflow-hidden group">
+                  <AnimatePresence initial={false} custom={storePhotoDirection}>
+                    <motion.div
+                      key={currentStorePhotoIndex}
+                      custom={storePhotoDirection}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        x: { type: "spring", stiffness: 400, damping: 40 },
+                        opacity: { duration: 0.2 },
+                      }}
+                      className="absolute inset-0"
                   >
                     <Image
-                      src={photo}
-                      alt={`Store photo ${index + 1}`}
+                        src={storePhotos[currentStorePhotoIndex]}
+                        alt={`Store photo ${currentStorePhotoIndex + 1}`}
                       fill
                       className="object-cover"
                       onError={(e) => {
@@ -305,26 +317,75 @@ export default function SellerProfilePage() {
                         target.src = "/placeholder.jpg";
                       }}
                     />
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Navigation Arrows */}
+                  {hasMultipleStorePhotos && (
+                    <>
+                      <button
+                        onClick={handlePreviousStorePhoto}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 p-2 shadow-sm transition-all duration-300 cursor-pointer opacity-0 group-hover:opacity-100"
+                        aria-label="Previous photo"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={handleNextStorePhoto}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white border border-gray-200 p-2 shadow-sm transition-all duration-300 cursor-pointer opacity-0 group-hover:opacity-100"
+                        aria-label="Next photo"
+                      >
+                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                      </button>
+                      {/* Photo Counter */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 text-sm">
+                        {currentStorePhotoIndex + 1} / {storePhotos.length}
+                      </div>
+                    </>
+                  )}
                   </div>
-                ))}
+              </div>
+            )}
+
+            {/* Product Categories Section */}
+            {(productCategories.length > 0 || seller.productCategories) && (
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 font-poppins">
+                  Product Categories
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {(seller.productCategories || productCategories).slice(0, 10).map((category: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-inter transition-colors cursor-pointer"
+                    >
+                      {category}
+                    </span>
+                  ))}
+                  {(seller.productCategories || productCategories).length > 10 && (
+                    <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-inter">
+                      +{(seller.productCategories || productCategories).length - 10} more
+                    </span>
+                  )}
               </div>
             </div>
           )}
 
           {/* Products Section */}
-          <div className="bg-white border border-stone-200 p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 className="text-xl font-medium text-stone-900 font-poppins">
+            <div className="bg-white border border-gray-200 p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 font-poppins">
                 Products ({filteredProducts.length})
               </h2>
+
+              {/* Category Filter */}
               {productCategories.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-6">
                   <button
                     onClick={() => setSelectedProductCategory("all")}
                     className={`px-4 py-2 border transition-colors font-inter text-sm cursor-pointer ${
                       selectedProductCategory === "all"
                         ? "bg-yogreet-sage text-white border-yogreet-sage"
-                        : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     All
@@ -336,7 +397,7 @@ export default function SellerProfilePage() {
                       className={`px-4 py-2 border transition-colors font-inter text-sm cursor-pointer ${
                         selectedProductCategory === category
                           ? "bg-yogreet-sage text-white border-yogreet-sage"
-                          : "bg-white text-stone-700 border-stone-300 hover:bg-stone-50"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                       }`}
                     >
                       {category}
@@ -344,79 +405,212 @@ export default function SellerProfilePage() {
                   ))}
                 </div>
               )}
-            </div>
 
+              {/* Products Grid */}
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProducts.map((product: any) => {
-                  const productImage = product.productImages?.[0] || "/placeholder.jpg";
+                  const productImages = product.productImages && product.productImages.length > 0 
+                    ? product.productImages 
+                    : ["/placeholder.svg"];
+                  const hasMultipleImages = productImages.length > 1;
+                  const currentImageIndex = productImageIndices[product.id] || 0;
+                  const isHovered = productHoverStates[product.id] || false;
+                  const direction = productDirections[product.id] || "right";
+                  
                   const productRating =
-                    product.Review && product.Review.length > 0
-                      ? product.Review.reduce(
-                          (sum: number, r: any) => sum + (r.rating || 0),
-                          0
-                        ) / product.Review.length
-                      : 0;
+                      product.Review && product.Review.length > 0
+                        ? product.Review.reduce(
+                            (sum: number, r: any) => sum + (r.rating || 0),
+                            0
+                          ) / product.Review.length
+                        : 0;
+                    const productReviews = product.Review?.length || 0;
+                    const smallPrice = parseFloat(product.smallPrice || "0");
+                    const smallWeight = parseFloat(product.smallWeight || "1");
+                    const pricePerKg = smallWeight > 0 ? smallPrice / smallWeight : smallPrice;
+
+                  const handlePreviousImage = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    if (hasMultipleImages) {
+                      setProductDirections(prev => ({ ...prev, [product.id]: "right" }));
+                      setProductImageIndices(prev => ({
+                        ...prev,
+                        [product.id]: prev[product.id] === 0 ? productImages.length - 1 : (prev[product.id] || 0) - 1
+                      }));
+                    }
+                  };
+
+                  const handleNextImage = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    if (hasMultipleImages) {
+                      setProductDirections(prev => ({ ...prev, [product.id]: "left" }));
+                      setProductImageIndices(prev => ({
+                        ...prev,
+                        [product.id]: (prev[product.id] || 0) === productImages.length - 1 ? 0 : (prev[product.id] || 0) + 1
+                      }));
+                    }
+                  };
+
+                  const slideVariants = {
+                    enter: (direction: "left" | "right") => ({
+                      x: direction === "left" ? "100%" : "-100%",
+                    }),
+                    center: {
+                      x: 0,
+                    },
+                    exit: (direction: "left" | "right") => ({
+                      x: direction === "left" ? "-100%" : "100%",
+                    }),
+                  };
+
+                  const handleCardClick = () => {
+                    router.push(`/explore/${product.id}`);
+                  };
 
                   return (
-                    <Link
+                    <div
                       key={product.id}
-                      href={`/explore/${product.id}`}
-                      className="border border-stone-200 hover:border-yogreet-sage transition-colors overflow-hidden group"
+                      className="bg-white border border-yogreet-light-gray overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-gray-400 rounded-xs mx-auto w-full"
+                      style={{ maxWidth: '320px' }}
+                      onMouseEnter={() => setProductHoverStates(prev => ({ ...prev, [product.id]: true }))}
+                      onMouseLeave={() => setProductHoverStates(prev => ({ ...prev, [product.id]: false }))}
                     >
-                      <div className="relative aspect-square bg-stone-100 overflow-hidden">
-                        <Image
-                          src={productImage}
-                          alt={safeString(product.productName)}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.jpg";
-                          }}
-                        />
+                      {/* Image Container */}
+                      <div 
+                        className="relative w-full h-48 bg-yogreet-light-gray overflow-hidden cursor-pointer"
+                        onClick={handleCardClick}
+                      >
+                        <AnimatePresence initial={false} custom={direction}>
+                          <motion.div
+                            key={currentImageIndex}
+                            custom={direction}
+                            variants={slideVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{
+                              x: { type: "spring", stiffness: 400, damping: 40, duration: 0.5 },
+                            }}
+                            className="absolute inset-0"
+                          >
+                            <Image 
+                              src={productImages[currentImageIndex]} 
+                              alt={`${safeString(product.productName)} - Image ${currentImageIndex + 1}`} 
+                              fill 
+                              className={`object-cover transition-transform duration-300 ${
+                                isHovered ? "scale-110" : "scale-100"
+                              }`} 
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                            />
+                          </motion.div>
+                        </AnimatePresence>
+                        
+                        {/* Navigation Arrows */}
+                        {hasMultipleImages && (
+                          <>
+                            {/* Previous Button */}
+                            <button
+                              onClick={handlePreviousImage}
+                              className={`absolute left-1 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-gray-50 transition-all duration-300 cursor-pointer ${
+                                isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
+                              }`}
+                              aria-label="Previous image"
+                            >
+                              <FiChevronLeft className="w-4 h-4 text-gray-600" />
+                            </button>
+                            
+                            {/* Next Button */}
+                            <button
+                              onClick={handleNextImage}
+                              className={`absolute right-1 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-gray-50 transition-all duration-300 cursor-pointer ${
+                                isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"
+                              }`}
+                              aria-label="Next image"
+                            >
+                              <FiChevronRight className="w-4 h-4 text-gray-600" />
+                            </button>
+                            
+                            {/* Image Counter */}
+                            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-0.5 rounded-full text-xs">
+                              {currentImageIndex + 1} / {productImages.length}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-stone-900 mb-1 font-manrope line-clamp-1">
-                          {safeString(product.productName)}
-                        </h3>
-                        <p className="text-sm text-stone-600 mb-2 font-inter line-clamp-2">
-                          {safeString(product.shortDescription)}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            <span className="text-sm text-stone-700 font-inter">
-                              {productRating.toFixed(1)}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            {product.smallPrice && (
-                              <p className="text-sm font-medium text-yogreet-sage font-poppins">
-                                ₹{safeNumber(product.smallPrice).toFixed(2)}
-                              </p>
+
+                      {/* Content */}
+                      <div className="p-3">
+                        {/* Seller Info and Reviews Row */}
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          {/* Seller Info */}
+                          <Link 
+                            href={`/buyer/seller/${sellerId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer flex-1 min-w-0"
+                          >
+                            {seller.businessLogo ? (
+                              <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
+                                <Image
+                                  src={seller.businessLogo}
+                                  alt={sellerName}
+                                  fill
+                                  className="object-cover"
+                                  sizes="24px"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-yogreet-sage shrink-0 flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">{sellerName.charAt(0).toUpperCase()}</span>
+                              </div>
                             )}
-                            {product.mediumPrice && !product.smallPrice && (
-                              <p className="text-sm font-medium text-yogreet-sage font-poppins">
-                                ₹{safeNumber(product.mediumPrice).toFixed(2)}
-                              </p>
-                            )}
-                            {product.largePrice && !product.smallPrice && !product.mediumPrice && (
-                              <p className="text-sm font-medium text-yogreet-sage font-poppins">
-                                ₹{safeNumber(product.largePrice).toFixed(2)}
-                              </p>
-                            )}
+                            <p className="text-sm text-yogreet-warm-gray hover:underline truncate">by {sellerName}</p>
+                          </Link>
+
+                          {/* Reviews */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <FiStar
+                                  key={i}
+                                  className={`w-3 h-3 ${i < Math.floor(productRating) ? "fill-yogreet-gold text-yogreet-gold" : "text-gray-300 fill-gray-300"}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-yogreet-warm-gray">({productReviews})</span>
                           </div>
                         </div>
+
+                        {/* Description */}
+                        {(product.shortDescription || product.description) && (
+                          <p className="text-sm text-yogreet-warm-gray mb-1.5 line-clamp-2 font-inter">
+                            {safeString(product.shortDescription || product.description)}
+                          </p>
+                        )}
+
+                        {/* Price */}
+                        <div className="mb-2">
+                          <p className="text-base font-poppins font-semibold text-black">
+                            From ₹{pricePerKg.toFixed(2)}/kg
+                          </p>
+                          {smallPrice > 0 && smallWeight > 0 && (
+                            <p className="text-xs text-yogreet-warm-gray font-inter mt-0.5">
+                              ₹{smallPrice.toFixed(2)} for {smallWeight}kg
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>
             ) : (
               <div className="text-center py-12">
-                <Package className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-                <p className="text-stone-600 font-inter">
+                  <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600 font-inter">
                   {selectedProductCategory === "all"
                     ? "No products available"
                     : "No products in this category"}
@@ -424,124 +618,82 @@ export default function SellerProfilePage() {
               </div>
             )}
           </div>
+          </div>
 
-          {/* Reviews Section */}
-          {seller.Review && seller.Review.length > 0 && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h2 className="text-xl font-medium text-stone-900 mb-6 font-poppins flex items-center gap-2">
-                <Star className="w-5 h-5" />
-                Customer Reviews ({seller.Review.length})
-              </h2>
+        {/* Right Sidebar */}
               <div className="space-y-6">
-                {seller.Review.map((review: any) => (
-                  <div
-                    key={review.id}
-                    className="border-b border-stone-100 pb-6 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        {review.buyer?.avatar ? (
-                          <div className="relative w-10 h-10 bg-stone-200 overflow-hidden">
+            {/* Contact Card */}
+            <div className="bg-white border border-gray-200 p-6 shadow-sm sticky top-6">
+              <div className="flex flex-col items-center mb-4">
+                <div className="relative w-16 h-16 rounded-full bg-gray-100 border-2 border-gray-200 overflow-hidden mb-3">
+                  {seller.businessLogo ? (
                             <Image
-                              src={review.buyer.avatar}
-                              alt={`${review.buyer.firstName} ${review.buyer.lastName}`}
+                      src={seller.businessLogo}
+                      alt={sellerName}
                               fill
                               className="object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 bg-stone-200 flex items-center justify-center">
-                            <Users className="w-6 h-6 text-stone-400" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-stone-900 font-manrope">
-                            {safeString(review.buyer?.firstName || "Anonymous")}{" "}
-                            {safeString(review.buyer?.lastName || "")}
-                          </p>
-                          {review.product && (
-                            <Link
-                              href={`/explore/${review.product.id}`}
-                              className="text-sm text-stone-600 hover:text-yogreet-sage font-inter"
-                            >
-                              {safeString(review.product.productName)}
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < (review.rating || 0)
-                                  ? "text-yellow-500 fill-yellow-500"
-                                  : "text-stone-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        {review.verified && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 font-inter">
-                            Verified
-                          </span>
-                        )}
-                      </div>
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <Store className="w-8 h-8 text-gray-400" />
                     </div>
-                    {review.title && (
-                      <h4 className="font-medium text-stone-900 mb-2 font-manrope">
-                        {safeString(review.title)}
-                      </h4>
-                    )}
-                    {review.text && (
-                      <p className="text-stone-600 font-inter mb-2">
-                        {safeString(review.text)}
-                      </p>
-                    )}
-                    <p className="text-sm text-stone-500 font-inter">
-                      {review.date
-                        ? new Date(review.date).toLocaleDateString()
-                        : "N/A"}
+                  )}
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1 font-poppins">{sellerName}</h3>
+                <p className="text-sm text-gray-500 mb-4 font-inter">
+                  {seller.verificationStatus === "approved" ? "Verified Exporter" : "Exporter"}
                     </p>
-                  </div>
-                ))}
               </div>
-            </div>
+
+              {seller.email ? (
+                <a
+                  href={`mailto:${seller.email}`}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 font-inter"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Contact Seller
+                </a>
+              ) : (
+                <button className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 font-inter">
+                  <MessageCircle className="w-4 h-4" />
+                  Contact Seller
+                </button>
           )}
         </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Contact Information */}
-          <div className="bg-white border border-stone-200 p-6 shadow-sm">
-            <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-              <Phone className="w-5 h-5" />
-              Contact Information
+            {/* Business Information */}
+            <div className="bg-white border border-gray-200 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 font-poppins flex items-center gap-2">
+                <Store className="w-5 h-5" />
+                Business Information
             </h3>
             <div className="space-y-3">
-              {seller.mobile && (
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 text-stone-500 mt-0.5" />
+                {seller.businessType && (
                   <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter">Phone</p>
-                    <a
-                      href={`tel:${seller.mobile}`}
-                      className="text-stone-700 hover:text-yogreet-sage font-inter"
-                    >
-                      {safeString(seller.mobile)}
-                    </a>
+                    <p className="text-sm font-medium text-gray-600 font-inter mb-1">
+                      Business Type
+                    </p>
+                    <p className="text-gray-700 font-inter">{safeString(seller.businessType)}</p>
                   </div>
+                )}
+                {location && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 font-inter mb-1">
+                      Location
+                    </p>
+                    <p className="text-gray-700 font-inter">{location}</p>
                 </div>
               )}
               {seller.businessAddress && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-4 h-4 text-stone-500 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
+                    <p className="text-sm font-medium text-gray-600 font-inter mb-1">
                       Address
                     </p>
-                    <p className="text-stone-700 font-inter">
+                    <p className="text-gray-700 font-inter">
                       {[
                         seller.businessAddress.street,
                         seller.businessAddress.city,
@@ -552,179 +704,35 @@ export default function SellerProfilePage() {
                         .filter(Boolean)
                         .join(", ")}
                     </p>
-                  </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Business Information */}
-          <div className="bg-white border border-stone-200 p-6 shadow-sm">
-            <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Business Information
-            </h3>
-            <div className="space-y-3">
-              {seller.businessType && (
-                <div>
-                  <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                    Business Type
-                  </p>
-                  <p className="text-stone-700 font-inter">{safeString(seller.businessType)}</p>
-                </div>
-              )}
-              {seller.productCategories && seller.productCategories.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                    Product Categories
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {seller.productCategories.map((category: string, index: number) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-stone-100 text-stone-700 text-sm font-inter"
-                      >
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {seller.serviceAreas && seller.serviceAreas.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                    Service Areas
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {seller.serviceAreas.map((area: string, index: number) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-stone-100 text-stone-700 text-sm font-inter"
-                      >
-                        {area}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Shipping & Payment */}
-          <div className="bg-white border border-stone-200 p-6 shadow-sm">
-            <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-              <Truck className="w-5 h-5" />
-              Shipping & Payment
-            </h3>
-            <div className="space-y-3">
-              {seller.shippingType && (
-                <div>
-                  <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                    Shipping Type
-                  </p>
-                  <p className="text-stone-700 font-inter">{safeString(seller.shippingType)}</p>
-                </div>
-              )}
-              {seller.bankName && (
-                <div>
-                  <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                    Bank Name
-                  </p>
-                  <p className="text-stone-700 font-inter">{safeString(seller.bankName)}</p>
-                </div>
-              )}
-              {seller.upiId && (
-                <div>
-                  <p className="text-sm font-medium text-stone-600 font-inter mb-1">UPI ID</p>
-                  <p className="text-stone-700 font-inter">{safeString(seller.upiId)}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Business Registration */}
-          {(seller.gstNumber || seller.panNumber || seller.iecCode || seller.apedaRegistrationNumber || seller.spicesBoardRegistrationNumber || seller.fssaiLicenseNumber) && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Business Registration
-              </h3>
-              <div className="space-y-3">
-                {seller.gstNumber && (
+                {seller.mobile && (
                   <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                      GST Number
+                    <p className="text-sm font-medium text-gray-600 font-inter mb-1">
+                      Contact
                     </p>
-                    <p className="text-stone-700 font-inter">{safeString(seller.gstNumber)}</p>
-                  </div>
-                )}
-                {seller.panNumber && (
-                  <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                      PAN Number
-                    </p>
-                    <p className="text-stone-700 font-inter">{safeString(seller.panNumber)}</p>
-                  </div>
-                )}
-                {seller.iecCode && (
-                  <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                      IEC Code
-                    </p>
-                    <p className="text-stone-700 font-inter">{safeString(seller.iecCode)}</p>
-                  </div>
-                )}
-                {seller.apedaRegistrationNumber && (
-                  <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                      APEDA Registration
-                    </p>
-                    <p className="text-stone-700 font-inter">
-                      {safeString(seller.apedaRegistrationNumber)}
-                    </p>
-                  </div>
-                )}
-                {seller.spicesBoardRegistrationNumber && (
-                  <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                      Spices Board Registration
-                    </p>
-                    <p className="text-stone-700 font-inter">
-                      {safeString(seller.spicesBoardRegistrationNumber)}
-                    </p>
-                  </div>
-                )}
-                {seller.fssaiLicenseNumber && (
-                  <div>
-                    <p className="text-sm font-medium text-stone-600 font-inter mb-1">
-                      FSSAI License
-                    </p>
-                    <p className="text-stone-700 font-inter">
-                      {safeString(seller.fssaiLicenseNumber)}
-                    </p>
+                    <p className="text-gray-700 font-inter">{safeString(seller.mobile)}</p>
                   </div>
                 )}
               </div>
             </div>
-          )}
 
           {/* Export Capabilities */}
           {(seller.certificateOfOriginCapability ||
             seller.phytosanitaryCertificateCapability ||
             seller.packagingCompliance ||
             seller.fumigationCertificateCapability ||
-            seller.exportLogisticsPrepared ||
-            seller.labTestingCapability) && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-                <Globe2 className="w-5 h-5" />
+            seller.exportLogisticsPrepared) && (
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 font-poppins flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
                 Export Capabilities
               </h3>
               <div className="space-y-2">
                 {seller.certificateOfOriginCapability && (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-stone-700 text-sm font-inter">
+                      <span className="text-gray-700 text-sm font-inter">
                       Certificate of Origin
                     </span>
                   </div>
@@ -732,7 +740,7 @@ export default function SellerProfilePage() {
                 {seller.phytosanitaryCertificateCapability && (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-stone-700 text-sm font-inter">
+                      <span className="text-gray-700 text-sm font-inter">
                       Phytosanitary Certificate
                     </span>
                   </div>
@@ -740,7 +748,7 @@ export default function SellerProfilePage() {
                 {seller.packagingCompliance && (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-stone-700 text-sm font-inter">
+                      <span className="text-gray-700 text-sm font-inter">
                       Packaging Compliance
                     </span>
                   </div>
@@ -748,7 +756,7 @@ export default function SellerProfilePage() {
                 {seller.fumigationCertificateCapability && (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-stone-700 text-sm font-inter">
+                      <span className="text-gray-700 text-sm font-inter">
                       Fumigation Certificate
                     </span>
                   </div>
@@ -756,83 +764,166 @@ export default function SellerProfilePage() {
                 {seller.exportLogisticsPrepared && (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-stone-700 text-sm font-inter">
+                      <span className="text-gray-700 text-sm font-inter">
                       Export Logistics Ready
                     </span>
                   </div>
                 )}
-                {seller.labTestingCapability && (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-stone-700 text-sm font-inter">
-                      Lab Testing Capability
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           )}
 
-          {/* Food Quality Certifications */}
-          {seller.foodQualityCertifications &&
-            seller.foodQualityCertifications.length > 0 && (
-              <div className="bg-white border border-stone-200 p-6 shadow-sm">
-                <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Food Quality Certifications
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {seller.foodQualityCertifications.map(
-                    (certification: string, index: number) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-green-50 text-green-700 text-sm font-inter border border-green-200"
-                      >
-                        {certification}
-                      </span>
-                    )
+            {/* Social Links */}
+            {seller.socialLinks && 
+             (seller.socialLinks.website || 
+              seller.socialLinks.facebook || 
+              seller.socialLinks.instagram || 
+              seller.socialLinks.twitter) && (
+              <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 font-poppins flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Connect
+              </h3>
+                <div className="flex items-center gap-4">
+                  {seller.socialLinks.website && (
+                    <a
+                      href={seller.socialLinks.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:text-yogreet-sage transition-colors"
+                      aria-label="Website"
+                    >
+                      <Globe className="w-5 h-5" />
+                    </a>
+          )}
+                  {seller.socialLinks.facebook && (
+                    <a
+                      href={seller.socialLinks.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:text-blue-600 transition-colors"
+                      aria-label="Facebook"
+                    >
+                      <Facebook className="w-5 h-5" />
+                    </a>
                   )}
-                </div>
-              </div>
-            )}
-
-          {/* Return Policy */}
-          {seller.returnPolicy && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-                <Box className="w-5 h-5" />
-                Return Policy
-              </h3>
-              <p className="text-stone-700 font-inter leading-relaxed whitespace-pre-line">
-                {safeString(seller.returnPolicy)}
-              </p>
-            </div>
-          )}
-
-          {/* Verification Status */}
-          {seller.verificationStatus && (
-            <div className="bg-white border border-stone-200 p-6 shadow-sm">
-              <h3 className="text-lg font-medium text-stone-900 mb-4 font-poppins flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                Verification Status
-              </h3>
-              <div className="flex items-center gap-2">
-                {seller.verificationStatus === "approved" ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <span className="text-green-700 font-medium font-inter">
-                      Verified Seller
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="w-5 h-5 text-stone-400" />
-                    <span className="text-stone-600 font-inter capitalize">
-                      {seller.verificationStatus.replace("_", " ")}
-                    </span>
-                  </>
+                  {seller.socialLinks.instagram && (
+                    <a
+                      href={seller.socialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:text-pink-600 transition-colors"
+                      aria-label="Instagram"
+                    >
+                      <Instagram className="w-5 h-5" />
+                    </a>
+                  )}
+                  {seller.socialLinks.twitter && (
+                    <a
+                      href={seller.socialLinks.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:text-blue-400 transition-colors"
+                      aria-label="Twitter"
+                    >
+                      <Twitter className="w-5 h-5" />
+                    </a>
                 )}
               </div>
+            </div>
+          )}
+          </div>
+        </div>
+
+        {/* Reviews Section - Bottom of Page */}
+        <div className="mt-6 bg-white border border-gray-200 p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6 font-poppins flex items-center gap-2">
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+            Customer Reviews {seller.Review && seller.Review.length > 0 && `(${seller.Review.length})`}
+          </h2>
+          {seller.Review && seller.Review.length > 0 ? (
+            <div className="space-y-6">
+              {seller.Review.map((review: any) => (
+                <div
+                  key={review.id}
+                  className="border-b border-gray-100 pb-6 last:border-0 last:pb-0"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {review.buyer?.avatar ? (
+                        <div className="relative w-10 h-10 bg-gray-200 overflow-hidden">
+                          <Image
+                            src={review.buyer.avatar}
+                            alt={`${review.buyer.firstName} ${review.buyer.lastName}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 flex items-center justify-center">
+                          <Users className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 font-manrope">
+                          {safeString(review.buyer?.firstName || "Anonymous")}{" "}
+                          {safeString(review.buyer?.lastName || "")}
+                        </p>
+                        {review.product && (
+                          <Link
+                            href={`/explore/${review.product.id}`}
+                            className="text-sm text-gray-600 hover:text-yogreet-sage font-inter"
+                          >
+                            {safeString(review.product.productName)}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${
+                              i < (review.rating || 0)
+                                ? "text-yellow-500 fill-yellow-500"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      {review.verified && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 font-inter">
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {review.title && (
+                    <h4 className="font-medium text-gray-900 mb-2 font-manrope">
+                      {safeString(review.title)}
+                    </h4>
+                  )}
+                  {review.text && (
+                    <p className="text-gray-600 font-inter mb-2">
+                      {safeString(review.text)}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500 font-inter">
+                    {review.date
+                      ? new Date(review.date).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600 font-inter text-lg mb-2">No reviews yet</p>
+              <p className="text-gray-500 font-inter text-sm">
+                This seller hasn't received any reviews yet.
+              </p>
             </div>
           )}
         </div>
@@ -840,4 +931,3 @@ export default function SellerProfilePage() {
     </div>
   );
 }
-

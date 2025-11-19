@@ -2,6 +2,7 @@
 
 import { FiX, FiMapPin, FiStar } from "react-icons/fi"
 import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface ExploreDetailModalProps {
   isOpen: boolean
@@ -25,11 +26,29 @@ interface ExploreDetailModalProps {
 }
 
 export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModalProps) {
-  if (!isOpen || !spice) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <AnimatePresence mode="wait">
+      {isOpen && spice && (
+        <motion.div
+          key="modal-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 30 }}
+            transition={{ 
+              duration: 0.25, 
+              ease: [0.4, 0, 0.2, 1],
+              opacity: { duration: 0.2 }
+            }}
+            className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 bg-white">
           <h2 className="text-2xl font-poppins font-semibold text-yogreet-charcoal">{spice.name}</h2>
@@ -104,7 +123,9 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

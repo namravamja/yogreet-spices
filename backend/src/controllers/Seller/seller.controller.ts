@@ -196,25 +196,7 @@ export const updateSellerVerification = async (req: AuthenticatedRequest, res: R
       }
     }
 
-    // Handle foodQualityCertifications if it's a string (convert to array)
-    if (verificationData.foodQualityCertifications !== undefined) {
-      if (typeof verificationData.foodQualityCertifications === 'string') {
-        const certsStr: string = verificationData.foodQualityCertifications;
-        try {
-          verificationData.foodQualityCertifications = JSON.parse(certsStr) as string[];
-        } catch {
-          verificationData.foodQualityCertifications = certsStr.split(',').map((cert: string) => cert.trim()).filter(Boolean) as string[];
-        }
-      }
-    }
-
     // Handle boolean fields (from FormData they come as strings)
-    if (verificationData.labTestingCapability !== undefined) {
-      if (typeof verificationData.labTestingCapability === 'string') {
-        verificationData.labTestingCapability = verificationData.labTestingCapability === 'true';
-      }
-      verificationData.labTestingCapability = Boolean(verificationData.labTestingCapability);
-    }
     if (verificationData.certificateOfOriginCapability !== undefined) {
       if (typeof verificationData.certificateOfOriginCapability === 'string') {
         verificationData.certificateOfOriginCapability = verificationData.certificateOfOriginCapability === 'true';

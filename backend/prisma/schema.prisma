@@ -200,40 +200,42 @@ model Seller {
 
   bankName              String?
   upiId                 String?
-  gstNumber             String?
-  panNumber             String?
-  shippingType          String?
-  serviceAreas          String[]
-  returnPolicy          String?
   
-  // Seller Verification Fields - Step 1: Business Identity Verification
-  incorporationCertificate        String?
-  msmeUdyamCertificate           String?
-  businessAddressProof            String?
-  ownerIdDocument                String?
-  ownerIdNumber                  String?
+  // Document Verification - Step 1: Business Identity Verification
+  panNumber                      String?
+  gstNumber                     String?
+  ownerIdDocument               String?
+  incorporationCertificate      String?
+  msmeUdyamCertificate          String?
+  businessAddressProof          String?
+  ownerIdNumber                 String?
   
-  // Seller Verification Fields - Step 2: Export Eligibility Verification
+  // Document Verification - Step 2: Export Eligibility Verification
   iecCode                         String?
   iecCertificate                  String?
-  apedaRegistrationNumber        String?
-  apedaCertificate               String?
-  spicesBoardRegistrationNumber String?
-  spicesBoardCertificate         String?
-  tradeLicense                   String?
+  apedaRegistrationNumber         String?
+  apedaCertificate                String?
+  spicesBoardRegistrationNumber  String?
+  spicesBoardCertificate          String?
+  tradeLicense                    String?
   // Bank Details - merged from bankAccountName/bankAccountHolderName, accountNumber/bankAccountNumber, ifscCode/bankIfscCode
-  bankAccountHolderName          String?
-  bankAccountNumber              String?
-  bankIfscCode                   String?
-  bankProofDocument              String?
+  bankAccountHolderName           String?
+  bankAccountNumber               String?
+  bankIfscCode                    String?
+  bankProofDocument               String?
   
-  // Seller Verification Fields - Step 3: Food & Safety Compliance
+  // Document Verification - Step 3: Food & Safety Compliance
   fssaiLicenseNumber             String?
   fssaiCertificate               String?
   foodQualityCertifications      String[] // multiple optional certifications
   labTestingCapability           Boolean  @default(false)
   
-  // Seller Verification Fields - Step 4: Export Documentation & Shipment Capability
+  // Document Verification - Step 4: Shipping & Logistics
+  shippingType                   String?
+  serviceAreas                   String[]
+  returnPolicy                   String?
+  
+  // Document Verification - Step 5: Export Documentation & Shipment Capability
   certificateOfOriginCapability       Boolean  @default(false)
   phytosanitaryCertificateCapability  Boolean  @default(false)
   packagingCompliance                 Boolean  @default(false)

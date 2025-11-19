@@ -1,9 +1,14 @@
 "use client"
 
-import { FiShield, FiCreditCard, FiGift } from "react-icons/fi"
+import { FiShield, FiCreditCard, FiGift, FiUsers } from "react-icons/fi"
 
 export function FeaturesSection() {
   const features = [
+    {
+      title: "No Middle Man",
+      description: "Connect directly with verified spice exporters, eliminating intermediaries and ensuring better prices and quality control.",
+      icon: FiUsers,
+    },
     {
       title: "Verified Exporters Only",
       description: "Buy from government-verified Indian spice exporters with proven track records and quality certifications.",
@@ -13,6 +18,11 @@ export function FeaturesSection() {
       title: "Secure Payment Protection",
       description: "Your money is safe with our escrow system - funds are released only when you're satisfied with your order.",
       icon: FiCreditCard,
+    },
+    {
+      title: "Samples Before Purchase",
+      description: "Test quality and authenticity with complimentary samples before committing to large orders.",
+      icon: FiGift,
     },
   ]
 
@@ -28,10 +38,10 @@ export function FeaturesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {features.map((feature, index) => {
             const IconComponent = feature.icon
-            const iconColors = ['text-yogreet-red', 'text-yogreet-sage', 'text-yogreet-gold']
+            const iconColors = ['text-yogreet-red', 'text-yogreet-sage', 'text-yogreet-gold', 'text-yogreet-red']
             const iconColor = iconColors[index % iconColors.length]
             
             return (

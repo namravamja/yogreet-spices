@@ -87,39 +87,42 @@ export default function BecomeSellerPage() {
 
   const requirements = [
     {
-      title: "Business Registration",
+      title: "Business Identity Verification",
       items: [
-        "Valid business registration certificate",
-        "Company incorporation document (if applicable)",
-        "MSME/Udyam certificate (optional but recommended)",
-        "PAN and GST number",
+        "PAN number",
+        "GST number",
+        "Owner ID document (Aadhaar/Passport)",
+        "Incorporation certificate (if applicable)",
+        "MSME/Udyam certificate (optional)",
+        "Business address proof",
       ],
     },
     {
-      title: "Export Eligibility",
+      title: "Export Eligibility Verification",
       items: [
         "IEC (Import Export Code) certificate",
         "APEDA registration number",
         "Spices Board registration number",
-        "Valid trade license",
-        "Bank account details for payments",
+        "Trade license",
+        "Bank account details and proof",
       ],
     },
     {
       title: "Food Safety Compliance",
       items: [
-        "FSSAI license number",
+        "FSSAI license number and certificate",
         "Food quality certifications (ISO, HACCP, etc.)",
-        "Lab testing capability documentation",
+        "Lab testing capability (if applicable)",
       ],
     },
     {
-      title: "Export Documentation",
+      title: "Export Documentation & Shipment Capability",
       items: [
         "Certificate of Origin capability",
         "Phytosanitary Certificate capability",
-        "Packaging compliance documentation",
+        "Packaging compliance",
         "Fumigation certificate capability",
+        "Export logistics preparedness",
       ],
     },
   ]
@@ -142,10 +145,11 @@ export default function BecomeSellerPage() {
       description: "Submit your business documents and certifications. Our team will review them to verify your eligibility as a spice exporter.",
       icon: FileText,
       details: [
-        "Upload business identity documents",
-        "Submit export eligibility certificates",
+        "Upload business identity verification documents",
+        "Submit export eligibility verification documents",
         "Provide food safety compliance documents",
-        "Confirm export documentation capabilities",
+        "Confirm shipping & logistics information",
+        "Verify export documentation & shipment capabilities",
       ],
     },
     {
@@ -153,10 +157,11 @@ export default function BecomeSellerPage() {
       description: "Complete your seller profile with business details, addresses, shipping logistics, and social media links.",
       icon: Award,
       details: [
-        "Add business and warehouse addresses",
-        "Set up shipping preferences",
-        "Configure service areas",
-        "Link your website and social media",
+        "Add business address information",
+        "Set up shipping type and service areas",
+        "Configure return policy",
+        "Link your website and social media profiles",
+        "Add store photos and business description",
       ],
       number: 3,
     },
@@ -270,18 +275,18 @@ export default function BecomeSellerPage() {
           <div className="absolute inset-0 bg-black/50 z-10"></div>
           {/* Optional left-to-right gradient emphasis */}
           <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/20 to-transparent z-10"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 min-h-[520px] md:min-h-[680px] z-20 flex items-center">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl md:text-5xl font-poppins font-semibold text-white leading-tight mb-4">
-                Become a Seller on Yogreet
+          <div className="relative mb-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 min-h-[520px] md:min-h-[680px] z-20 flex items-center justify-center">
+            <div className="max-w-3xl text-center">
+              <h1 className="text-5xl md:text-7xl font-poppins font-normal text-white leading-tight mb-4">
+                Your Gateway to Global Spice Export
               </h1>
-              <p className="text-white/90 font-inter text-base md:text-lg mb-8 max-w-2xl">
-                Join India’s premier spice export platform. Showcase your products, reach verified buyers worldwide, and grow with secure escrow payments.
+              <p className="text-white/90 font-inter text-base md:text-lg mb-8 max-w-2xl mx-auto">
+                Join India's premier spice export platform. Showcase your products, reach verified buyers worldwide, and grow with secure escrow payments.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleSignupClick}
-                  className="px-6 py-3 bg-white text-yogreet-sage font-manrope font-semibold hover:bg-white/90 transition-colors cursor-pointer rounded-md"
+                  className="px-6 py-3 bg-yogreet-sage text-white font-manrope font-semibold hover:bg-yogreet-sage/90 transition-colors cursor-pointer rounded-md"
                 >
                   Create Seller Account
                 </button>

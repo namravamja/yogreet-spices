@@ -8,6 +8,7 @@ export const getPublicSellerProfile = async (sellerId: string) => {
       where: { id: sellerId },
       select: {
         id: true,
+        email: true,
         fullName: true,
         companyName: true,
         businessLogo: true,
@@ -42,6 +43,7 @@ export const getPublicSellerProfile = async (sellerId: string) => {
         },
         verificationStatus: true,
         profileCompletion: true,
+        createdAt: true,
         // Export capabilities (public info)
         certificateOfOriginCapability: true,
         phytosanitaryCertificateCapability: true,
@@ -144,6 +146,90 @@ export const getPublicSellerProfile = async (sellerId: string) => {
       throw error;
     }
     throw new Error(`Failed to fetch seller profile: ${(error as Error).message}`);
+  }
+};
+
+export const getTopSellers = async (limit: number = 10) => {
+  try {
+    const sellers = await prisma.seller.findMany({
+      where: {
+        verificationStatus: "approved", // Only show verified sellers
+        profileCompletion: {
+          gte: 50, // At least 50% profile completion
+        },
+      },
+      select: {
+        id: true,
+        fullName: true,
+        companyName: true,
+        businessLogo: true,
+        about: true,
+        businessAddress: {
+          select: {
+            city: true,
+            state: true,
+            country: true,
+          },
+        },
+        products: {
+          select: {
+            id: true,
+          },
+        },
+        Review: {
+          select: {
+            rating: true,
+          },
+        },
+      },
+      orderBy: [
+        {
+          profileCompletion: "desc",
+        },
+        {
+          documentCompletion: "desc",
+        },
+      ],
+      take: limit,
+    });
+
+    // Transform sellers with calculated fields
+    const sellersWithStats = sellers.map((seller) => {
+      const reviews = seller.Review || [];
+      const averageRating =
+        reviews.length > 0
+          ? reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) /
+            reviews.length
+          : 0;
+
+      const totalProducts = seller.products?.length || 0;
+      const totalReviews = reviews.length;
+
+      const location = seller.businessAddress
+        ? `${seller.businessAddress.city || ""}, ${seller.businessAddress.country || ""}`
+            .trim()
+            .replace(/^,\s*/, "")
+            .replace(/,\s*$/, "")
+        : "Unknown Location";
+
+      return {
+        id: seller.id,
+        name: seller.companyName || seller.fullName || "Unknown Seller",
+        logo: seller.businessLogo,
+        about: seller.about,
+        location,
+        averageRating: Math.round(averageRating * 10) / 10,
+        totalProducts,
+        totalReviews,
+      };
+    });
+
+    return sellersWithStats;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Failed to fetch top sellers: ${(error as Error).message}`);
   }
 };
 

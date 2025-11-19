@@ -16,3 +16,13 @@ export const getPublicSellerProfile = async (req: Request, res: Response) => {
   }
 };
 
+export const getTopSellers = async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const sellers = await sellerService.getTopSellers(limit);
+    res.json(sellers);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+

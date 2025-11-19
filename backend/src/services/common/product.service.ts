@@ -36,8 +36,14 @@ export const getProducts = async () => {
         seller: {
           select: {
             id: true,
+            email: true,
             companyName: true,
             fullName: true,
+            businessType: true,
+            businessLogo: true,
+            about: true,
+            productCategories: true,
+            createdAt: true,
             businessAddress: {
               select: {
                 city: true,
@@ -131,8 +137,14 @@ export const createProduct = async (sellerId: string, data: CreateProductData) =
         seller: {
           select: {
             id: true,
+            email: true,
             companyName: true,
             fullName: true,
+            businessType: true,
+            businessLogo: true,
+            about: true,
+            productCategories: true,
+            createdAt: true,
             businessAddress: {
               select: {
                 city: true,
@@ -276,8 +288,14 @@ export const updateProduct = async (sellerId: string, productId: string, data: U
         seller: {
           select: {
             id: true,
+            email: true,
             companyName: true,
             fullName: true,
+            businessType: true,
+            businessLogo: true,
+            about: true,
+            productCategories: true,
+            createdAt: true,
             businessAddress: {
               select: {
                 city: true,

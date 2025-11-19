@@ -51,12 +51,9 @@ export default function DocumentProgress({ data }: DocumentProgressProps) {
   const calculateProgress = () => {
     try {
       let completed = 0;
-      const total = 30; // Updated total based on actual fields (9+11+2+3+5)
+      const total = 27; // Updated total after removing companyName, businessType, and fullName/ownerFullName (6+11+2+3+5)
 
-      // Step 1: Business Identity (9 fields)
-      if (data?.companyName?.trim()) completed++;
-      if (data?.businessType?.trim()) completed++;
-      if (data?.fullName?.trim() || data?.ownerFullName?.trim()) completed++;
+      // Step 1: Business Identity (6 fields)
       if (data?.panNumber?.trim()) completed++;
       if (data?.gstNumber?.trim()) completed++;
       if (data?.ownerIdDocument) completed++;
@@ -119,9 +116,6 @@ export default function DocumentProgress({ data }: DocumentProgressProps) {
       const missing: string[] = [];
 
       // Step 1: Business Identity
-      if (!data?.companyName?.trim()) missing.push("• Add company name");
-      if (!data?.businessType?.trim()) missing.push("• Add business type");
-      if (!data?.fullName?.trim() && !data?.ownerFullName?.trim()) missing.push("• Add owner full name");
       if (!data?.panNumber?.trim()) missing.push("• Add PAN number");
       if (!data?.gstNumber?.trim()) missing.push("• Add GST number");
       if (!data?.ownerIdDocument) missing.push("• Upload owner ID document");
@@ -191,7 +185,7 @@ export default function DocumentProgress({ data }: DocumentProgressProps) {
             <p>Complete your documents to enable exports:</p>
             <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
               {getMissingFields().map((field, index) => (
-                <div key={index} className="font-inter">{field}</div>
+                <div key={index} className="font-inter text-red-600">{field}</div>
               ))}
             </div>
           </div>

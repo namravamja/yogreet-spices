@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Edit } from "lucide-react";
+import { MapPin, Edit, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Address {
@@ -27,6 +27,17 @@ export default function AddressInformation({
   const router = useRouter();
   const business = sellerData.businessAddress;
 
+  // Check if all required address fields are complete
+  const isComplete = 
+    business?.street?.trim() &&
+    business?.city?.trim() &&
+    business?.state?.trim() &&
+    business?.country?.trim() &&
+    business?.pinCode?.trim();
+  
+  const buttonText = isComplete ? "Edit" : "Upload";
+  const ButtonIcon = isComplete ? Edit : Upload;
+
   return (
     <div className="bg-white border border-stone-200 shadow-sm">
       <div className="p-6 border-b border-stone-200">
@@ -39,8 +50,8 @@ export default function AddressInformation({
             onClick={() => (onEdit ? onEdit() : router.push("/seller/edit-profile/3"))}
             className="px-3 py-1.5 border border-yogreet-sage text-yogreet-sage rounded-md hover:bg-yogreet-sage/10 transition-colors cursor-pointer text-sm font-manrope flex items-center gap-1.5"
           >
-            <Edit className="w-4 h-4" />
-            Edit
+            <ButtonIcon className="w-4 h-4" />
+            {buttonText}
           </button>
         </div>
       </div>

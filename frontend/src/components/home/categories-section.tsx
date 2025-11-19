@@ -60,7 +60,7 @@ export function CategoriesSection() {
             <div
               key={index}
               onClick={() => handleCategoryClick(category.name)}
-              className="group relative shrink-0 w-36 h-36 md:w-44 md:h-44 bg-white border border-yogreet-light-gray rounded-md overflow-hidden cursor-pointer hover:shadow-lg hover:border-yogreet-red transition-all duration-300"
+              className="group relative shrink-0 w-28 h-32 md:w-36 md:h-36 bg-white border border-yogreet-light-gray rounded-md overflow-hidden cursor-pointer hover:shadow-lg hover:border-yogreet-red transition-all duration-300"
             >
               <div className="relative w-full h-full">
                 <img
