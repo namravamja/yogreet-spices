@@ -19,7 +19,7 @@ export const BuyerApi = createApi({
     baseUrl: `${BASE_API_URL}/buyer`,
     credentials: "include",
   }),
-  tagTypes: ["Buyer", "Cart"],
+  tagTypes: ["Buyer", "Cart", "Orders"],
   endpoints: () => ({}),
 });
 

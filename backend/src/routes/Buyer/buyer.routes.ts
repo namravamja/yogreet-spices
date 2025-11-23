@@ -40,5 +40,9 @@ router.put("/cart/:id", asyncHandler(buyerController.updateCartItem as any));
 router.delete("/cart/:id", asyncHandler(buyerController.removeCartItem as any));
 router.delete("/cart", asyncHandler(buyerController.clearCart as any));
 
+// Order routes
+router.get("/orders", asyncHandler(buyerController.getOrders as any));
+router.post("/orders", asyncHandler(buyerController.createOrder as any));
+
 export default router;
 

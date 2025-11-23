@@ -22,7 +22,6 @@ const SHIPPING_TYPES = [
 const SERVICE_AREAS = [
   "Domestic",
   "International",
-  "Bulk Orders",
   "Retail Orders",
   "B2B",
   "B2C",

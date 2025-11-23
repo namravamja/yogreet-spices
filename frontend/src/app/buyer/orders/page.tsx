@@ -13,127 +13,7 @@ import {
   User,
 } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
-
-// Mock data for now - replace with actual API calls later
-const mockOrders = [
-  {
-    id: "ORD-001-2024",
-    status: "delivered",
-    paymentStatus: "paid",
-    placedAt: "2024-01-15T10:30:00Z",
-    totalAmount: 1250,
-    shippingCost: 50,
-    taxAmount: 100,
-    paymentMethod: "Credit Card",
-    estimatedDelivery: "2024-01-20T00:00:00Z",
-    updatedAt: "2024-01-18T14:20:00Z",
-    orderItems: [
-      {
-        id: "item-1",
-        productId: "prod-1",
-        quantity: 2,
-        priceAtPurchase: 500,
-        product: {
-          productName: "Premium Turmeric Powder",
-          productImages: ["/Profile.jpg"],
-          category: "Spices",
-        },
-        artist: {
-          storeName: "Spice Master",
-          fullName: "John Doe",
-        },
-      },
-      {
-        id: "item-2",
-        productId: "prod-2",
-        quantity: 1,
-        priceAtPurchase: 250,
-        product: {
-          productName: "Organic Cumin Seeds",
-          productImages: ["/Profile.jpg"],
-          category: "Spices",
-        },
-        artist: {
-          storeName: "Organic Spices Co",
-          fullName: "Jane Smith",
-        },
-      },
-    ],
-  },
-  {
-    id: "ORD-002-2024",
-    status: "shipped",
-    paymentStatus: "paid",
-    placedAt: "2024-01-20T15:45:00Z",
-    totalAmount: 750,
-    shippingCost: 30,
-    taxAmount: 60,
-    paymentMethod: "UPI",
-    estimatedDelivery: "2024-01-25T00:00:00Z",
-    updatedAt: "2024-01-22T09:15:00Z",
-    orderItems: [
-      {
-        id: "item-3",
-        productId: "prod-3",
-        quantity: 3,
-        priceAtPurchase: 200,
-        product: {
-          productName: "Red Chili Powder",
-          productImages: ["/Profile.jpg"],
-          category: "Spices",
-        },
-        artist: {
-          storeName: "Hot Spices",
-          fullName: "Mike Johnson",
-        },
-      },
-    ],
-  },
-  {
-    id: "ORD-003-2024",
-    status: "processing",
-    paymentStatus: "paid",
-    placedAt: "2024-01-25T12:20:00Z",
-    totalAmount: 1800,
-    shippingCost: 80,
-    taxAmount: 144,
-    paymentMethod: "Net Banking",
-    estimatedDelivery: "2024-01-30T00:00:00Z",
-    updatedAt: "2024-01-26T11:30:00Z",
-    orderItems: [
-      {
-        id: "item-4",
-        productId: "prod-4",
-        quantity: 1,
-        priceAtPurchase: 1500,
-        product: {
-          productName: "Premium Garam Masala",
-          productImages: ["/Profile.jpg"],
-          category: "Spice Blends",
-        },
-        artist: {
-          storeName: "Royal Spices",
-          fullName: "Sarah Wilson",
-        },
-      },
-      {
-        id: "item-5",
-        productId: "prod-5",
-        quantity: 2,
-        priceAtPurchase: 150,
-        product: {
-          productName: "Cardamom Pods",
-          productImages: ["/Profile.jpg"],
-          category: "Spices",
-        },
-        artist: {
-          storeName: "Royal Spices",
-          fullName: "Sarah Wilson",
-        },
-      },
-    ],
-  },
-];
+import { useGetOrdersQuery } from "@/services/api/buyerApi";
 
 // Status color mappings with Yogreet theme
 const statusColors: Record<string, string> = {
@@ -157,11 +37,44 @@ export default function BuyerOrdersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading] = useState(false);
-  const [error] = useState(null);
 
-  // Use mock data for now
-  const orders = mockOrders;
+  // Fetch orders from API
+  const { data: ordersData, isLoading, error } = useGetOrdersQuery(undefined, {
+    skip: false,
+  });
+
+  // Transform API data to match frontend format
+  const orders = useMemo(() => {
+    if (!ordersData) return [];
+    
+    return ordersData.map((order: any) => ({
+      id: order.id || order._id,
+      status: order.status || "pending",
+      paymentStatus: order.paymentStatus || "unpaid",
+      placedAt: order.placedAt || order.createdAt,
+      totalAmount: order.totalAmount || 0,
+      shippingCost: order.shippingCost || 0,
+      taxAmount: order.taxAmount || 0,
+      paymentMethod: order.paymentMethod || "N/A",
+      updatedAt: order.updatedAt || order.placedAt,
+      orderItems: (order.orderItems || []).map((item: any) => ({
+        id: item.id || item._id,
+        productId: item.product?.id || item.productId?._id || item.productId || item.productId,
+        quantity: item.quantity || 0,
+        priceAtPurchase: item.priceAtPurchase || 0,
+        product: {
+          productName: item.product?.productName || "Unknown Product",
+          productImages: item.product?.productImages || ["/placeholder.jpg"],
+          category: item.product?.category || "N/A",
+        },
+        artist: {
+          storeName: item.seller?.companyName || item.seller?.fullName || "Unknown Seller",
+          fullName: item.seller?.fullName || "Unknown Seller",
+        },
+      })),
+    }));
+  }, [ordersData]);
+
   const pagination = {
     currentPage: 1,
     totalPages: 1,
@@ -414,7 +327,11 @@ export default function BuyerOrdersPage() {
                       </h3>
                       <p className="text-sm text-stone-500 mt-1">
                         Placed on{" "}
-                        {new Date(order.placedAt).toLocaleDateString()}
+                        {new Date(order.placedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2 mt-2 sm:mt-0">
@@ -464,7 +381,7 @@ export default function BuyerOrdersPage() {
                           />
                         </div>
                         <div className="flex-1">
-                          <Link href={`/Products/${item.productId}`}>
+                          <Link href={`/explore/${item.productId}`}>
                             <h4 className="font-medium text-yogreet-charcoal hover:text-yogreet-red transition-colors">
                               {item.product?.productName || "Unknown Product"}
                             </h4>
@@ -528,13 +445,21 @@ export default function BuyerOrdersPage() {
                             Estimated delivery:{" "}
                             {new Date(
                               order.estimatedDelivery
-                            ).toLocaleDateString()}
+                            ).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
                           </p>
                         )}
                       {order.updatedAt && (
                         <p className="text-xs text-stone-500 mt-1">
                           Last updated:{" "}
-                          {new Date(order.updatedAt).toLocaleDateString()}
+                          {new Date(order.updatedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
                         </p>
                       )}
                     </div>

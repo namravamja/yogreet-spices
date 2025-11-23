@@ -121,6 +121,21 @@ export const buyerApi = BuyerApi.injectEndpoints({
       invalidatesTags: ["Cart"],
     }),
 
+    // Order operations
+    getOrders: builder.query({
+      query: () => "/orders",
+      providesTags: ["Orders"],
+    }),
+
+    createOrder: builder.mutation({
+      query: (orderData) => ({
+        url: "/orders",
+        method: "POST",
+        body: orderData,
+      }),
+      invalidatesTags: ["Cart", "Buyer", "Orders"],
+    }),
+
   }),
 });
 
@@ -137,5 +152,7 @@ export const {
   useUpdateCartItemMutation,
   useRemoveCartItemMutation,
   useClearCartMutation,
+  useGetOrdersQuery,
+  useCreateOrderMutation,
 } = buyerApi;
 

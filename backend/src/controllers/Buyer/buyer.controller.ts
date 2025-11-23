@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import * as buyerService from "../../services/Buyer/buyer.service";
+import * as cartService from "../../services/Buyer/cart.service";
+import * as orderService from "../../services/Buyer/order.service";
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
@@ -85,8 +87,8 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response) =>
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const addressId = parseInt(req.params.id, 10);
-    if (isNaN(addressId)) throw new Error("Invalid address ID");
+    const addressId = req.params.id;
+    if (!addressId) throw new Error("Invalid address ID");
 
     const addressData: buyerService.AddressUpdateData = req.body;
     const address = await buyerService.updateAddress(userId, addressId, addressData);
@@ -101,8 +103,8 @@ export const deleteAddress = async (req: AuthenticatedRequest, res: Response) =>
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const addressId = parseInt(req.params.id, 10);
-    if (isNaN(addressId)) throw new Error("Invalid address ID");
+    const addressId = req.params.id;
+    if (!addressId) throw new Error("Invalid address ID");
 
     await buyerService.deleteAddress(userId, addressId);
     res.status(204).send();
@@ -116,8 +118,8 @@ export const setDefaultAddress = async (req: AuthenticatedRequest, res: Response
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const addressId = parseInt(req.params.id, 10);
-    if (isNaN(addressId)) throw new Error("Invalid address ID");
+    const addressId = req.params.id;
+    if (!addressId) throw new Error("Invalid address ID");
 
     const address = await buyerService.setDefaultAddress(userId, addressId);
     res.json(address);
@@ -132,7 +134,7 @@ export const getCart = async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const cartItems = await buyerService.getCartItems(userId);
+    const cartItems = await cartService.getCartItems(userId);
     res.json(cartItems);
   } catch (error) {
     res.status(404).json({ error: (error as Error).message });
@@ -144,7 +146,7 @@ export const addToCart = async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const cartItem = await buyerService.addToCart(userId, req.body);
+    const cartItem = await cartService.addToCart(userId, req.body);
     res.status(201).json(cartItem);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -157,7 +159,7 @@ export const updateCartItem = async (req: AuthenticatedRequest, res: Response) =
     if (!userId) throw new Error("Unauthorized");
 
     const cartItemId = req.params.id;
-    const cartItem = await buyerService.updateCartItem(userId, cartItemId, req.body);
+    const cartItem = await cartService.updateCartItem(userId, cartItemId, req.body);
     res.json(cartItem);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -170,7 +172,7 @@ export const removeCartItem = async (req: AuthenticatedRequest, res: Response) =
     if (!userId) throw new Error("Unauthorized");
 
     const cartItemId = req.params.id;
-    await buyerService.removeCartItem(userId, cartItemId);
+    await cartService.removeCartItem(userId, cartItemId);
     res.status(204).send();
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -182,8 +184,34 @@ export const clearCart = async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    await buyerService.clearCart(userId);
+    await cartService.clearCart(userId);
     res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+// Order controllers
+export const getOrders = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const orders = await orderService.getBuyerOrders(userId);
+    res.json(orders);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const orderData: orderService.CreateOrderData = req.body;
+    const order = await orderService.createOrder(userId, orderData);
+    res.status(201).json(order);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }

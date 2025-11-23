@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -13,7 +13,6 @@ import toast from "react-hot-toast";
 import PageHero from "@/components/shared/PageHero";
 import {
   useGetCartQuery,
-  useUpdateCartItemMutation,
   useRemoveCartItemMutation,
   useClearCartMutation,
 } from "@/services/api/buyerApi";
@@ -82,96 +81,78 @@ export default function BuyerCartPage() {
   const { data: cartData, isLoading: isLoadingCart, refetch } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
   });
-  const [updateCartItem, { isLoading: isUpdating }] = useUpdateCartItemMutation();
   const [removeCartItem, { isLoading: isRemoving }] = useRemoveCartItemMutation();
   const [clearCart, { isLoading: isClearing }] = useClearCartMutation();
   
   const [isLoading, setIsLoading] = useState(false);
   
-  // Transform backend data to match frontend expectations
-  const cartItems = cartData ? cartData.map((item: any) => ({
-    id: item.id,
-    productId: item.productId,
-    weight: item.quantity, // Backend uses 'quantity', frontend uses 'weight'
-    product: {
-      id: item.product.id,
-      productName: item.product.productName,
-      productImages: item.product.productImages,
-      sellingPrice: item.product.sellingPrice,
-      availableStock: item.product.availableStock,
-      minQuantity: parseFloat(item.product.weight || "1"), // Use weight as minQuantity
-      category: item.product.category,
-      artist: {
-        fullName: item.product.seller?.fullName || "Unknown",
-        storeName: item.product.seller?.companyName || "Unknown",
+  // Transform backend data to match new product schema
+  const cartItems = cartData ? cartData.map((item: any) => {
+    const product = item.product || {}
+    
+    // Calculate available stock from package weights
+    const sampleWeight = parseFloat(product.sampleWeight || "0")
+    const smallWeight = parseFloat(product.smallWeight || "0")
+    const mediumWeight = parseFloat(product.mediumWeight || "0")
+    const largeWeight = parseFloat(product.largeWeight || "0")
+    const availableStock = sampleWeight + smallWeight + mediumWeight + largeWeight
+    
+    // Get package prices
+    const samplePrice = parseFloat(product.samplePrice || "0")
+    const smallPrice = parseFloat(product.smallPrice || "0")
+    const mediumPrice = parseFloat(product.mediumPrice || "0")
+    const largePrice = parseFloat(product.largePrice || "0")
+    
+    // Calculate price per kg from small package (or sample if small not available)
+    let pricePerKg = 0
+    if (smallWeight > 0 && smallPrice > 0) {
+      pricePerKg = smallPrice / smallWeight
+    } else if (sampleWeight > 0 && samplePrice > 0) {
+      pricePerKg = samplePrice / sampleWeight
+    } else if (mediumWeight > 0 && mediumPrice > 0) {
+      pricePerKg = mediumPrice / mediumWeight
+    } else if (largeWeight > 0 && largePrice > 0) {
+      pricePerKg = largePrice / largeWeight
+    }
+    
+    // Minimum quantity is the smallest package weight
+    const minQuantity = Math.min(
+      ...([sampleWeight, smallWeight, mediumWeight, largeWeight].filter(w => w > 0))
+    ) || 1
+    
+    return {
+      id: item.id,
+      productId: item.productId,
+      weight: item.quantity, // Backend uses 'quantity', frontend uses 'weight'
+      product: {
+        id: product.id,
+        productName: product.productName,
+        productImages: product.productImages || [],
+        pricePerKg,
+        availableStock,
+        minQuantity,
+        category: product.category,
+        shortDescription: product.shortDescription,
+        // Package details
+        samplePrice,
+        sampleWeight,
+        smallPrice,
+        smallWeight,
+        mediumPrice,
+        mediumWeight,
+        largePrice,
+        largeWeight,
+        // Seller information
+        seller: {
+          id: product.seller?.id || null,
+          fullName: product.seller?.fullName || null,
+          companyName: product.seller?.companyName || product.seller?.fullName || "Unknown Seller",
+          businessLogo: product.seller?.businessLogo || null,
+          businessAddress: product.seller?.businessAddress || null,
+        },
       },
-    },
-  })) : [];
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [tempWeight, setTempWeight] = useState<number | null>(null);
-
-  const handleModifyClick = (cartItemId: string, currentWeight: number) => {
-    setEditingItemId(cartItemId);
-    setTempWeight(currentWeight);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingItemId(null);
-    setTempWeight(null);
-  };
-
-  const handleSaveWeight = async (
-    cartItemId: string,
-    newWeight: number,
-    maxStock: number,
-    minQuantity: number
-  ) => {
-    if (isNaN(newWeight) || newWeight <= 0) {
-      toast.error(`Please enter a valid weight`, {
-        duration: 3000,
-        icon: "⚠️",
-      });
-      return false;
     }
-
-    if (newWeight < minQuantity) {
-      toast.error(`Minimum order weight is ${minQuantity} kg`, {
-        duration: 3000,
-        icon: "⚠️",
-      });
-      return false;
-    }
-
-    if (newWeight > maxStock) {
-      toast.error(`Only ${maxStock} kg available in stock`, {
-        duration: 3000,
-        icon: "⚠️",
-      });
-      return false;
-    }
-
-    try {
-      await updateCartItem({
-        id: cartItemId,
-        quantity: newWeight,
-      }).unwrap();
-      
-      setEditingItemId(null);
-      setTempWeight(null);
-      
-      toast.success("Weight updated", {
-        duration: 1500,
-        icon: "✅",
-      });
-      return true;
-    } catch (error: any) {
-      const errorMessage = error?.data?.error || error?.message || "Failed to update weight";
-      toast.error(errorMessage, {
-        duration: 3000,
-      });
-      return false;
-    }
-  };
+  }) : [];
 
   const removeItem = async (cartItemId: string) => {
     try {
@@ -210,7 +191,7 @@ export default function BuyerCartPage() {
     if (!cartItems || cartItems.length === 0) return 0;
 
     return cartItems.reduce((sum: number, item: any) => {
-      const pricePerKg = Number.parseFloat(item.product?.sellingPrice || 0);
+      const pricePerKg = item.product?.pricePerKg || 0;
       const weight = item.weight || 0;
       return sum + pricePerKg * weight;
     }, 0);
@@ -220,7 +201,7 @@ export default function BuyerCartPage() {
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
-  const isLoadingData = isLoadingCart || isUpdating || isRemoving || isClearing;
+  const isLoadingData = isLoadingCart || isRemoving || isClearing;
 
   if (isLoadingData && cartItems.length === 0) {
     return (
@@ -329,17 +310,8 @@ export default function BuyerCartPage() {
               const weight = Number.parseFloat(
                 item.weight?.toString() || item.product?.minQuantity?.toString() || "1"
               );
-              const availableStock = Number.parseFloat(
-                item.product?.availableStock || "0"
-              );
-              const minQuantity = Number.parseFloat(
-                item.product?.minQuantity || "1"
-              );
-              const isWeightAtMax = weight >= availableStock;
-              const isOutOfStock = availableStock === 0;
-              const pricePerKg = Number.parseFloat(
-                item.product?.sellingPrice || "0"
-              );
+              const pricePerKg = item.product?.pricePerKg || 0;
+              const seller = item.product?.seller;
 
               return (
                 <div key={item.id} className="bg-white border border-stone-200 rounded-xs">
@@ -358,67 +330,55 @@ export default function BuyerCartPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-2">
-                          <div>
+                          <div className="flex-1">
                             <Link href={`/explore/${item.product?.id || ""}`}>
-                              <h3 className="font-medium text-yogreet-charcoal hover:text-yogreet-red transition-colors">
+                              <h3 className="font-medium text-yogreet-charcoal hover:text-yogreet-red hover:underline transition-colors mb-1">
                                 {item.product?.productName || "Unknown Product"}
                               </h3>
                             </Link>
-                            <p className="text-sm text-stone-500">
-                              By{" "}
-                              {item.product?.artist?.fullName ||
-                                "Unknown Artist"}
-                            </p>
+                            
+                            {/* Seller Information */}
+                            {seller && (
+                              <Link 
+                                href={seller.id ? `/buyer/seller/${seller.id}` : "#"}
+                                className="flex items-center gap-2 mb-2 group"
+                                onClick={(e) => !seller.id && e.preventDefault()}
+                              >
+                                {seller.businessLogo ? (
+                                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
+                                    <Image
+                                      src={seller.businessLogo}
+                                      alt={seller.companyName || seller.fullName}
+                                      fill
+                                      className="object-cover rounded-full"
+                                      sizes="32px"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-yogreet-sage shrink-0 flex items-center justify-center">
+                                    <span className="text-white text-xs font-semibold">
+                                      {(seller.companyName || seller.fullName).charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex flex-col">
+                                  <p className="text-sm font-medium text-yogreet-charcoal group-hover:text-yogreet-red group-hover:underline transition-colors">
+                                    {seller.companyName || seller.fullName}
+                                  </p>
+                                  {seller.businessAddress && (
+                                    <p className="text-xs text-stone-500">
+                                      {seller.businessAddress.city || ""}{seller.businessAddress.city && seller.businessAddress.country ? ", " : ""}{seller.businessAddress.country || ""}
+                                    </p>
+                                  )}
+                                </div>
+                              </Link>
+                            )}
+                            
                             <span className="inline-block bg-stone-100 text-stone-800 text-xs px-2 py-1 mt-1 rounded-xs">
                               {item.product?.category || "Uncategorized"}
                             </span>
                           </div>
-                          {editingItemId === item.productId ? (
                             <div className="flex gap-2">
-                              <button
-                                onClick={handleCancelEdit}
-                                disabled={isUpdating}
-                                className="px-3 py-1.5 text-sm border border-stone-300 text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  const weightToSave = (tempWeight !== null && tempWeight !== undefined) 
-                                    ? tempWeight 
-                                    : weight;
-                                  console.log('Save button clicked, saving weight:', weightToSave, 'current editingItemId:', editingItemId);
-                                  
-                                  // Immediately exit edit mode before saving
-                                  setEditingItemId(null);
-                                  setTempWeight(null);
-                                  console.log('Edit mode exited immediately');
-                                  
-                                  // Then save the weight
-                                  await handleSaveWeight(
-                                    item.id,
-                                    weightToSave,
-                                    availableStock,
-                                    minQuantity
-                                  );
-                                }}
-                                disabled={isUpdating}
-                                className="px-3 py-1.5 text-sm bg-yogreet-red hover:bg-yogreet-red/90 text-white transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleModifyClick(item.id, weight)}
-                                disabled={isUpdating || isOutOfStock}
-                                className="px-3 py-1.5 text-sm border border-stone-300 text-stone-700 hover:bg-stone-50 transition-colors cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Modify
-                              </button>
                               <button
                                 onClick={() => removeItem(item.id)}
                                 disabled={isRemoving}
@@ -427,93 +387,27 @@ export default function BuyerCartPage() {
                                 Remove
                               </button>
                             </div>
-                          )}
                         </div>
 
                         <div className="flex flex-col gap-3 mt-4">
                           <div className="flex items-center gap-2">
                             <span className="text-base text-stone-600 font-medium">Weight (kg):</span>
-                            {editingItemId === item.id ? (
-                              <div className="flex items-center">
-                                <input
-                                  type="text"
-                                  value={tempWeight !== null && tempWeight !== undefined ? (tempWeight === 0 ? '' : tempWeight.toString()) : weight.toFixed(1)}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    // Allow only numbers and one decimal point
-                                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                                      if (value === '' || value === '.') {
-                                        setTempWeight(weight); // Keep original weight if empty
-                                      } else {
-                                        const newWeight = parseFloat(value);
-                                        if (!isNaN(newWeight) && newWeight >= 0) {
-                                          setTempWeight(newWeight);
-                                        }
-                                      }
-                                    }
-                                  }}
-                                  onKeyDown={async (e) => {
-                                    // Allow: backspace, delete, tab, escape, enter, decimal point
-                                    if (
-                                      e.key === 'Enter' ||
-                                      e.key === 'Escape' ||
-                                      e.key === 'Backspace' ||
-                                      e.key === 'Delete' ||
-                                      e.key === 'Tab' ||
-                                      e.key === 'ArrowLeft' ||
-                                      e.key === 'ArrowRight' ||
-                                      e.key === 'ArrowUp' ||
-                                      e.key === 'ArrowDown' ||
-                                      e.key === 'Home' ||
-                                      e.key === 'End' ||
-                                      (e.key === '.' && !e.currentTarget.value.includes('.')) ||
-                                      /^[0-9]$/.test(e.key)
-                                    ) {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const weightToSave = (tempWeight !== null && tempWeight !== undefined)
-                                          ? tempWeight
-                                          : weight;
-                                        await handleSaveWeight(
-                                          item.id,
-                                          weightToSave,
-                                          availableStock,
-                                          minQuantity
-                                        );
-                                      } else if (e.key === 'Escape') {
-                                        e.preventDefault();
-                                        handleCancelEdit();
-                                      }
-                                    } else {
-                                      e.preventDefault();
-                                    }
-                                  }}
-                                  autoFocus
-                                  disabled={isUpdating || isOutOfStock}
-                                  className="h-9 w-28 px-3 py-1 text-base font-medium border border-stone-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400 disabled:opacity-50 disabled:cursor-not-allowed text-center"
-                                  placeholder={`${minQuantity} kg`}
-                                />
-                                <span className="ml-2 text-base text-stone-600">kg</span>
-                              </div>
-                            ) : (
                               <span className="text-base font-medium text-yogreet-charcoal">
                                 {weight.toFixed(1)} kg
                               </span>
-                            )}
                           </div>
 
                           <div className="flex items-center justify-between border-t border-stone-200 pt-3">
                             <div className="flex flex-col gap-0.5">
                               <p className="text-sm text-stone-500">
-                                ₹{pricePerKg.toFixed(2)} per kg
+                                ${pricePerKg.toFixed(2)} per kg
                               </p>
                               <p className="text-xs text-stone-400">
-                                {weight.toFixed(1)} kg × ₹{pricePerKg.toFixed(2)}
+                                {weight.toFixed(1)} kg × ${pricePerKg.toFixed(2)}
                               </p>
                             </div>
                             <p className="font-medium text-yogreet-charcoal text-lg">
-                              ₹{(pricePerKg * weight).toFixed(2)}
+                              ${(pricePerKg * weight).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -537,33 +431,25 @@ export default function BuyerCartPage() {
                   <div className="flex justify-between">
                     <span className="text-stone-600">Subtotal</span>
                     <span className="text-yogreet-charcoal">
-                      ₹{subtotal.toFixed(2)}
+                      ${subtotal.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Shipping</span>
                     <span className="text-yogreet-charcoal">
-                      {shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}
+                      {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Tax</span>
-                    <span className="text-yogreet-charcoal">₹{tax.toFixed(2)}</span>
+                    <span className="text-yogreet-charcoal">${tax.toFixed(2)}</span>
                   </div>
                   <hr className="border-stone-200" />
                   <div className="flex justify-between font-medium text-lg">
                     <span className="text-yogreet-charcoal">Total</span>
-                    <span className="text-yogreet-red">₹{total.toFixed(2)}</span>
+                    <span className="text-yogreet-red">${total.toFixed(2)}</span>
                   </div>
                 </div>
-
-                {shipping > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 p-3 mb-6 rounded-xs">
-                    <p className="text-sm text-blue-800">
-                      Add ₹{(100 - subtotal).toFixed(2)} more for free shipping!
-                    </p>
-                  </div>
-                )}
 
                 <Link href="/buyer/checkout">
                   <button className="w-full bg-yogreet-red hover:bg-yogreet-red/90 text-white px-6 py-3 font-medium mb-4 transition-colors cursor-pointer rounded-xs">

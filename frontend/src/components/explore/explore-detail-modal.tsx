@@ -98,7 +98,7 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
               {/* Buttons */}
               <div className="flex gap-3">
                 <button className="flex-1 bg-yogreet-red text-white py-3 font-manrope font-medium transition-all hover:shadow-lg">
-                  Buy in Bulk
+                  Add to Cart
                 </button>
               </div>
             </div>

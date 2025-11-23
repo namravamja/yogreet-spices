@@ -18,7 +18,7 @@ export function TestimonialsSection() {
       name: "Priya Sharma",
       role: "Wholesale Buyer",
       image: "/professional-woman-1.jpg",
-      quote: "Finding quality spices has never been easier. I love the sample request feature before bulk orders.",
+      quote: "Finding quality spices has never been easier. I love the sample request feature before placing orders.",
     },
     {
       name: "Ahmed Hassan",

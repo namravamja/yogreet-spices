@@ -7,9 +7,12 @@ import Image from "next/image"
 import Link from "next/link"
 import { FiStar, FiMapPin, FiArrowLeft, FiCheck, FiX, FiUser, FiChevronLeft, FiChevronRight, FiChevronDown, FiInfo, FiSearch, FiThumbsUp, FiThumbsDown, FiRepeat, FiMessageCircle } from "react-icons/fi"
 import { Navbar, Footer } from "@/components/layout"
-import BuyBulkModal from "@/components/buyer/BuyBulkModal"
 import { useGetProductsQuery } from "@/services/api"
 import PageHero from "@/components/shared/PageHero"
+import { LoginModal, SignupModal } from "@/components/auth"
+import { useAuth } from "@/hooks/useAuth"
+import { useAddToCartMutation, useGetCartQuery } from "@/services/api/buyerApi"
+import toast from "react-hot-toast"
 
 // Transform database product to detail page format
 function transformProductForDetail(product: any) {
@@ -119,13 +122,19 @@ export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data, isLoading, error } = useGetProductsQuery()
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth("buyer")
+  const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation()
+  const { data: cartData } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated,
+  })
   const [product, setProduct] = useState<any>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [selectedPackage, setSelectedPackage] = useState<"sample" | "small" | "medium" | "large">("small")
   const [showWhatsIncluded, setShowWhatsIncluded] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
-  const [showBulkModal, setShowBulkModal] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [newReview, setNewReview] = useState({
     rating: 5,
     comment: "",
@@ -281,6 +290,108 @@ export default function ProductDetailPage() {
 
     return () => unsubscribe()
   }, [scrollY])
+
+  // Modal handlers
+  const handleOpenLogin = () => {
+    setIsLoginModalOpen(true)
+    setIsSignupModalOpen(false)
+  }
+
+  const handleSwitchToSignup = () => {
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(true)
+  }
+
+  const handleSwitchToLogin = () => {
+    setIsSignupModalOpen(false)
+    setIsLoginModalOpen(true)
+  }
+
+  const handleCloseModals = () => {
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(false)
+  }
+
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(false)
+    // After successful login, try adding to cart again
+    if (product) {
+      handleAddToCart()
+    }
+  }
+
+  // Check if product is already in cart
+  const isProductInCart = useMemo(() => {
+    if (!cartData || !product) return false
+    return cartData.some((item: any) => {
+      const itemProductId = item.productId?.toString() || item.productId
+      const currentProductId = product.id?.toString() || product.id
+      return itemProductId === currentProductId
+    })
+  }, [cartData, product])
+
+  // Add to cart handler
+  const handleAddToCart = async () => {
+    // Check authentication
+    if (!isAuthenticated) {
+      handleOpenLogin()
+      return
+    }
+
+    if (!product) {
+      toast.error("Product not found")
+      return
+    }
+
+    // Check if product is already in cart
+    if (isProductInCart) {
+      toast.error("This product is already in your cart", {
+        duration: 3000,
+        icon: "⚠️",
+      })
+      return
+    }
+
+    // Get quantity based on selected package
+    let quantity = 0
+    switch (selectedPackage) {
+      case "sample":
+        quantity = product.sampleWeight || 0
+        break
+      case "small":
+        quantity = product.smallWeight || 0
+        break
+      case "medium":
+        quantity = product.mediumWeight || 0
+        break
+      case "large":
+        quantity = product.largeWeight || 0
+        break
+    }
+
+    if (quantity <= 0) {
+      toast.error("Invalid package selection")
+      return
+    }
+
+    try {
+      await addToCart({
+        productId: product.id,
+        quantity: quantity,
+      }).unwrap()
+
+      toast.success("Item added to cart!", {
+        duration: 2000,
+        icon: "✅",
+      })
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || error?.message || "Failed to add item to cart"
+      toast.error(errorMessage, {
+        duration: 3000,
+      })
+    }
+  }
 
   const loading = isLoading || (!product && !error)
 
@@ -564,21 +675,6 @@ export default function ProductDetailPage() {
                       </div>
                     </div>
 
-                    {/* Contact Button */}
-                    {product.sellerEmail ? (
-                      <a
-                        href={`mailto:${product.sellerEmail}`}
-                        className="mt-4 inline-block px-5 py-2 border-2 border-yogreet-charcoal text-yogreet-charcoal font-medium hover:bg-yogreet-charcoal hover:text-white transition-colors cursor-pointer text-sm"
-                      >
-                        Contact me
-                      </a>
-                    ) : (
-                      <button
-                        className="mt-4 px-5 py-2 border-2 border-yogreet-charcoal text-yogreet-charcoal font-medium hover:bg-yogreet-charcoal hover:text-white transition-colors cursor-pointer text-sm"
-                      >
-                        Contact me
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -1026,7 +1122,7 @@ export default function ProductDetailPage() {
                   (selectedPackage === "large" && product.largeDescription)
                 ) && (
                   <p className="text-sm text-yogreet-warm-gray mb-4">
-                    {selectedPackage === "sample" && "Sample spice purchase to test quality before bulk order."}
+                    {selectedPackage === "sample" && "Sample spice purchase to test quality before placing an order."}
                     {selectedPackage === "small" && "Small spice purchase with standard quality and packaging."}
                     {selectedPackage === "medium" && "Medium spice purchase with premium quality, better packaging, and faster shipping."}
                     {selectedPackage === "large" && "Large spice purchase with highest quality, premium packaging, priority shipping, and quality certificate."}
@@ -1068,12 +1164,6 @@ export default function ProductDetailPage() {
                             <FiCheck className="w-4 h-4 text-yogreet-sage" />
                             <span>Priority shipping</span>
                           </div>
-                          {selectedPackage === "large" && (
-                            <div className="flex items-center gap-2">
-                              <FiCheck className="w-4 h-4 text-yogreet-sage" />
-                              <span>Bulk discount</span>
-                            </div>
-                          )}
                         </>
                       )}
                     </div>
@@ -1083,28 +1173,22 @@ export default function ProductDetailPage() {
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <button
-                    onClick={() => setShowBulkModal(true)}
-                    className="w-full bg-yogreet-charcoal text-white py-3 font-medium hover:bg-yogreet-charcoal/90 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full bg-yogreet-red text-white py-3 font-medium hover:bg-yogreet-red/90 transition-colors cursor-pointer flex items-center justify-center gap-2"
                   >
-                    Continue
+                    Buy Now
                     <FiArrowLeft className="w-4 h-4 rotate-180" />
                   </button>
-                  {product.sellerEmail ? (
-                    <a
-                      href={`mailto:${product.sellerEmail}`}
-                      className="w-full border-2 border-gray-300 text-yogreet-charcoal py-3 font-medium hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      Contact me
-                      <FiChevronDown className="w-4 h-4" />
-                    </a>
-                  ) : (
-                    <button
-                      className="w-full border-2 border-gray-300 text-yogreet-charcoal py-3 font-medium hover:bg-gray-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      Contact me
-                      <FiChevronDown className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart || !product || isProductInCart}
+                    className={`w-full py-3 font-medium transition-colors flex items-center justify-center ${
+                      isProductInCart
+                        ? "bg-stone-100 border border-stone-300 text-stone-600 cursor-not-allowed"
+                        : "bg-white border border-yogreet-charcoal text-yogreet-charcoal hover:bg-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                  >
+                    {isAddingToCart ? "Adding..." : isProductInCart ? "Already in Cart" : "Add to Cart"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1115,27 +1199,18 @@ export default function ProductDetailPage() {
 
       <Footer />
 
-      {/* Buy Bulk Modal */}
-      {product && (
-        <BuyBulkModal
-          isOpen={showBulkModal}
-          onClose={() => setShowBulkModal(false)}
-          product={{
-            id: product.id.toString(),
-            name: product.name,
-            price: selectedPackage === "sample"
-              ? product.samplePricePerKg || 0
-              : selectedPackage === "small" 
-              ? product.smallPricePerKg || product.price
-              : selectedPackage === "medium"
-              ? product.mediumPricePerKg || 0
-              : product.largePricePerKg || 0,
-            minQuantity: product.minQuantity,
-            origin: product.origin,
-            image: currentImage,
-          }}
-        />
-      )}
+      {/* Login and Signup Modals */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleCloseModals}
+        onSwitchToSignup={handleSwitchToSignup}
+        onLoginSuccess={handleLoginSuccess}
+      />
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={handleCloseModals}
+        onSwitchToLogin={handleSwitchToLogin}
+      />
 
     </main>
   )

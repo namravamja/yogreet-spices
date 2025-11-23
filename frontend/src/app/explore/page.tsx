@@ -4,7 +4,6 @@ import { useState, useMemo } from "react"
 import { Navbar, Footer } from "@/components/layout"
 import { ExploreFilterBar, ExploreSpiceCard, ExplorePagination, type FilterState } from "@/components/explore"
 import { CategoryFilterBar } from "@/components/explore/category-filter-bar"
-import BuyBulkModal from "@/components/buyer/BuyBulkModal"
 import { useGetProductsQuery } from "@/services/api"
 import PageHero from "@/components/shared/PageHero"
 
@@ -71,8 +70,6 @@ function transformProduct(product: any) {
 
 export default function ExplorePage() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [showBulkModal, setShowBulkModal] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [filters, setFilters] = useState<FilterState>({
     category: "all",
     priceRange: "all",
@@ -159,10 +156,6 @@ export default function ExplorePage() {
     setCurrentPage(1)
   }
 
-  const handleBulkOrder = (spice: any) => {
-    setSelectedProduct(spice)
-    setShowBulkModal(true)
-  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -232,22 +225,6 @@ export default function ExplorePage() {
       </div>
 
       <Footer />
-
-      {/* Buy Bulk Modal */}
-      {selectedProduct && (
-        <BuyBulkModal
-          isOpen={showBulkModal}
-          onClose={() => setShowBulkModal(false)}
-          product={{
-            id: selectedProduct.id,
-            name: selectedProduct.name,
-            price: selectedProduct.price,
-            minQuantity: selectedProduct.minQuantity,
-            origin: selectedProduct.origin,
-            image: selectedProduct.image,
-          }}
-        />
-      )}
 
     </main>
   )

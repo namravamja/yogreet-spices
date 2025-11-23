@@ -56,7 +56,7 @@ export function HowItWorksSection() {
         "Sample request form",
         "Quality approval process",
         "Feedback on samples",
-        "Decision on bulk order"
+        "Decision on order"
       ],
     },
     {
@@ -210,7 +210,7 @@ export function HowItWorksSection() {
                     Get complimentary samples to test aroma, texture, and purity before committing to large orders. No cost to you.
                   </p>
                   <p className="text-yogreet-charcoal">
-                    This ensures you get exactly the quality you expect before placing bulk orders.
+                    This ensures you get exactly the quality you expect before placing orders.
                   </p>
                 </div>
                 <div className="absolute left-0 md:left-1/2 transform md:-translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-yogreet-red text-white z-10 order-1 md:order-2">
@@ -236,7 +236,7 @@ export function HowItWorksSection() {
                       </li>
                       <li className="flex items-start">
                         <CheckCircle className="w-5 h-5 text-yogreet-red mr-2 shrink-0 mt-0.5" />
-                        <span>Decision on bulk order</span>
+                        <span>Decision on order</span>
                       </li>
                     </ul>
                   </div>

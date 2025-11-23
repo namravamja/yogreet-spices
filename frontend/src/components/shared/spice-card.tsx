@@ -69,7 +69,7 @@ export function SpiceCard({ name, seller, image, pricePerKg, minOrder, rating, r
                 disabled={!inStock}
                 className="flex-1 px-3 py-2 bg-yogreet-red text-white font-manrope font-medium text-xs hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                Buy Bulk
+                Add to Cart
               </button>
             </div>
       </div>
