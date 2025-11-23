@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import * as sellerController from "../../controllers/Seller/seller.controller";
 import { verifyToken } from "../../middleware/authMiddleware";
 import { uploadFlexibleImages, uploadSellerVerificationDocuments } from "../../middleware/multer";
+import { asyncHandler } from "../../middleware/errorHandler";
 import productRoutes from "./product.routes";
 
 const router = express.Router();
@@ -10,7 +11,7 @@ const router = express.Router();
 const verifySeller = (req: Request, res: Response, next: NextFunction) => {
   const user = (req as any).user;
   if (!user || user.role !== "SELLER") {
-    return res.status(403).json({ error: "Forbidden: Seller access required" });
+    return res.status(403).json({ success: false, message: "Forbidden: Seller access required" });
   }
   next();
 };
@@ -19,22 +20,22 @@ const verifySeller = (req: Request, res: Response, next: NextFunction) => {
 router.use(verifyToken);
 router.use(verifySeller);
 
-router.get("/view", sellerController.getSeller as any);
+router.get("/view", asyncHandler(sellerController.getSeller as any));
 router.put(
   "/update",
   uploadFlexibleImages([
     { name: "businessLogo", maxCount: 1 },
     { name: "storePhotos", maxCount: 10 },
   ]),
-  sellerController.updateSeller as any
+  asyncHandler(sellerController.updateSeller as any)
 );
 
 // Verification endpoints
-router.get("/verification", sellerController.getSellerVerification as any);
+router.get("/verification", asyncHandler(sellerController.getSellerVerification as any));
 router.put(
   "/verification",
   uploadSellerVerificationDocuments,
-  sellerController.updateSellerVerification as any
+  asyncHandler(sellerController.updateSellerVerification as any)
 );
 
 // Product routes (delegated to separate product routes file)

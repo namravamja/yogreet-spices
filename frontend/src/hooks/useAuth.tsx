@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useGetBuyerQuery } from "@/services/api/buyerApi";
 import { useGetSellerQuery } from "@/services/api/sellerApi";
+import { useGetAdminQuery } from "@/services/api/adminApi";
 
 interface ApiError {
   status?: number;
@@ -26,7 +27,12 @@ interface SellerData {
   [key: string]: any;
 }
 
-export function useAuth(role: "buyer" | "seller") {
+interface AdminData {
+  username?: string;
+  [key: string]: any;
+}
+
+export function useAuth(role: "buyer" | "seller" | "admin") {
   const {
     data: buyerData,
     isLoading: buyerLoading,
@@ -53,31 +59,59 @@ export function useAuth(role: "buyer" | "seller") {
     refetchOnMountOrArgChange: true,
   });
 
+  const {
+    data: adminData,
+    isLoading: adminLoading,
+    isError: isAdminError,
+    error: adminError,
+    refetch: refetchAdmin,
+  } = useGetAdminQuery(undefined, {
+    skip: role !== "admin",
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMountOrArgChange: true,
+  });
+
   // Derive hasTriedAuth from query states - no useEffect needed
   const hasTriedAuth = useMemo(() => {
     if (role === "buyer") {
       // Has tried auth if query is not loading and we have either data or error
       return !buyerLoading && (!!buyerData || isBuyerError);
-    } else {
+    } else if (role === "seller") {
       // Has tried auth if query is not loading and we have either data or error
       return !sellerLoading && (!!sellerData || isSellerError);
+    } else {
+      // Has tried auth if query is not loading and we have either data or error
+      return !adminLoading && (!!adminData || isAdminError);
     }
-  }, [role, buyerLoading, buyerData, isBuyerError, sellerLoading, sellerData, isSellerError]);
+  }, [role, buyerLoading, buyerData, isBuyerError, sellerLoading, sellerData, isSellerError, adminLoading, adminData, isAdminError]);
 
   const isAuthenticated = useMemo(() => {
     return (
       (role === "buyer" && !isBuyerError && !!buyerData && hasTriedAuth) ||
-      (role === "seller" && !isSellerError && !!sellerData && hasTriedAuth)
+      (role === "seller" && !isSellerError && !!sellerData && hasTriedAuth) ||
+      (role === "admin" && !isAdminError && !!adminData && hasTriedAuth)
     );
-  }, [role, isBuyerError, buyerData, isSellerError, sellerData, hasTriedAuth]);
+  }, [role, isBuyerError, buyerData, isSellerError, sellerData, isAdminError, adminData, hasTriedAuth]);
 
   const apiError = useMemo(() => {
-    return (role === "buyer" ? buyerError : sellerError) as ApiError | undefined;
-  }, [role, buyerError, sellerError]);
+    if (role === "buyer") return buyerError as ApiError | undefined;
+    if (role === "seller") return sellerError as ApiError | undefined;
+    return adminError as ApiError | undefined;
+  }, [role, buyerError, sellerError, adminError]);
 
   const user = useMemo(() => {
-    if (!isAuthenticated || !(buyerData || sellerData)) {
+    if (!isAuthenticated || !(buyerData || sellerData || adminData)) {
       return null;
+    }
+
+    if (role === "admin") {
+      return {
+        name: (adminData as AdminData)?.username || "Admin",
+        image: "/placeholder-user.jpg",
+        username: (adminData as AdminData)?.username,
+        ...adminData,
+      };
     }
 
     return {
@@ -100,19 +134,21 @@ export function useAuth(role: "buyer" | "seller") {
           : (sellerData as SellerData)?.email,
       ...(role === "buyer" ? buyerData : sellerData),
     };
-  }, [isAuthenticated, buyerData, sellerData, role]);
+  }, [isAuthenticated, buyerData, sellerData, adminData, role]);
 
   const isLoading = useMemo(() => {
-    return (role === "buyer" ? buyerLoading : sellerLoading) && !hasTriedAuth;
-  }, [role, buyerLoading, sellerLoading, hasTriedAuth]);
+    if (role === "buyer") return buyerLoading && !hasTriedAuth;
+    if (role === "seller") return sellerLoading && !hasTriedAuth;
+    return adminLoading && !hasTriedAuth;
+  }, [role, buyerLoading, sellerLoading, adminLoading, hasTriedAuth]);
 
   return {
     isAuthenticated,
     isLoading,
-    isError: role === "buyer" ? isBuyerError : isSellerError,
+    isError: role === "buyer" ? isBuyerError : role === "seller" ? isSellerError : isAdminError,
     error: apiError,
     user,
-    refetch: role === "buyer" ? refetchBuyer : refetchSeller,
+    refetch: role === "buyer" ? refetchBuyer : role === "seller" ? refetchSeller : refetchAdmin,
   };
 }
 

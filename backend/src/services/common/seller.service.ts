@@ -1,127 +1,47 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Seller } from "../../models/Seller";
+import { Product } from "../../models/Product";
+import { Review } from "../../models/Review";
+import { Documents } from "../../models/Documents";
+import mongoose from "mongoose";
 
 export const getPublicSellerProfile = async (sellerId: string) => {
   try {
-    const seller = await prisma.seller.findUnique({
-      where: { id: sellerId },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        companyName: true,
-        businessLogo: true,
-        about: true,
-        storePhotos: true,
-        businessType: true,
-        productCategories: true,
-        mobile: true,
-        shippingType: true,
-        serviceAreas: true,
-        returnPolicy: true,
-        gstNumber: true,
-        panNumber: true,
-        bankName: true,
-        upiId: true,
-        businessAddress: {
-          select: {
-            street: true,
-            city: true,
-            state: true,
-            country: true,
-            pinCode: true,
-          },
-        },
-        socialLinks: {
-          select: {
-            website: true,
-            facebook: true,
-            instagram: true,
-            twitter: true,
-          },
-        },
-        verificationStatus: true,
-        profileCompletion: true,
-        createdAt: true,
-        // Export capabilities (public info)
-        certificateOfOriginCapability: true,
-        phytosanitaryCertificateCapability: true,
-        packagingCompliance: true,
-        fumigationCertificateCapability: true,
-        exportLogisticsPrepared: true,
-        labTestingCapability: true,
-        foodQualityCertifications: true,
-        // Verification numbers (public info)
-        iecCode: true,
-        apedaRegistrationNumber: true,
-        spicesBoardRegistrationNumber: true,
-        fssaiLicenseNumber: true,
-        products: {
-          where: {
-            // Only show active products
-          },
-          select: {
-            id: true,
-            productName: true,
-            category: true,
-            subCategory: true,
-            shortDescription: true,
-            productImages: true,
-            smallPrice: true,
-            smallWeight: true,
-            mediumPrice: true,
-            mediumWeight: true,
-            largePrice: true,
-            largeWeight: true,
-            shippingCost: true,
-            createdAt: true,
-            Review: {
-              select: {
-                rating: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        },
-        Review: {
-          select: {
-            id: true,
-            rating: true,
-            title: true,
-            text: true,
-            date: true,
-            verified: true,
-            buyer: {
-              select: {
-                firstName: true,
-                lastName: true,
-                avatar: true,
-              },
-            },
-            product: {
-              select: {
-                id: true,
-                productName: true,
-                productImages: true,
-              },
-            },
-          },
-          orderBy: {
-            date: "desc",
-          },
-        },
-      },
-    });
+    const seller = await Seller.findById(sellerId)
+      .select("-password")
+      .populate("businessAddressId")
+      .populate("documentsId")
+      .populate("socialLinksId")
+      .lean();
 
     if (!seller) {
       throw new Error("Seller not found");
     }
 
+    // Get products for this seller
+    const products = await Product.find({ sellerId: new mongoose.Types.ObjectId(sellerId) })
+      .select("productName category subCategory shortDescription productImages smallPrice smallWeight mediumPrice mediumWeight largePrice largeWeight shippingCost createdAt")
+      .populate({
+        path: "reviews",
+        select: "rating",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Get reviews for this seller
+    const reviews = await Review.find({ sellerId: new mongoose.Types.ObjectId(sellerId) })
+      .select("rating title text date verified buyerId productId")
+      .populate({
+        path: "buyerId",
+        select: "firstName lastName avatar",
+      })
+      .populate({
+        path: "productId",
+        select: "id productName productImages",
+      })
+      .sort({ date: -1 })
+      .lean();
+
     // Calculate average rating from all reviews
-    const reviews = seller.Review || [];
     const averageRating =
       reviews.length > 0
         ? reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) /
@@ -129,15 +49,65 @@ export const getPublicSellerProfile = async (sellerId: string) => {
         : 0;
 
     // Calculate total products
-    const products = seller.products || [];
     const totalProducts = products.length;
 
     // Calculate total reviews
     const totalReviews = reviews.length;
 
     return {
-      ...seller,
-      averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
+      id: seller._id.toString(),
+      email: seller.email,
+      fullName: seller.fullName,
+      companyName: seller.companyName,
+      businessLogo: seller.businessLogo,
+      about: seller.about,
+      storePhotos: seller.storePhotos,
+      businessType: seller.businessType,
+      productCategories: seller.productCategories,
+      mobile: seller.mobile,
+      bankName: seller.bankName,
+      upiId: seller.upiId,
+      businessAddress: seller.businessAddressId,
+      socialLinks: seller.socialLinksId,
+      profileCompletion: seller.profileCompletion,
+      createdAt: seller.createdAt,
+      shippingType: seller.documentsId?.shippingType,
+      serviceAreas: seller.documentsId?.serviceAreas,
+      returnPolicy: seller.documentsId?.returnPolicy,
+      gstNumber: seller.documentsId?.gstNumber,
+      panNumber: seller.documentsId?.panNumber,
+      certificateOfOriginCapability: seller.documentsId?.certificateOfOriginCapability,
+      phytosanitaryCertificateCapability: seller.documentsId?.phytosanitaryCertificateCapability,
+      packagingCompliance: seller.documentsId?.packagingCompliance,
+      fumigationCertificateCapability: seller.documentsId?.fumigationCertificateCapability,
+      exportLogisticsPrepared: seller.documentsId?.exportLogisticsPrepared,
+      labTestingCapability: seller.documentsId?.labTestingCapability,
+      foodQualityCertifications: seller.documentsId?.foodQualityCertifications,
+      iecCode: seller.documentsId?.iecCode,
+      apedaRegistrationNumber: seller.documentsId?.apedaRegistrationNumber,
+      spicesBoardRegistrationNumber: seller.documentsId?.spicesBoardRegistrationNumber,
+      fssaiLicenseNumber: seller.documentsId?.fssaiLicenseNumber,
+      verificationStatus: seller.documentsId?.verificationStatus || "pending",
+      products: products.map((product: any) => ({
+        ...product,
+        id: product._id.toString(),
+        Review: product.reviews || [],
+      })),
+      Review: reviews.map((review: any) => ({
+        ...review,
+        id: review._id.toString(),
+        buyer: review.buyerId ? {
+          firstName: review.buyerId.firstName,
+          lastName: review.buyerId.lastName,
+          avatar: review.buyerId.avatar,
+        } : null,
+        product: review.productId ? {
+          id: review.productId._id?.toString(),
+          productName: review.productId.productName,
+          productImages: review.productId.productImages,
+        } : null,
+      })),
+      averageRating: Math.round(averageRating * 10) / 10,
       totalProducts,
       totalReviews,
     };
@@ -151,69 +121,53 @@ export const getPublicSellerProfile = async (sellerId: string) => {
 
 export const getTopSellers = async (limit: number = 10) => {
   try {
-    const sellers = await prisma.seller.findMany({
-      where: {
-        verificationStatus: "approved", // Only show verified sellers
-        profileCompletion: {
-          gte: 50, // At least 50% profile completion
-        },
-      },
-      select: {
-        id: true,
-        fullName: true,
-        companyName: true,
-        businessLogo: true,
-        about: true,
-        businessAddress: {
-          select: {
-            city: true,
-            state: true,
-            country: true,
-          },
-        },
-        products: {
-          select: {
-            id: true,
-          },
-        },
-        Review: {
-          select: {
-            rating: true,
-          },
-        },
-      },
-      orderBy: [
-        {
-          profileCompletion: "desc",
-        },
-        {
-          documentCompletion: "desc",
-        },
-      ],
-      take: limit,
-    });
+    const sellers = await Seller.find({
+      profileCompletion: { $gte: 50 },
+    })
+      .select("fullName companyName businessLogo about businessAddressId profileCompletion documentCompletion documentsId")
+      .populate("businessAddressId")
+      .populate({
+        path: "documentsId",
+        select: "verificationStatus",
+      })
+      .sort({ profileCompletion: -1, documentCompletion: -1 })
+      .limit(limit)
+      .lean();
 
-    // Transform sellers with calculated fields
-    const sellersWithStats = sellers.map((seller) => {
-      const reviews = seller.Review || [];
+    // Filter sellers with approved verification status
+    const approvedSellers = sellers.filter((seller: any) => 
+      seller.documentsId?.verificationStatus === "approved"
+    );
+
+    // Get product and review counts for each seller
+    const sellersWithStats = await Promise.all(
+      approvedSellers.map(async (seller: any) => {
+        const productCount = await Product.countDocuments({ 
+          sellerId: seller._id 
+        });
+        
+        const reviews = await Review.find({ sellerId: seller._id })
+          .select("rating")
+          .lean();
+        
       const averageRating =
         reviews.length > 0
           ? reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) /
             reviews.length
           : 0;
 
-      const totalProducts = seller.products?.length || 0;
+        const totalProducts = productCount;
       const totalReviews = reviews.length;
 
-      const location = seller.businessAddress
-        ? `${seller.businessAddress.city || ""}, ${seller.businessAddress.country || ""}`
+        const location = seller.businessAddressId
+          ? `${seller.businessAddressId.city || ""}, ${seller.businessAddressId.country || ""}`
             .trim()
             .replace(/^,\s*/, "")
             .replace(/,\s*$/, "")
         : "Unknown Location";
 
       return {
-        id: seller.id,
+          id: seller._id.toString(),
         name: seller.companyName || seller.fullName || "Unknown Seller",
         logo: seller.businessLogo,
         about: seller.about,
@@ -222,7 +176,8 @@ export const getTopSellers = async (limit: number = 10) => {
         totalProducts,
         totalReviews,
       };
-    });
+      })
+    );
 
     return sellersWithStats;
   } catch (error) {
@@ -232,4 +187,3 @@ export const getTopSellers = async (limit: number = 10) => {
     throw new Error(`Failed to fetch top sellers: ${(error as Error).message}`);
   }
 };
-

@@ -1,102 +1,12 @@
 "use client";
 
-interface SellerDocumentsData {
-  // Step 1: Business Identity
-  companyName?: string | null;
-  businessType?: string | null;
-  fullName?: string | null;
-  ownerFullName?: string | null;
-  panNumber?: string | null;
-  gstNumber?: string | null;
-  ownerIdDocument?: string | null;
-  incorporationCertificate?: string | null;
-  msmeUdyamCertificate?: string | null;
-  businessAddressProof?: string | null;
-
-  // Step 2: Export Eligibility
-  iecCode?: string | null;
-  iecCertificate?: string | null;
-  tradeLicense?: string | null;
-  apedaRegistrationNumber?: string | null;
-  apedaCertificate?: string | null;
-  spicesBoardRegistrationNumber?: string | null;
-  spicesBoardCertificate?: string | null;
-  bankAccountHolderName?: string | null;
-  bankAccountNumber?: string | null;
-  bankIfscCode?: string | null;
-  bankProofDocument?: string | null;
-
-  // Step 3: Food & Safety
-  fssaiLicenseNumber?: string | null;
-  fssaiCertificate?: string | null;
-
-  // Step 4: Shipping & Logistics
-  shippingType?: string | null;
-  serviceAreas?: string[] | null;
-  returnPolicy?: string | null;
-
-  // Step 5: Export Documentation & Shipment Capability
-  certificateOfOriginCapability?: boolean | null;
-  phytosanitaryCertificateCapability?: boolean | null;
-  packagingCompliance?: boolean | null;
-  fumigationCertificateCapability?: boolean | null;
-  exportLogisticsPrepared?: boolean | null;
-}
-
 interface DocumentProgressProps {
-  data: SellerDocumentsData;
+  documentCompletion: number;
+  data?: any; // Optional data for missing fields check
 }
 
-export default function DocumentProgress({ data }: DocumentProgressProps) {
-  const calculateProgress = () => {
-    try {
-      let completed = 0;
-      const total = 27; // Updated total after removing companyName, businessType, and fullName/ownerFullName (6+11+2+3+5)
-
-      // Step 1: Business Identity (6 fields)
-      if (data?.panNumber?.trim()) completed++;
-      if (data?.gstNumber?.trim()) completed++;
-      if (data?.ownerIdDocument) completed++;
-      if (data?.incorporationCertificate) completed++;
-      if (data?.msmeUdyamCertificate) completed++;
-      if (data?.businessAddressProof) completed++;
-
-      // Step 2: Export Eligibility (11 fields)
-      if (data?.iecCode?.trim()) completed++;
-      if (data?.iecCertificate) completed++;
-      if (data?.tradeLicense) completed++;
-      if (data?.apedaRegistrationNumber?.trim()) completed++;
-      if (data?.apedaCertificate) completed++;
-      if (data?.spicesBoardRegistrationNumber?.trim()) completed++;
-      if (data?.spicesBoardCertificate) completed++;
-      if (data?.bankAccountHolderName?.trim()) completed++;
-      if (data?.bankAccountNumber?.trim()) completed++;
-      if (data?.bankIfscCode?.trim()) completed++;
-      if (data?.bankProofDocument) completed++;
-
-      // Step 3: Food & Safety (2 fields)
-      if (data?.fssaiLicenseNumber?.trim()) completed++;
-      if (data?.fssaiCertificate) completed++;
-
-      // Step 4: Shipping & Logistics (3 fields)
-      if (data?.shippingType?.trim()) completed++;
-      if (Array.isArray(data?.serviceAreas) && data.serviceAreas.length > 0) completed++;
-      if (data?.returnPolicy?.trim()) completed++;
-
-      // Step 5: Export Documentation & Shipment Capability (5 fields)
-      if (data?.certificateOfOriginCapability) completed++;
-      if (data?.phytosanitaryCertificateCapability) completed++;
-      if (data?.packagingCompliance) completed++;
-      if (data?.fumigationCertificateCapability) completed++;
-      if (data?.exportLogisticsPrepared) completed++;
-
-      return Math.round((completed / total) * 100);
-    } catch {
-      return 0;
-    }
-  };
-
-  const progress = calculateProgress();
+export default function DocumentProgress({ documentCompletion, data }: DocumentProgressProps) {
+  const progress = documentCompletion || 0;
 
   const getProgressColor = () => {
     if (progress >= 80) return "bg-yogreet-sage";
@@ -118,6 +28,7 @@ export default function DocumentProgress({ data }: DocumentProgressProps) {
       // Step 1: Business Identity
       if (!data?.panNumber?.trim()) missing.push("• Add PAN number");
       if (!data?.gstNumber?.trim()) missing.push("• Add GST number");
+      if (!data?.aadharNumber?.trim()) missing.push("• Add Aadhaar number");
       if (!data?.ownerIdDocument) missing.push("• Upload owner ID document");
       if (!data?.incorporationCertificate) missing.push("• Upload incorporation certificate");
       if (!data?.msmeUdyamCertificate) missing.push("• Upload MSME/Udyam certificate");
@@ -144,13 +55,6 @@ export default function DocumentProgress({ data }: DocumentProgressProps) {
       if (!data?.shippingType?.trim()) missing.push("• Select shipping type");
       if (!Array.isArray(data?.serviceAreas) || data.serviceAreas.length === 0) missing.push("• Add service areas");
       if (!data?.returnPolicy?.trim()) missing.push("• Add return policy");
-
-      // Step 5: Export Documentation & Shipment Capability
-      if (!data?.certificateOfOriginCapability) missing.push("• Enable certificate of origin capability");
-      if (!data?.phytosanitaryCertificateCapability) missing.push("• Enable phytosanitary certificate capability");
-      if (!data?.packagingCompliance) missing.push("• Enable packaging compliance");
-      if (!data?.fumigationCertificateCapability) missing.push("• Enable fumigation certificate capability");
-      if (!data?.exportLogisticsPrepared) missing.push("• Enable export logistics prepared");
 
       return missing;
     } catch {

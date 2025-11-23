@@ -60,12 +60,18 @@ export default function EditProductSidebar({
     manufacturingDate: "",
     expiryDate: "",
     // Package pricing
+    samplePrice: "",
+    sampleWeight: "",
+    sampleDescription: "",
     smallPrice: "",
     smallWeight: "",
+    smallDescription: "",
     mediumPrice: "",
     mediumWeight: "",
+    mediumDescription: "",
     largePrice: "",
     largeWeight: "",
+    largeDescription: "",
     productImages: [],
     shippingCost: "",
   });
@@ -99,12 +105,18 @@ export default function EditProductSidebar({
         manufacturingDate: formatDate(product.manufacturingDate),
         expiryDate: formatDate(product.expiryDate),
         // Package pricing
+        samplePrice: product.samplePrice || "",
+        sampleWeight: product.sampleWeight || "",
+        sampleDescription: product.sampleDescription || "",
         smallPrice: product.smallPrice || "",
         smallWeight: product.smallWeight || "",
+        smallDescription: product.smallDescription || "",
         mediumPrice: product.mediumPrice || "",
         mediumWeight: product.mediumWeight || "",
+        mediumDescription: product.mediumDescription || "",
         largePrice: product.largePrice || "",
         largeWeight: product.largeWeight || "",
+        largeDescription: product.largeDescription || "",
         productImages: product.productImages || [],
         shippingCost: product.shippingCost || "",
       });
@@ -131,16 +143,12 @@ export default function EditProductSidebar({
       "productName",
       "category",
       "shortDescription",
-      "smallPrice",
-      "smallWeight",
-      "mediumPrice",
-      "mediumWeight",
-      "largePrice",
-      "largeWeight",
       "shippingCost",
     ];
 
     const numberFields = [
+      "samplePrice",
+      "sampleWeight",
       "smallPrice",
       "smallWeight",
       "mediumPrice",
@@ -150,6 +158,7 @@ export default function EditProductSidebar({
       "shippingCost",
     ];
 
+    // Validate required fields
     for (const field of requiredFields) {
       const value = productData[field as keyof ProductData];
       if (!value || value.toString().trim() === "") {
@@ -159,6 +168,43 @@ export default function EditProductSidebar({
 
       if (numberFields.includes(field) && isNaN(Number(value))) {
         toast.error(`${field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())} must be a valid number`);
+        return false;
+      }
+    }
+
+    // Validate that at least one package option is provided
+    const hasSample = productData.samplePrice && productData.sampleWeight;
+    const hasSmall = productData.smallPrice && productData.smallWeight;
+    const hasMedium = productData.mediumPrice && productData.mediumWeight;
+    const hasLarge = productData.largePrice && productData.largeWeight;
+
+    if (!hasSample && !hasSmall && !hasMedium && !hasLarge) {
+      toast.error("At least one package option (Sample, Small, Medium, or Large) must be provided");
+      return false;
+    }
+
+    // Validate number fields for provided packages
+    if (hasSample) {
+      if (isNaN(Number(productData.samplePrice)) || isNaN(Number(productData.sampleWeight))) {
+        toast.error("Sample package price and weight must be valid numbers");
+        return false;
+      }
+    }
+    if (hasSmall) {
+      if (isNaN(Number(productData.smallPrice)) || isNaN(Number(productData.smallWeight))) {
+        toast.error("Small package price and weight must be valid numbers");
+        return false;
+      }
+    }
+    if (hasMedium) {
+      if (isNaN(Number(productData.mediumPrice)) || isNaN(Number(productData.mediumWeight))) {
+        toast.error("Medium package price and weight must be valid numbers");
+        return false;
+      }
+    }
+    if (hasLarge) {
+      if (isNaN(Number(productData.largePrice)) || isNaN(Number(productData.largeWeight))) {
+        toast.error("Large package price and weight must be valid numbers");
         return false;
       }
     }

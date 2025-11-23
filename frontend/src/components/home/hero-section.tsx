@@ -38,7 +38,7 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-3 mb-8 justify-center">
             <Link 
               href="/explore"
-              className="px-6 py-4 bg-yogreet-red/60 border border-yogreet-red text-white font-manrope font-medium hover:bg-yogreet-red/80 transition-all cursor-pointer text-center text-base md:text-lg rounded-md"
+              className="px-6 py-4 bg-yogreet-red border border-yogreet-red text-white font-manrope font-medium hover:bg-yogreet-red/60 transition-all cursor-pointer text-center text-base md:text-lg rounded-md"
             >
               Start Buying Spices
             </Link>
@@ -54,7 +54,7 @@ export function HeroSection() {
                   });
                 }
               }}
-              className="px-8 py-4 border-2 bg-white/20 rounded-md border-white text-white font-manrope font-medium hover:bg-white/30 transition-all cursor-pointer text-center text-base md:text-lg"
+              className="px-8 py-4 border-2 bg-white/90 rounded-md border-white font-manrope font-medium hover:bg-white/70 transition-all cursor-pointer text-center text-base md:text-lg"
             >
               How It Works ?
             </button>

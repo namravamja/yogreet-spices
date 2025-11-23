@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import {
   hashPassword,
   comparePassword,
@@ -6,6 +5,9 @@ import {
   generateVerificationToken,
 } from "../../utils/jwt";
 import { sendVerificationEmail } from "../../helpers/mailer";
+import { Buyer } from "../../models/Buyer";
+import { Seller } from "../../models/Seller";
+import { Admin } from "../../models/Admin";
 
 interface SignupData {
   email: string;
@@ -24,53 +26,49 @@ interface SellerSignupData {
   productCategories?: string[] | string;
 }
 
-const prisma = new PrismaClient();
 
 export const signupBuyer = async (data: SignupData) => {
-  const existing = await prisma.buyer.findUnique({
-    where: { email: data.email },
-  });
+  const existing = await Buyer.findOne({ email: data.email });
   if (existing) throw new Error("Email already registered");
 
   const hashed: string = await hashPassword(data.password);
 
-  const buyer = await prisma.buyer.create({
-    data: { ...data, password: hashed },
+  const buyer = await Buyer.create({
+    ...data,
+    password: hashed,
   });
 
   const verifyToken = generateVerificationToken({
-    id: buyer.id,
+    id: buyer._id.toString(),
     role: "BUYER",
   });
 
   // Save token & expiry (5 minutes expiry)
-  await prisma.buyer.update({
-    where: { id: buyer.id },
-    data: {
-      verifyToken,
-      verifyExpires: new Date(Date.now() + 5 * 60 * 1000),
-    },
-  });
+  buyer.verifyToken = verifyToken;
+  buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+  await buyer.save();
 
-  // Send verification email (catch errors to not block registration)
+  // Send verification email - throw error if it fails so user knows
   try {
     await sendVerificationEmail(buyer.email, verifyToken, "BUYER");
   } catch (error) {
-    console.error("Failed to send verification email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Failed to send verification email to buyer:", errorMessage);
+    // Delete the buyer account if email fails to send
+    await Buyer.findByIdAndDelete(buyer._id);
+    throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
   }
 
   setTimeout(async () => {
-    const freshBuyer = await prisma.buyer.findUnique({
-      where: { id: buyer.id },
-    });
+    const freshBuyer = await Buyer.findById(buyer._id);
     if (freshBuyer && !freshBuyer.isVerified) {
-      await prisma.buyer.delete({ where: { id: buyer.id } });
+      await Buyer.findByIdAndDelete(buyer._id);
     }
   }, 7 * 60 * 1000); // 7 minutes delay
 
   return {
     message: "Buyer created, Please check your email to verify your account.",
-    id: buyer.id,
+    id: buyer._id.toString(),
   };
 };
 
@@ -81,7 +79,7 @@ export const loginBuyer = async ({
   email: string;
   password: string;
 }) => {
-  const buyer = await prisma.buyer.findUnique({ where: { email } });
+  const buyer = await Buyer.findOne({ email });
   if (
     !buyer ||
     !buyer.password ||
@@ -92,20 +90,16 @@ export const loginBuyer = async ({
   if (!buyer.isVerified) {
     throw new Error("Please verify your email before logging in");
   }
-  const token = generateToken({ id: buyer.id, role: "BUYER" });
+  const token = generateToken({ id: buyer._id.toString(), role: "BUYER" });
 
-  await prisma.buyer.update({
-    where: { id: buyer.id },
-    data: { isAuthenticated: true },
-  });
+  buyer.isAuthenticated = true;
+  await buyer.save();
 
-  return { token, buyer };
+  return { token, buyer: buyer.toObject() };
 };
 
 export const signupSeller = async (data: SellerSignupData) => {
-  const existing = await prisma.seller.findUnique({
-    where: { email: data.email },
-  });
+  const existing = await Seller.findOne({ email: data.email });
   if (existing) throw new Error("Email already registered");
 
   const hashed = await hashPassword(data.password);
@@ -131,10 +125,10 @@ export const signupSeller = async (data: SellerSignupData) => {
     email: data.email,
     password: hashed,
     fullName: data.fullName,
-    companyName: data.companyName, // Merged from storeName and companyName
+    companyName: data.companyName,
     mobile: data.mobile,
     businessType: data.businessType,
-    productCategories: productCategories.length > 0 ? productCategories : undefined,
+    productCategories: productCategories.length > 0 ? productCategories : [],
   };
   
   // Backward compatibility: if storeName is provided (from old frontend), use it for companyName
@@ -150,45 +144,41 @@ export const signupSeller = async (data: SellerSignupData) => {
     }
   });
 
-  const seller = await prisma.seller.create({
-    data: sellerData,
-  });
+  const seller = await Seller.create(sellerData);
 
   const verifyToken = generateVerificationToken({
-    id: seller.id,
+    id: (seller as any)._id.toString(),
     role: "SELLER",
   });
 
-  await prisma.seller.update({
-    where: { id: seller.id },
-    data: {
-      verifyToken,
-      verifyExpires: new Date(Date.now() + 5 * 60 * 1000),
-    },
-  });
+  (seller as any).verifyToken = verifyToken;
+  (seller as any).verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+  await (seller as any).save();
 
-  // Send verification email (catch errors to not block registration)
+  // Send verification email - throw error if it fails so user knows
   try {
-    await sendVerificationEmail(seller.email, verifyToken, "SELLER");
+    await sendVerificationEmail((seller as any).email, verifyToken, "SELLER");
   } catch (error) {
-    console.error("Failed to send verification email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Failed to send verification email to seller:", errorMessage);
+    // Delete the seller account if email fails to send
+    await Seller.findByIdAndDelete((seller as any)._id);
+    throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
   }
 
   setTimeout(async () => {
-    const freshSeller = await prisma.seller.findUnique({
-      where: { id: seller.id },
-    });
+    const freshSeller = await Seller.findById((seller as any)._id);
     if (freshSeller && !freshSeller.isVerified) {
-      await prisma.seller.delete({ where: { id: seller.id } });
+      await Seller.findByIdAndDelete((seller as any)._id);
       console.log(
-        `Deleted unverified seller with id ${seller.id} after 7 minutes`
+        `Deleted unverified seller with id ${(seller as any)._id} after 7 minutes`
       );
     }
   }, 7 * 60 * 1000);
 
   return {
     message: "Seller created, Please check your email to verify your account.",
-    id: seller.id,
+    id: (seller as any)._id.toString(),
   };
 };
 
@@ -199,7 +189,7 @@ export const loginSeller = async ({
   email: string;
   password: string;
 }) => {
-  const seller = await prisma.seller.findUnique({ where: { email } });
+  const seller = await Seller.findOne({ email });
   if (
     !seller ||
     !seller.password ||
@@ -210,13 +200,31 @@ export const loginSeller = async ({
   if (!seller.isVerified) {
     throw new Error("Please verify your email before logging in");
   }
-  const token = generateToken({ id: seller.id, role: "SELLER" });
+  const token = generateToken({ id: seller._id.toString(), role: "SELLER" });
 
-  await prisma.seller.update({
-    where: { id: seller.id },
-    data: { isAuthenticated: true },
-  });
+  seller.isAuthenticated = true;
+  await seller.save();
 
-  return { token, seller };
+  return { token, seller: seller.toObject() };
+};
+
+export const loginAdmin = async ({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}) => {
+  const admin = await Admin.findOne({ username });
+  if (
+    !admin ||
+    !admin.password ||
+    !(await comparePassword(password, admin.password))
+  ) {
+    throw new Error("Invalid credentials");
+  }
+  const token = generateToken({ id: admin._id.toString(), role: "ADMIN" });
+
+  return { token, admin: admin.toObject() };
 };
 

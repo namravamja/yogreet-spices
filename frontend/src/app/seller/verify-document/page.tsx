@@ -13,6 +13,7 @@ import Step4ShippingLogistics from "./components/step4-shipping-logistics";
 import Step4ExportDocsShipment from "./components/step4-export-docs-shipment";
 import { useGetSellerVerificationQuery, useUpdateSellerVerificationMutation, useGetSellerQuery } from "@/services/api/sellerApi";
 import { useAuth } from "@/hooks/useAuth";
+// documentCompletion is calculated on backend, no need to import calculateDocumentCompletion
 
 type CacheResponse<T> = { source: "cache" | "api"; data: T };
 
@@ -24,7 +25,7 @@ interface SellerVerificationData {
   incorporationCertificate?: string;
   msmeUdyamCertificate?: string;
   businessAddressProof?: string;
-  ownerIdNumber?: string;
+  aadharNumber?: string;
 
   // Step 2: Export Eligibility Verification
   iecCode: string;
@@ -127,7 +128,7 @@ export default function SellerVerifyDocumentPage() {
     incorporationCertificate: "",
     msmeUdyamCertificate: "",
     businessAddressProof: "",
-    ownerIdNumber: "",
+    aadharNumber: "",
     // Step 2: Export Eligibility Verification
     iecCode: "",
     iecCertificate: "",
@@ -179,7 +180,7 @@ export default function SellerVerifyDocumentPage() {
         (data.incorporationCertificate || "") === (originalData.incorporationCertificate || "") &&
         (data.msmeUdyamCertificate || "") === (originalData.msmeUdyamCertificate || "") &&
         (data.businessAddressProof || "") === (originalData.businessAddressProof || "") &&
-        (data.ownerIdNumber || "") === (originalData.ownerIdNumber || "")
+        (data.aadharNumber || "") === (originalData.aadharNumber || "")
       );
     }
     if (currentStep === 2) {
@@ -256,7 +257,7 @@ export default function SellerVerifyDocumentPage() {
           incorporationCertificate: sellerData.incorporationCertificate || "",
           msmeUdyamCertificate: sellerData.msmeUdyamCertificate || "",
           businessAddressProof: sellerData.businessAddressProof || "",
-          ownerIdNumber: sellerData.ownerIdNumber || "",
+          aadharNumber: sellerData.aadharNumber || "",
           // Step 2: Export Eligibility Verification
           iecCode: sellerData.iecCode || "",
           iecCertificate: sellerData.iecCertificate || "",
@@ -302,55 +303,6 @@ export default function SellerVerifyDocumentPage() {
     }
   };
 
-  // Calculate document completion percentage (matches DocumentProgress component)
-  const calculateDocumentCompletion = (verificationData: SellerVerificationData): number => {
-    try {
-      let completed = 0;
-      const total = 27; // Updated total after removing companyName, businessType, and fullName/ownerFullName (6+11+2+3+5)
-
-      // Step 1: Business Identity (6 fields) - excludes companyName, businessType, fullName
-      if (verificationData?.panNumber?.trim()) completed++;
-      if (verificationData?.gstNumber?.trim()) completed++;
-      if (verificationData?.ownerIdDocument) completed++;
-      if (verificationData?.incorporationCertificate) completed++;
-      if (verificationData?.msmeUdyamCertificate) completed++;
-      if (verificationData?.businessAddressProof) completed++;
-
-      // Step 2: Export Eligibility (11 fields)
-      if (verificationData?.iecCode?.trim()) completed++;
-      if (verificationData?.iecCertificate) completed++;
-      if (verificationData?.tradeLicense) completed++;
-      if (verificationData?.apedaRegistrationNumber?.trim()) completed++;
-      if (verificationData?.apedaCertificate) completed++;
-      if (verificationData?.spicesBoardRegistrationNumber?.trim()) completed++;
-      if (verificationData?.spicesBoardCertificate) completed++;
-      if (verificationData?.bankAccountHolderName?.trim()) completed++;
-      if (verificationData?.bankAccountNumber?.trim()) completed++;
-      if (verificationData?.bankIfscCode?.trim()) completed++;
-      if (verificationData?.bankProofDocument) completed++;
-
-      // Step 3: Food & Safety (2 fields)
-      if (verificationData?.fssaiLicenseNumber?.trim()) completed++;
-      if (verificationData?.fssaiCertificate) completed++;
-
-      // Step 4: Shipping & Logistics (3 fields)
-      if (verificationData?.shippingType?.trim()) completed++;
-      if (Array.isArray(verificationData?.serviceAreas) && verificationData.serviceAreas.length > 0) completed++;
-      if (verificationData?.returnPolicy?.trim()) completed++;
-
-      // Step 5: Export Documentation & Shipment Capability (5 fields)
-      if (verificationData?.certificateOfOriginCapability) completed++;
-      if (verificationData?.phytosanitaryCertificateCapability) completed++;
-      if (verificationData?.packagingCompliance) completed++;
-      if (verificationData?.fumigationCertificateCapability) completed++;
-      if (verificationData?.exportLogisticsPrepared) completed++;
-
-      return Math.round((completed / total) * 100);
-    } catch {
-      return 0;
-    }
-  };
-
   const saveStep1Data = async (): Promise<boolean> => {
     try {
       const formData = new FormData();
@@ -378,7 +330,7 @@ export default function SellerVerifyDocumentPage() {
       const payload: any = {
         panNumber: data.panNumber || "",
         gstNumber: data.gstNumber || "",
-        ownerIdNumber: data.ownerIdNumber || "",
+        aadharNumber: data.aadharNumber || "",
         // Always include document URL fields, so clearing "" persists removal (when no new file)
         incorporationCertificate: data.incorporationCertificate || "",
         msmeUdyamCertificate: data.msmeUdyamCertificate || "",
@@ -386,9 +338,7 @@ export default function SellerVerifyDocumentPage() {
         ownerIdDocument: data.ownerIdDocument || "",
       };
 
-      // Calculate and include document completion
-      const updatedData = { ...data, ...payload };
-      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      // documentCompletion is calculated on backend automatically
 
       // If a file is being uploaded for any of these, the uploaded file will override the URL on backend
 
@@ -456,9 +406,7 @@ export default function SellerVerifyDocumentPage() {
         bankProofDocument: data.bankProofDocument || "",
       };
 
-      // Calculate and include document completion
-      const updatedData = { ...data, ...payload };
-      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      // documentCompletion is calculated on backend automatically
 
       if (step2Files.length > 0) {
         Object.keys(payload).forEach(key => {
@@ -499,9 +447,7 @@ export default function SellerVerifyDocumentPage() {
         fssaiCertificate: data.fssaiCertificate || "",
       };
 
-      // Calculate and include document completion
-      const updatedData = { ...data, ...payload };
-      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      // documentCompletion is calculated on backend automatically
 
       if (step3Files.length > 0) {
         Object.keys(payload).forEach(key => {
@@ -537,9 +483,7 @@ export default function SellerVerifyDocumentPage() {
         serviceAreas: data.serviceAreas,
         returnPolicy: data.returnPolicy,
       };
-      // Calculate and include document completion
-      const updatedData = { ...data, ...payload };
-      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      // documentCompletion is calculated on backend automatically
       await updateSellerVerification(payload).unwrap();
       toast.success("Step 4 data saved successfully!");
       return true;
@@ -559,9 +503,7 @@ export default function SellerVerifyDocumentPage() {
         fumigationCertificateCapability: data.fumigationCertificateCapability,
         exportLogisticsPrepared: data.exportLogisticsPrepared,
       };
-      // Calculate and include document completion
-      const updatedData = { ...data, ...payload };
-      payload.documentCompletion = calculateDocumentCompletion(updatedData);
+      // documentCompletion is calculated on backend automatically
       await updateSellerVerification(payload).unwrap();
       toast.success("Step 5 data saved successfully!");
       return true;
@@ -658,7 +600,7 @@ export default function SellerVerifyDocumentPage() {
         // Step 1: Business Identity Verification
         panNumber: data.panNumber,
         gstNumber: data.gstNumber,
-        ownerIdNumber: data.ownerIdNumber || "",
+        aadharNumber: data.aadharNumber || "",
         // Step 2: Export Eligibility Verification
         iecCode: data.iecCode,
         apedaRegistrationNumber: data.apedaRegistrationNumber,
@@ -680,8 +622,7 @@ export default function SellerVerifyDocumentPage() {
         verificationStatus: "pending",
       };
 
-      // Calculate and include document completion
-      payload.documentCompletion = calculateDocumentCompletion(data);
+      // documentCompletion is calculated on backend automatically
 
       // Add certificate URLs if they exist in data (from previous uploads)
       if (data.incorporationCertificate && !uploadedFiles.incorporationCertificate) {

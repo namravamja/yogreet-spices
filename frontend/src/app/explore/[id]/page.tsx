@@ -5,7 +5,7 @@ import { motion, useScroll } from "framer-motion"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { FiStar, FiMapPin, FiArrowLeft, FiCheck, FiX, FiUser, FiChevronLeft, FiChevronRight, FiChevronDown, FiInfo, FiSearch, FiThumbsUp, FiThumbsDown, FiRepeat } from "react-icons/fi"
+import { FiStar, FiMapPin, FiArrowLeft, FiCheck, FiX, FiUser, FiChevronLeft, FiChevronRight, FiChevronDown, FiInfo, FiSearch, FiThumbsUp, FiThumbsDown, FiRepeat, FiMessageCircle } from "react-icons/fi"
 import { Navbar, Footer } from "@/components/layout"
 import BuyBulkModal from "@/components/buyer/BuyBulkModal"
 import { useGetProductsQuery } from "@/services/api"
@@ -37,6 +37,8 @@ function transformProductForDetail(product: any) {
     : ["/placeholder.svg"]
 
   // Get package pricing
+  const samplePrice = parseFloat(product.samplePrice || "0")
+  const sampleWeight = parseFloat(product.sampleWeight || "1")
   const smallPrice = parseFloat(product.smallPrice || "0")
   const smallWeight = parseFloat(product.smallWeight || "1")
   const mediumPrice = parseFloat(product.mediumPrice || "0")
@@ -44,13 +46,20 @@ function transformProductForDetail(product: any) {
   const largePrice = parseFloat(product.largePrice || "0")
   const largeWeight = parseFloat(product.largeWeight || "1")
 
+  // Get package descriptions
+  const sampleDescription = product.sampleDescription || ""
+  const smallDescription = product.smallDescription || ""
+  const mediumDescription = product.mediumDescription || ""
+  const largeDescription = product.largeDescription || ""
+
   // Calculate price per kg for each package
+  const samplePricePerKg = sampleWeight > 0 ? samplePrice / sampleWeight : samplePrice
   const smallPricePerKg = smallWeight > 0 ? smallPrice / smallWeight : smallPrice
   const mediumPricePerKg = mediumWeight > 0 ? mediumPrice / mediumWeight : mediumPrice
   const largePricePerKg = largeWeight > 0 ? largePrice / largeWeight : largePrice
 
-  // Use small package price as default/fallback
-  const price = smallPricePerKg
+  // Use sample package price as default, fallback to small if sample not available
+  const price = samplePricePerKg > 0 ? samplePricePerKg : smallPricePerKg
 
   const minQuantity = parseFloat(product.availableStock || "0")
   const origin = product.category || "Unknown Origin"
@@ -62,17 +71,23 @@ function transformProductForDetail(product: any) {
     sellerId,
     sellerEmail,
     sellerProfilePicture,
-    price, // Default price (small package price per kg)
-    // Package pricing
+    price,
+    samplePrice,
+    sampleWeight,
+    samplePricePerKg,
+    sampleDescription,
     smallPrice,
     smallWeight,
     smallPricePerKg,
+    smallDescription,
     mediumPrice,
     mediumWeight,
     mediumPricePerKg,
+    mediumDescription,
     largePrice,
     largeWeight,
     largePricePerKg,
+    largeDescription,
     minQuantity,
     origin,
     images,
@@ -107,7 +122,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<any>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [selectedPackage, setSelectedPackage] = useState<"small" | "medium" | "large">("small")
+  const [selectedPackage, setSelectedPackage] = useState<"sample" | "small" | "medium" | "large">("small")
   const [showWhatsIncluded, setShowWhatsIncluded] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [showBulkModal, setShowBulkModal] = useState(false)
@@ -133,6 +148,16 @@ export default function ProductDetailPage() {
       setProduct(foundProduct)
       setReviews(foundProduct.reviewsList || [])
       setCurrentImageIndex(0) // Reset to first image when product changes
+      // Set default package selection based on availability
+      if (foundProduct.samplePrice && foundProduct.sampleWeight) {
+        setSelectedPackage("sample")
+      } else if (foundProduct.smallPrice && foundProduct.smallWeight) {
+        setSelectedPackage("small")
+      } else if (foundProduct.mediumPrice && foundProduct.mediumWeight) {
+        setSelectedPackage("medium")
+      } else if (foundProduct.largePrice && foundProduct.largeWeight) {
+        setSelectedPackage("large")
+      }
     }
   }, [params.id, products])
 
@@ -855,44 +880,75 @@ export default function ProductDetailPage() {
             <div className="border border-gray-200 overflow-hidden">
               {/* Package Tabs */}
               <div className="flex border-b border-gray-200">
+                {product.samplePrice && product.sampleWeight && (
+                  <button
+                    onClick={() => setSelectedPackage("sample")}
+                    className={`flex flex-col flex-1 py-3 cursor-pointer px-4 text-sm font-medium transition-colors ${
+                      selectedPackage === "sample"
+                        ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span>Sample</span>
+                    {product.sampleWeight && (
+                      <span className="text-xs opacity-75">{product.sampleWeight}kg</span>
+                    )}
+                  </button>
+                )}
+                {product.smallPrice && product.smallWeight && (
+                  <button
+                    onClick={() => setSelectedPackage("small")}
+                    className={`flex flex-col flex-1 py-3 cursor-pointer px-4 text-sm font-medium transition-colors ${
+                      selectedPackage === "small"
+                        ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span>Small</span>
+                    {product.smallWeight && (
+                      <span className="text-xs opacity-75">{product.smallWeight}kg</span>
+                    )}
+                  </button>
+                )}
+                {product.mediumPrice && product.mediumWeight && (
+                  <button
+                    onClick={() => setSelectedPackage("medium")}
+                    className={`flex flex-col flex-1 cursor-pointer py-3 px-4 text-sm font-medium transition-colors ${
+                      selectedPackage === "medium"
+                        ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span>Medium</span>
+                    {product.mediumWeight && (
+                      <span className="text-xs opacity-75">{product.mediumWeight}kg</span>
+                    )}
+                  </button>
+                )}
+                {product.largePrice && product.largeWeight && (
+                  <button
+                    onClick={() => setSelectedPackage("large")}
+                    className={`flex flex-col flex-1 cursor-pointer py-3 px-4 text-sm font-medium transition-colors ${
+                      selectedPackage === "large"
+                        ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span>Large</span>
+                    {product.largeWeight && (
+                      <span className="text-xs opacity-75">{product.largeWeight}kg</span>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Chat with Buyer */}
+              <div className="px-4 py-3 border-b border-gray-200 bg-white">
                 <button
-                  onClick={() => setSelectedPackage("small")}
-                  className={`flex flex-col flex-1 py-3 cursor-pointer px-4 text-sm font-medium transition-colors ${
-                    selectedPackage === "small"
-                      ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }`}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-yogreet-sage text-white font-medium hover:bg-yogreet-sage/90 transition-colors cursor-pointer text-sm rounded-md"
                 >
-                  <span>Small</span>
-                  {product.smallWeight && (
-                    <span className="text-xs opacity-75">{product.smallWeight}kg</span>
-                  )}
-                </button>
-                <button
-                  onClick={() => setSelectedPackage("medium")}
-                  className={`flex flex-col flex-1 cursor-pointer py-3 px-4 text-sm font-medium transition-colors ${
-                    selectedPackage === "medium"
-                      ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  <span>Medium</span>
-                  {product.mediumWeight && (
-                    <span className="text-xs opacity-75">{product.mediumWeight}kg</span>
-                  )}
-                </button>
-                <button
-                  onClick={() => setSelectedPackage("large")}
-                  className={`flex flex-col flex-1 cursor-pointer py-3 px-4 text-sm font-medium transition-colors ${
-                    selectedPackage === "large"
-                      ? "bg-white text-yogreet-charcoal border-b-2 border-yogreet-red"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  <span>Large</span>
-                  {product.largeWeight && (
-                    <span className="text-xs opacity-75">{product.largeWeight}kg</span>
-                  )}
+                  <FiMessageCircle className="w-4 h-4" />
+                  <span>Chat with seller</span>
                 </button>
               </div>
 
@@ -900,6 +956,7 @@ export default function ProductDetailPage() {
               <div className="p-6 bg-white">
                 {/* Package Name */}
                 <h3 className="text-lg font-semibold text-yogreet-charcoal mb-2">
+                  {selectedPackage === "sample" && "Order Sample"}
                   {selectedPackage === "small" && "Small Package"}
                   {selectedPackage === "medium" && "Medium Package"}
                   {selectedPackage === "large" && "Large Package"}
@@ -909,7 +966,9 @@ export default function ProductDetailPage() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-2xl font-bold text-black">
-                      ${selectedPackage === "small" 
+                      ${selectedPackage === "sample"
+                        ? product.samplePricePerKg?.toFixed(2) || "0.00"
+                        : selectedPackage === "small" 
                         ? product.smallPricePerKg?.toFixed(2) || product.price.toFixed(2)
                         : selectedPackage === "medium"
                         ? product.mediumPricePerKg?.toFixed(2) || "0.00"
@@ -917,6 +976,11 @@ export default function ProductDetailPage() {
                     </span>
                     <FiInfo className="w-4 h-4 text-gray-400" />
                   </div>
+                  {selectedPackage === "sample" && product.samplePrice && product.sampleWeight && (
+                    <p className="text-sm text-yogreet-warm-gray">
+                      ${product.samplePrice.toFixed(2)} for {product.sampleWeight}kg
+                    </p>
+                  )}
                   {selectedPackage === "small" && product.smallPrice && product.smallWeight && (
                     <p className="text-sm text-yogreet-warm-gray">
                       ${product.smallPrice.toFixed(2)} for {product.smallWeight}kg
@@ -935,23 +999,39 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-yogreet-warm-gray mb-4">
-                  {selectedPackage === "small" && "Small spice purchase with standard quality and packaging."}
-                  {selectedPackage === "medium" && "Medium spice purchase with premium quality, better packaging, and faster shipping."}
-                  {selectedPackage === "large" && "Large spice purchase with highest quality, premium packaging, priority shipping, and quality certificate."}
-                </p>
-
-                {/* Delivery & Revisions */}
-                <div className="space-y-2 mb-4 pb-4 border-b border-gray-200">
-                  <div className="flex items-center gap-2 text-sm text-yogreet-charcoal">
-                    <span>⏱</span>
-                    <span>{selectedPackage === "small" ? "7-day" : selectedPackage === "medium" ? "5-day" : "3-day"} delivery</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-yogreet-charcoal">
-                    <span>🔄</span>
-                    <span>Unlimited revisions</span>
-                  </div>
-                </div>
+                {selectedPackage === "sample" && product.sampleDescription && (
+                  <p className="text-sm text-yogreet-warm-gray mb-4">
+                    {product.sampleDescription}
+                  </p>
+                )}
+                {selectedPackage === "small" && product.smallDescription && (
+                  <p className="text-sm text-yogreet-warm-gray mb-4">
+                    {product.smallDescription}
+                  </p>
+                )}
+                {selectedPackage === "medium" && product.mediumDescription && (
+                  <p className="text-sm text-yogreet-warm-gray mb-4">
+                    {product.mediumDescription}
+                  </p>
+                )}
+                {selectedPackage === "large" && product.largeDescription && (
+                  <p className="text-sm text-yogreet-warm-gray mb-4">
+                    {product.largeDescription}
+                  </p>
+                )}
+                {!(
+                  (selectedPackage === "sample" && product.sampleDescription) ||
+                  (selectedPackage === "small" && product.smallDescription) ||
+                  (selectedPackage === "medium" && product.mediumDescription) ||
+                  (selectedPackage === "large" && product.largeDescription)
+                ) && (
+                  <p className="text-sm text-yogreet-warm-gray mb-4">
+                    {selectedPackage === "sample" && "Sample spice purchase to test quality before bulk order."}
+                    {selectedPackage === "small" && "Small spice purchase with standard quality and packaging."}
+                    {selectedPackage === "medium" && "Medium spice purchase with premium quality, better packaging, and faster shipping."}
+                    {selectedPackage === "large" && "Large spice purchase with highest quality, premium packaging, priority shipping, and quality certificate."}
+                  </p>
+                )}
 
                 {/* What's Included */}
                 <div className="mb-4">
@@ -976,7 +1056,13 @@ export default function ProductDetailPage() {
                         <FiCheck className="w-4 h-4 text-yogreet-sage" />
                         <span>Quality certificate</span>
                       </div>
-                      {selectedPackage !== "small" && (
+                      {selectedPackage === "sample" && (
+                        <div className="flex items-center gap-2">
+                          <FiCheck className="w-4 h-4 text-yogreet-sage" />
+                          <span>Sample size for testing</span>
+                        </div>
+                      )}
+                      {selectedPackage !== "sample" && selectedPackage !== "small" && (
                         <>
                           <div className="flex items-center gap-2">
                             <FiCheck className="w-4 h-4 text-yogreet-sage" />
@@ -1037,7 +1123,9 @@ export default function ProductDetailPage() {
           product={{
             id: product.id.toString(),
             name: product.name,
-            price: selectedPackage === "small" 
+            price: selectedPackage === "sample"
+              ? product.samplePricePerKg || 0
+              : selectedPackage === "small" 
               ? product.smallPricePerKg || product.price
               : selectedPackage === "medium"
               ? product.mediumPricePerKg || 0

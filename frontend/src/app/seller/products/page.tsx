@@ -15,11 +15,11 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useGetSellerProductsQuery } from "@/services/api/sellerApi";
-import { useSellerVerification } from "@/hooks/useSellerVerification";
-import { Switch } from "@/components/ui/switch";
+import { useGetSellerProductsQuery, useGetSellerQuery } from "@/services/api/sellerApi";
 import AddProductSidebar from "./components/add-product-sidebar";
 import CompleteProfileModal from "./components/complete-profile-modal";
+import AccountUnderReviewModal from "./components/account-under-review-modal";
+import { Switch } from "@/components/ui/switch";
 
 // Safe data access utilities
 const safeArray = <T,>(value: T[] | undefined | null): T[] => {
@@ -59,8 +59,9 @@ export default function SellerProductsPage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isAddProductSidebarOpen, setIsAddProductSidebarOpen] = useState(false);
   const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  const [showAccountUnderReviewModal, setShowAccountUnderReviewModal] = useState(false);
   
-  // Testing toggle to disable validation (stored in localStorage)
+  // Validation toggle (stored in localStorage)
   const [validationEnabled, setValidationEnabled] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("seller-product-validation-enabled");
@@ -70,13 +71,10 @@ export default function SellerProductsPage() {
   });
 
   const { isAuthenticated, isLoading: authLoading } = useAuth("seller");
-  const {
-    isLoading: isVerificationLoading,
-    profileProgress,
-    documentVerificationProgress,
-    isFullyVerified,
-  } = useSellerVerification();
   const { data: productResponse, isLoading, error } = useGetSellerProductsQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const { data: sellerData } = useGetSellerQuery(undefined, {
     skip: !isAuthenticated,
   });
 
@@ -86,12 +84,33 @@ export default function SellerProductsPage() {
   };
 
   const handleAddProductClick = () => {
-    // Check if both profile and verification are 100% complete (only if validation is enabled)
-    if (validationEnabled && !isVerificationLoading && !isFullyVerified) {
-      setShowCompleteProfileModal(true);
-    } else {
+    const seller = sellerData?.data || sellerData;
+    if (!seller) return;
+
+    // Skip validation if disabled
+    if (!validationEnabled) {
       setIsAddProductSidebarOpen(true);
+      return;
     }
+
+    const profileCompletion = seller.profileCompletion || 0;
+    const documentCompletion = seller.documentCompletion || 0;
+    const isVerified = seller.isVerified || false;
+
+    // Check if profile or document completion is not 100%
+    if (profileCompletion < 100 || documentCompletion < 100) {
+      setShowCompleteProfileModal(true);
+      return;
+    }
+
+    // If both are 100% but seller is not verified
+    if (!isVerified) {
+      setShowAccountUnderReviewModal(true);
+      return;
+    }
+
+    // Seller is verified, allow product creation
+    setIsAddProductSidebarOpen(true);
   };
 
   // Extract products data from cache response format using useMemo
@@ -208,7 +227,7 @@ export default function SellerProductsPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          {/* Testing Toggle - Validation Control */}
+          {/* Validation Toggle */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-md">
             <Switch
               checked={validationEnabled}
@@ -472,8 +491,14 @@ export default function SellerProductsPage() {
       <CompleteProfileModal
         open={showCompleteProfileModal}
         onOpenChange={setShowCompleteProfileModal}
-        profileProgress={profileProgress}
-        documentVerificationProgress={documentVerificationProgress}
+        profileProgress={(sellerData?.data || sellerData)?.profileCompletion || 0}
+        documentVerificationProgress={(sellerData?.data || sellerData)?.documentCompletion || 0}
+      />
+
+      {/* Account Under Review Modal */}
+      <AccountUnderReviewModal
+        open={showAccountUnderReviewModal}
+        onOpenChange={setShowAccountUnderReviewModal}
       />
     </div>
   );

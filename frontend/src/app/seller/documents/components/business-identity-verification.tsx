@@ -14,10 +14,11 @@ export default function BusinessIdentityVerification({
 }: BusinessIdentityVerificationProps) {
   const router = useRouter();
   
-  // Check if all required fields are complete (Step 1: 6 fields)
+  // Check if all required fields are complete (Step 1: 7 fields)
   const isComplete = 
     sellerData?.panNumber?.trim() &&
     sellerData?.gstNumber?.trim() &&
+    sellerData?.aadharNumber?.trim() &&
     sellerData?.ownerIdDocument &&
     sellerData?.incorporationCertificate &&
     sellerData?.msmeUdyamCertificate &&
@@ -88,6 +89,14 @@ export default function BusinessIdentityVerification({
               </label>
               <p className={`py-2 font-inter ${sellerData?.gstNumber ? "text-stone-600" : "text-red-500"}`}>
                 {sellerData?.gstNumber || "not provided"}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-manrope font-medium text-stone-700 mb-1">
+                Aadhaar Number *
+              </label>
+              <p className={`py-2 font-inter ${sellerData?.aadharNumber ? "text-stone-600" : "text-red-500"}`}>
+                {sellerData?.aadharNumber || "not provided"}
               </p>
             </div>
           </div>

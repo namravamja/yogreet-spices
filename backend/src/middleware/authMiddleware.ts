@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 
 interface AuthPayload {
   id: string;
-  role: "BUYER" | "SELLER";
+  role: "BUYER" | "SELLER" | "ADMIN";
 }
 
 export const verifyToken = (

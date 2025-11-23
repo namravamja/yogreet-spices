@@ -10,7 +10,7 @@ interface SellerVerificationDataStep1 {
   incorporationCertificate?: string;
   msmeUdyamCertificate?: string;
   businessAddressProof?: string;
-  ownerIdNumber?: string;
+  aadharNumber?: string;
 }
 
 interface Step1Props {
@@ -150,13 +150,13 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
         </div>
       </div>
 
-      {/* Owner ID Number */}
+      {/* Aadhaar Number */}
       <div className="mt-6">
-        <label className="block text-sm font-medium text-stone-700 mb-2">Owner ID Number</label>
+        <label className="block text-sm font-medium text-stone-700 mb-2">Aadhaar Number</label>
               <input
                 type="text"
-          value={data.ownerIdNumber || ""}
-          onChange={(e) => handleChange("ownerIdNumber", e.target.value)}
+          value={data.aadharNumber || ""}
+          onChange={(e) => handleChange("aadharNumber", e.target.value)}
                 className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
               />
       </div>

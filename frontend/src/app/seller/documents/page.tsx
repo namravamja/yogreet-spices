@@ -29,62 +29,8 @@ export default function SellerDocumentsPage() {
   const [localData, setLocalData] = React.useState<any>({});
   const [uploadedFiles, setUploadedFiles] = React.useState<Record<string, File | File[]>>({});
 
-  // Calculate document completion progress
-  const calculateDocumentProgress = (data: any): number => {
-    try {
-      let completed = 0;
-      const total = 30; // Updated total based on actual fields (9+11+2+3+5)
-
-      // Step 1: Business Identity (9 fields)
-      if (data?.companyName?.trim()) completed++;
-      if (data?.businessType?.trim()) completed++;
-      if (data?.fullName?.trim() || data?.ownerFullName?.trim()) completed++;
-      if (data?.panNumber?.trim()) completed++;
-      if (data?.gstNumber?.trim()) completed++;
-      if (data?.ownerIdDocument) completed++;
-      if (data?.incorporationCertificate) completed++;
-      if (data?.msmeUdyamCertificate) completed++;
-      if (data?.businessAddressProof) completed++;
-
-      // Step 2: Export Eligibility (11 fields)
-      if (data?.iecCode?.trim()) completed++;
-      if (data?.iecCertificate) completed++;
-      if (data?.tradeLicense) completed++;
-      if (data?.apedaRegistrationNumber?.trim()) completed++;
-      if (data?.apedaCertificate) completed++;
-      if (data?.spicesBoardRegistrationNumber?.trim()) completed++;
-      if (data?.spicesBoardCertificate) completed++;
-      if (data?.bankAccountHolderName?.trim()) completed++;
-      if (data?.bankAccountNumber?.trim()) completed++;
-      if (data?.bankIfscCode?.trim()) completed++;
-      if (data?.bankProofDocument) completed++;
-
-      // Step 3: Food & Safety (2 fields)
-      if (data?.fssaiLicenseNumber?.trim()) completed++;
-      if (data?.fssaiCertificate) completed++;
-
-      // Step 4: Shipping & Logistics (3 fields)
-      if (data?.shippingType?.trim()) completed++;
-      if (Array.isArray(data?.serviceAreas) && data.serviceAreas.length > 0) completed++;
-      if (data?.returnPolicy?.trim()) completed++;
-
-      // Step 5: Export Documentation & Shipment Capability (5 fields)
-      if (data?.certificateOfOriginCapability) completed++;
-      if (data?.phytosanitaryCertificateCapability) completed++;
-      if (data?.packagingCompliance) completed++;
-      if (data?.fumigationCertificateCapability) completed++;
-      if (data?.exportLogisticsPrepared) completed++;
-
-      return Math.round((completed / total) * 100);
-    } catch {
-      return 0;
-    }
-  };
-
-  const documentProgress = React.useMemo(() => {
-    if (!sellerData) return 0;
-    return calculateDocumentProgress(sellerData);
-  }, [sellerData]);
+  // Get document completion from API response
+  const documentProgress = sellerData?.documentCompletion || 0;
   
   const isVerified = documentProgress === 100;
 
@@ -107,6 +53,7 @@ export default function SellerDocumentsPage() {
           businessType: localData.businessType || "",
           panNumber: localData.panNumber || "",
           gstNumber: localData.gstNumber || "",
+          aadharNumber: localData.aadharNumber || "",
           fullName: localData.fullName || localData.ownerFullName || "",
           ownerFullName: localData.fullName || localData.ownerFullName || "",
           incorporationCertificate: localData.incorporationCertificate || "",
@@ -149,9 +96,7 @@ export default function SellerDocumentsPage() {
         });
       }
       // Calculate document completion after merging localData with payload
-      const updatedData = { ...localData, ...payload };
-      const documentCompletion = calculateDocumentProgress(updatedData);
-      payload.documentCompletion = documentCompletion;
+      // documentCompletion is calculated on backend, no need to calculate or send it
 
       if (hasFiles) {
         const formData = new FormData();
@@ -282,7 +227,7 @@ export default function SellerDocumentsPage() {
           </div>
           {/* Right - Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            <DocumentProgress data={sellerData as any} />
+            <DocumentProgress documentCompletion={documentProgress} data={sellerData as any} />
             <VerificationStatusMessage isVerified={isVerified} progress={documentProgress} />
           </div>
         </div>

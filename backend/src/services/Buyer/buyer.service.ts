@@ -1,6 +1,9 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Buyer } from "../../models/Buyer";
+import { Address } from "../../models/Address";
+import { Cart } from "../../models/Cart";
+import { Product } from "../../models/Product";
+import { Seller } from "../../models/Seller";
+import mongoose from "mongoose";
 
 export interface BuyerUpdateData {
   firstName?: string;
@@ -12,51 +15,37 @@ export interface BuyerUpdateData {
 }
 
 export const getBuyerById = async (id: string) => {
-  const buyer = await prisma.buyer.findUnique({
-    where: { id },
-    select: {
-      password: false,
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      phone: true,
-      avatar: true,
-      dateOfBirth: true,
-      gender: true,
-      createdAt: true,
-      updatedAt: true,
-      isVerified: true,
-      isAuthenticated: true,
-      addresses: true,
-    },
-  });
+  const buyer = await Buyer.findById(id)
+    .select("-password")
+    .populate("addresses")
+    .lean();
+  
   if (!buyer) throw new Error("Buyer not found");
-  return buyer;
+  
+  return {
+    ...buyer,
+    id: buyer._id.toString(),
+    addresses: buyer.addresses || [],
+  };
 };
 
 export const updateBuyer = async (id: string, data: BuyerUpdateData) => {
-  const buyer = await prisma.buyer.update({
-    where: { id },
-    data,
-    select: {
-      password: false,
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      phone: true,
-      avatar: true,
-      dateOfBirth: true,
-      gender: true,
-      createdAt: true,
-      updatedAt: true,
-      isVerified: true,
-      isAuthenticated: true,
-      addresses: true,
-    },
-  });
-  return buyer;
+  const buyer = await Buyer.findByIdAndUpdate(
+    id,
+    { $set: data },
+    { new: true }
+  )
+    .select("-password")
+    .populate("addresses")
+    .lean();
+  
+  if (!buyer) throw new Error("Buyer not found");
+  
+  return {
+    ...buyer,
+    id: buyer._id.toString(),
+    addresses: buyer.addresses || [],
+  };
 };
 
 // Address operations
@@ -89,97 +78,125 @@ export interface AddressUpdateData {
 }
 
 export const getBuyerAddresses = async (buyerId: string) => {
-  const addresses = await prisma.address.findMany({
-    where: { userId: buyerId },
-    orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-  });
-  return addresses;
+  const addresses = await Address.find({ userId: new mongoose.Types.ObjectId(buyerId) })
+    .sort({ isDefault: -1, createdAt: -1 })
+    .lean();
+  
+  return addresses.map(addr => ({
+    ...addr,
+    id: addr._id.toString(),
+  }));
 };
 
 export const createAddress = async (buyerId: string, data: AddressCreateData) => {
   // If this address is set as default, unset all other default addresses
   if (data.isDefault) {
-    await prisma.address.updateMany({
-      where: { userId: buyerId, isDefault: true },
-      data: { isDefault: false },
-    });
+    await Address.updateMany(
+      { userId: new mongoose.Types.ObjectId(buyerId), isDefault: true },
+      { $set: { isDefault: false } }
+    );
   }
 
-  const address = await prisma.address.create({
-    data: {
-      ...data,
-      userId: buyerId,
-    },
+  const address = await Address.create({
+    ...data,
+    userId: new mongoose.Types.ObjectId(buyerId),
   });
-  return address;
+  
+  return {
+    ...address.toObject(),
+    id: address._id.toString(),
+  };
 };
 
-export const updateAddress = async (buyerId: string, addressId: number, data: AddressUpdateData) => {
+export const updateAddress = async (buyerId: string, addressId: string, data: AddressUpdateData) => {
   // If this address is set as default, unset all other default addresses
   if (data.isDefault === true) {
-    await prisma.address.updateMany({
-      where: { userId: buyerId, isDefault: true, id: { not: addressId } },
-      data: { isDefault: false },
-    });
+    await Address.updateMany(
+      { 
+        userId: new mongoose.Types.ObjectId(buyerId), 
+        isDefault: true,
+        _id: { $ne: new mongoose.Types.ObjectId(addressId) }
+      },
+      { $set: { isDefault: false } }
+    );
   }
 
-  const address = await prisma.address.update({
-    where: { id: addressId, userId: buyerId },
-    data,
-  });
-  return address;
+  const address = await Address.findOneAndUpdate(
+    { _id: new mongoose.Types.ObjectId(addressId), userId: new mongoose.Types.ObjectId(buyerId) },
+    { $set: data },
+    { new: true }
+  ).lean();
+  
+  if (!address) throw new Error("Address not found");
+  
+  return {
+    ...address,
+    id: address._id.toString(),
+  };
 };
 
-export const deleteAddress = async (buyerId: string, addressId: number) => {
+export const deleteAddress = async (buyerId: string, addressId: string) => {
   // Check if this is the last address
-  const addressCount = await prisma.address.count({
-    where: { userId: buyerId },
-  });
+  const addressCount = await Address.countDocuments({ userId: new mongoose.Types.ObjectId(buyerId) });
 
   if (addressCount <= 1) {
     throw new Error("Cannot delete the last address. You must have at least one address.");
   }
 
-  await prisma.address.delete({
-    where: { id: addressId, userId: buyerId },
+  await Address.findOneAndDelete({
+    _id: new mongoose.Types.ObjectId(addressId),
+    userId: new mongoose.Types.ObjectId(buyerId),
   });
 };
 
-export const setDefaultAddress = async (buyerId: string, addressId: number) => {
+export const setDefaultAddress = async (buyerId: string, addressId: string) => {
   // First, unset all default addresses
-  await prisma.address.updateMany({
-    where: { userId: buyerId, isDefault: true },
-    data: { isDefault: false },
-  });
+  await Address.updateMany(
+    { userId: new mongoose.Types.ObjectId(buyerId), isDefault: true },
+    { $set: { isDefault: false } }
+  );
 
   // Then set the specified address as default
-  const address = await prisma.address.update({
-    where: { id: addressId, userId: buyerId },
-    data: { isDefault: true },
-  });
-  return address;
+  const address = await Address.findOneAndUpdate(
+    { _id: new mongoose.Types.ObjectId(addressId), userId: new mongoose.Types.ObjectId(buyerId) },
+    { $set: { isDefault: true } },
+    { new: true }
+  ).lean();
+  
+  if (!address) throw new Error("Address not found");
+  
+  return {
+    ...address,
+    id: address._id.toString(),
+  };
 };
 
 // Cart operations
 export const getCartItems = async (buyerId: string) => {
-  const cartItems = await prisma.cart.findMany({
-    where: { buyerId },
-    include: {
-      product: {
-        include: {
-          seller: {
-            select: {
-              id: true,
-              fullName: true,
-              companyName: true,
-            },
-          },
-        },
+  const cartItems = await Cart.find({ buyerId: new mongoose.Types.ObjectId(buyerId) })
+    .populate({
+      path: "productId",
+      populate: {
+        path: "sellerId",
+        select: "fullName companyName",
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return cartItems;
+    })
+    .sort({ createdAt: -1 })
+    .lean();
+  
+  return cartItems.map(item => ({
+    ...item,
+    id: item._id.toString(),
+    product: item.productId ? {
+      ...(item.productId as any),
+      id: (item.productId as any)._id.toString(),
+      seller: (item.productId as any).sellerId ? {
+        id: ((item.productId as any).sellerId as any)._id?.toString(),
+        fullName: ((item.productId as any).sellerId as any).fullName,
+        companyName: ((item.productId as any).sellerId as any).companyName,
+      } : null,
+    } : null,
+  }));
 };
 
 export interface AddToCartData {
@@ -189,18 +206,16 @@ export interface AddToCartData {
 
 export const addToCart = async (buyerId: string, data: AddToCartData) => {
   // Check if product exists and has stock
-  const product = await prisma.product.findUnique({
-    where: { id: data.productId },
-  });
+  const product = await Product.findById(data.productId).lean();
 
   if (!product) {
     throw new Error("Product not found");
   }
 
   // Calculate total available stock from package weights
-  const smallWeight = parseFloat(product.smallWeight || "0");
-  const mediumWeight = parseFloat(product.mediumWeight || "0");
-  const largeWeight = parseFloat(product.largeWeight || "0");
+  const smallWeight = parseFloat((product as any).smallWeight || "0");
+  const mediumWeight = parseFloat((product as any).mediumWeight || "0");
+  const largeWeight = parseFloat((product as any).largeWeight || "0");
   const availableStock = smallWeight + mediumWeight + largeWeight;
   
   if (data.quantity > availableStock) {
@@ -208,13 +223,9 @@ export const addToCart = async (buyerId: string, data: AddToCartData) => {
   }
 
   // Check if item already exists in cart
-  const existingCartItem = await prisma.cart.findUnique({
-    where: {
-      buyerId_productId: {
-        buyerId,
-        productId: data.productId,
-      },
-    },
+  const existingCartItem = await Cart.findOne({
+    buyerId: new mongoose.Types.ObjectId(buyerId),
+    productId: new mongoose.Types.ObjectId(data.productId),
   });
 
   if (existingCartItem) {
@@ -224,47 +235,63 @@ export const addToCart = async (buyerId: string, data: AddToCartData) => {
       throw new Error(`Total quantity would exceed available stock of ${availableStock} kg`);
     }
 
-    const cartItem = await prisma.cart.update({
-      where: { id: existingCartItem.id },
-      data: { quantity: newQuantity },
-      include: {
-        product: {
-          include: {
-            seller: {
-              select: {
-                id: true,
-                fullName: true,
-                companyName: true,
-              },
-            },
-          },
+    existingCartItem.quantity = newQuantity;
+    await existingCartItem.save();
+
+    const cartItem = await Cart.findById(existingCartItem._id)
+      .populate({
+        path: "productId",
+        populate: {
+          path: "sellerId",
+          select: "fullName companyName",
         },
-      },
-    });
-    return cartItem;
+      })
+      .lean();
+    
+    return {
+      ...cartItem,
+      id: cartItem!._id.toString(),
+      product: (cartItem as any).productId ? {
+        ...((cartItem as any).productId as any),
+        id: ((cartItem as any).productId as any)._id.toString(),
+        seller: ((cartItem as any).productId as any).sellerId ? {
+          id: (((cartItem as any).productId as any).sellerId as any)._id?.toString(),
+          fullName: (((cartItem as any).productId as any).sellerId as any).fullName,
+          companyName: (((cartItem as any).productId as any).sellerId as any).companyName,
+        } : null,
+      } : null,
+    };
   } else {
     // Create new cart item
-    const cartItem = await prisma.cart.create({
-      data: {
-        buyerId,
-        productId: data.productId,
-        quantity: data.quantity,
-      },
-      include: {
-        product: {
-          include: {
-            seller: {
-              select: {
-                id: true,
-                fullName: true,
-                companyName: true,
-              },
-            },
-          },
-        },
-      },
+    const cartItem = await Cart.create({
+      buyerId: new mongoose.Types.ObjectId(buyerId),
+      productId: new mongoose.Types.ObjectId(data.productId),
+      quantity: data.quantity,
     });
-    return cartItem;
+
+    const populatedCartItem = await Cart.findById(cartItem._id)
+      .populate({
+        path: "productId",
+        populate: {
+          path: "sellerId",
+          select: "fullName companyName",
+        },
+      })
+      .lean();
+    
+    return {
+      ...populatedCartItem,
+      id: populatedCartItem!._id.toString(),
+      product: (populatedCartItem as any).productId ? {
+        ...((populatedCartItem as any).productId as any),
+        id: ((populatedCartItem as any).productId as any)._id.toString(),
+        seller: ((populatedCartItem as any).productId as any).sellerId ? {
+          id: (((populatedCartItem as any).productId as any).sellerId as any)._id?.toString(),
+          fullName: (((populatedCartItem as any).productId as any).sellerId as any).fullName,
+          companyName: (((populatedCartItem as any).productId as any).sellerId as any).companyName,
+        } : null,
+      } : null,
+    };
   }
 };
 
@@ -273,19 +300,20 @@ export interface UpdateCartItemData {
 }
 
 export const updateCartItem = async (buyerId: string, cartItemId: string, data: UpdateCartItemData) => {
-  const cartItem = await prisma.cart.findUnique({
-    where: { id: cartItemId },
-    include: { product: true },
-  });
+  const cartItem = await Cart.findOne({
+    _id: new mongoose.Types.ObjectId(cartItemId),
+    buyerId: new mongoose.Types.ObjectId(buyerId),
+  }).populate("productId").lean();
 
-  if (!cartItem || cartItem.buyerId !== buyerId) {
+  if (!cartItem) {
     throw new Error("Cart item not found");
   }
 
   // Calculate total available stock from package weights
-  const smallWeight = parseFloat(cartItem.product.smallWeight || "0");
-  const mediumWeight = parseFloat(cartItem.product.mediumWeight || "0");
-  const largeWeight = parseFloat(cartItem.product.largeWeight || "0");
+  const product = cartItem.productId as any;
+  const smallWeight = parseFloat(product?.smallWeight || "0");
+  const mediumWeight = parseFloat(product?.mediumWeight || "0");
+  const largeWeight = parseFloat(product?.largeWeight || "0");
   const availableStock = smallWeight + mediumWeight + largeWeight;
   
   if (data.quantity > availableStock) {
@@ -296,44 +324,48 @@ export const updateCartItem = async (buyerId: string, cartItemId: string, data: 
     throw new Error("Quantity must be greater than 0");
   }
 
-  const updatedCartItem = await prisma.cart.update({
-    where: { id: cartItemId },
-    data: { quantity: data.quantity },
-    include: {
-      product: {
-        include: {
-          seller: {
-            select: {
-              id: true,
-              fullName: true,
-              companyName: true,
-            },
-          },
-        },
+  const updatedCartItem = await Cart.findByIdAndUpdate(
+    cartItemId,
+    { $set: { quantity: data.quantity } },
+    { new: true }
+  )
+    .populate({
+      path: "productId",
+      populate: {
+        path: "sellerId",
+        select: "fullName companyName",
       },
-    },
-  });
-  return updatedCartItem;
+    })
+    .lean();
+  
+  return {
+    ...updatedCartItem,
+    id: updatedCartItem!._id.toString(),
+    product: (updatedCartItem as any).productId ? {
+      ...((updatedCartItem as any).productId as any),
+      id: ((updatedCartItem as any).productId as any)._id.toString(),
+      seller: ((updatedCartItem as any).productId as any).sellerId ? {
+        id: (((updatedCartItem as any).productId as any).sellerId as any)._id?.toString(),
+        fullName: (((updatedCartItem as any).productId as any).sellerId as any).fullName,
+        companyName: (((updatedCartItem as any).productId as any).sellerId as any).companyName,
+      } : null,
+    } : null,
+  };
 };
 
 export const removeCartItem = async (buyerId: string, cartItemId: string) => {
-  const cartItem = await prisma.cart.findUnique({
-    where: { id: cartItemId },
+  const cartItem = await Cart.findOne({
+    _id: new mongoose.Types.ObjectId(cartItemId),
+    buyerId: new mongoose.Types.ObjectId(buyerId),
   });
 
-  if (!cartItem || cartItem.buyerId !== buyerId) {
+  if (!cartItem) {
     throw new Error("Cart item not found");
   }
 
-  await prisma.cart.delete({
-    where: { id: cartItemId },
-  });
+  await Cart.findByIdAndDelete(cartItemId);
 };
 
 export const clearCart = async (buyerId: string) => {
-  await prisma.cart.deleteMany({
-    where: { buyerId },
-  });
+  await Cart.deleteMany({ buyerId: new mongoose.Types.ObjectId(buyerId) });
 };
-
-

@@ -11,7 +11,7 @@ export const comparePassword = async (input: string, hashed: string) => {
 
 export const generateToken = (payload: {
   id: string;
-  role: "BUYER" | "SELLER";
+  role: "BUYER" | "SELLER" | "ADMIN";
 }) => {
   return jwt.sign(payload, process.env.JWT_SECRET as string, {
     expiresIn: "7d",

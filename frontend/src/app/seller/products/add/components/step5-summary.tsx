@@ -135,25 +135,67 @@ export default function Step5Summary({ productData }: Step5Props) {
                 {/* Package Pricing */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-stone-900 font-manrope">Package Pricing:</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center border-b border-stone-100 pb-2">
-                      <span className="text-stone-600 text-sm font-inter">Small:</span>
+                  <div className="space-y-3">
+                    {productData.samplePrice && productData.sampleWeight && (
+                      <div className="border-b border-stone-100 pb-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-stone-600 text-sm font-inter font-medium">Order Sample:</span>
+                          <span className="text-stone-700 text-sm font-manrope">
+                            ₹{productData.samplePrice} ({productData.sampleWeight} kg)
+                          </span>
+                        </div>
+                        {productData.sampleDescription && (
+                          <p className="text-stone-500 text-xs font-inter mt-1">
+                            {productData.sampleDescription}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {productData.smallPrice && productData.smallWeight && (
+                      <div className="border-b border-stone-100 pb-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-stone-600 text-sm font-inter font-medium">Small:</span>
                       <span className="text-stone-700 text-sm font-manrope">
-                        ₹{productData.smallPrice || "0.00"} ({productData.smallWeight || "0"} kg)
+                            ₹{productData.smallPrice} ({productData.smallWeight} kg)
                       </span>
                     </div>
-                    <div className="flex justify-between items-center border-b border-stone-100 pb-2">
-                      <span className="text-stone-600 text-sm font-inter">Medium:</span>
+                        {productData.smallDescription && (
+                          <p className="text-stone-500 text-xs font-inter mt-1">
+                            {productData.smallDescription}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {productData.mediumPrice && productData.mediumWeight && (
+                      <div className="border-b border-stone-100 pb-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-stone-600 text-sm font-inter font-medium">Medium:</span>
                       <span className="text-stone-700 text-sm font-manrope">
-                        ₹{productData.mediumPrice || "0.00"} ({productData.mediumWeight || "0"} kg)
+                            ₹{productData.mediumPrice} ({productData.mediumWeight} kg)
                       </span>
                     </div>
-                    <div className="flex justify-between items-center border-b border-stone-100 pb-2">
-                      <span className="text-stone-600 text-sm font-inter">Large:</span>
+                        {productData.mediumDescription && (
+                          <p className="text-stone-500 text-xs font-inter mt-1">
+                            {productData.mediumDescription}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {productData.largePrice && productData.largeWeight && (
+                      <div className="border-b border-stone-100 pb-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-stone-600 text-sm font-inter font-medium">Large:</span>
                       <span className="text-stone-700 text-sm font-manrope">
-                        ₹{productData.largePrice || "0.00"} ({productData.largeWeight || "0"} kg)
+                            ₹{productData.largePrice} ({productData.largeWeight} kg)
                       </span>
                     </div>
+                        {productData.largeDescription && (
+                          <p className="text-stone-500 text-xs font-inter mt-1">
+                            {productData.largeDescription}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 

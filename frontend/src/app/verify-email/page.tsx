@@ -16,12 +16,12 @@ export default function VerifyEmailPage() {
     if (status === "success") {
       toast.success("Email verified successfully! You can now log in.");
       setTimeout(() => {
-        router.push("/");
+        router.push("/?openLogin=true");
       }, 1500);
     } else if (status === "already") {
       toast.success("Your email is already verified.");
       setTimeout(() => {
-        router.push("/");
+        router.push("/?openLogin=true");
       }, 1500);
     } else if (status === "error") {
       const errorMessage = message ? decodeURIComponent(message) : "Email verification failed. Please try again.";

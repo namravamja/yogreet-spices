@@ -2,17 +2,18 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FiMenu, FiUser, FiLogOut, FiPackage, FiTruck, FiShoppingCart, FiBox, FiChevronDown, FiCheckCircle } from "react-icons/fi"
 import { LoginModal, SignupModal, SellerSignupModal, SellerLoginModal } from "../auth"
 import { useAuth } from "@/hooks/useAuth"
 import { useLogoutMutation } from "@/services/api/authApi"
 import { useGetCartQuery } from "@/services/api/buyerApi"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import toast from "react-hot-toast"
 
 export function Navbar() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated, isLoading: isAuthLoading, user, refetch } = useAuth("buyer")
   const [logout] = useLogoutMutation()
   const { data: cartData } = useGetCartQuery(undefined, {
@@ -33,6 +34,16 @@ export function Navbar() {
   const [sellerDropdownTimeout, setSellerDropdownTimeout] = useState<NodeJS.Timeout | null>(null)
   // Mock: whether buyer's document verification is pending
   const [isDocVerificationPending] = useState(true)
+
+  // Check for openLogin query parameter and open login modal
+  useEffect(() => {
+    const openLogin = searchParams.get("openLogin")
+    if (openLogin === "true" && !isAuthenticated && !isAuthLoading) {
+      setIsLoginModalOpen(true)
+      // Clean up URL by removing the query parameter
+      router.replace("/", { scroll: false })
+    }
+  }, [searchParams, isAuthenticated, isAuthLoading, router])
 
   // Navigation menu items
   const menuItems = [

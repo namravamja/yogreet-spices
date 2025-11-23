@@ -1,52 +1,68 @@
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "../utils/cloudinary";
+import cloudinary, { isCloudinaryConfigured } from "../utils/cloudinary";
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => {
-    const fileField = file.fieldname;
-    // Determine folder based on the route or user role
-    const userRole = (req as any).user?.role || "sellers";
-    const folder = userRole === "BUYER" ? `yogreet/buyers` : `yogreet/sellers`;
-    return {
-      folder: folder,
-      resource_type: "image",
-      allowed_formats: [
-        "jpg",
-        "jpeg",
-        "png",
-        "gif",
-        "bmp",
-        "webp",
-        "svg",
-        "tiff",
-        "tif",
-        "ico",
-        "avif",
-        "heic",
-        "heif",
-        "raw",
-        "cr2",
-        "nef",
-        "orf",
-        "sr2",
-      ],
-      transformation: [
-        {
-          width: 1200,
-          height: 1200,
-          crop: "limit",
-          quality: "auto:good",
-          format: "auto",
-        },
-      ],
-      public_id: `${fileField}-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 15)}`,
-    };
-  },
-});
+// Check if Cloudinary is configured using the utility function
+const cloudinaryReady = isCloudinaryConfigured();
+
+// Only create CloudinaryStorage if Cloudinary is configured
+// Otherwise use memory storage (files will need to be manually handled)
+let storage: multer.StorageEngine;
+try {
+  if (cloudinaryReady) {
+    storage = new CloudinaryStorage({
+      cloudinary,
+      params: async (req, file) => {
+        const fileField = file.fieldname;
+        // Determine folder based on the route or user role
+        const userRole = (req as any).user?.role || "sellers";
+        const folder = userRole === "BUYER" ? `yogreet/buyers` : `yogreet/sellers`;
+        return {
+          folder: folder,
+          resource_type: "image",
+          allowed_formats: [
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp",
+            "webp",
+            "svg",
+            "tiff",
+            "tif",
+            "ico",
+            "avif",
+            "heic",
+            "heif",
+            "raw",
+            "cr2",
+            "nef",
+            "orf",
+            "sr2",
+          ],
+          transformation: [
+            {
+              width: 1200,
+              height: 1200,
+              crop: "limit",
+              quality: "auto:good",
+              format: "auto",
+            },
+          ],
+          public_id: `${fileField}-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 15)}`,
+        };
+      },
+    });
+  } else {
+    storage = multer.memoryStorage();
+  }
+} catch (error: any) {
+  console.error('❌ Failed to initialize CloudinaryStorage:', error?.message || error);
+  console.warn('⚠️  Falling back to memory storage. File uploads will be stored in memory.');
+  storage = multer.memoryStorage();
+}
 
 const fileFilter = (
   req: any,

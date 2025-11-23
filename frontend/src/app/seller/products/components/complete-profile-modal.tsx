@@ -25,7 +25,7 @@ export default function CompleteProfileModal({
 }: CompleteProfileModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-poppins font-semibold text-yogreet-charcoal">
             Complete Your Profile & Verification

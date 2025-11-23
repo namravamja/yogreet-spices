@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyVerificationToken } from "../../utils/jwt";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Buyer } from "../../models/Buyer";
+import { Seller } from "../../models/Seller";
 
 export const verifyEmail = async (
   req: Request,
@@ -25,9 +24,7 @@ export const verifyEmail = async (
     const payload = verifyVerificationToken(token);
 
     if (payload.role === "BUYER") {
-      const buyer = await prisma.buyer.findUnique({
-        where: { id: payload.id },
-      });
+      const buyer = await Buyer.findById(payload.id);
 
       if (!buyer) {
         const acceptsJson = req.headers.accept?.includes("application/json");
@@ -49,12 +46,12 @@ export const verifyEmail = async (
             role: payload.role 
           });
         } else {
-          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=already`);
+          res.redirect(`${process.env.FRONTEND_URL}/?openLogin=true`);
         }
         return;
       }
 
-      if (buyer.verifyToken !== token || buyer.verifyExpires! < new Date()) {
+      if (buyer.verifyToken !== token || (buyer.verifyExpires && buyer.verifyExpires < new Date())) {
         const acceptsJson = req.headers.accept?.includes("application/json");
         if (acceptsJson) {
           res.status(400).json({ error: "Verification token expired or invalid" });
@@ -64,14 +61,10 @@ export const verifyEmail = async (
         return;
       }
 
-      await prisma.buyer.update({
-        where: { id: buyer.id },
-        data: {
-          isVerified: true,
-          verifyToken: null,
-          verifyExpires: null,
-        },
-      });
+      buyer.isVerified = true;
+      buyer.verifyToken = undefined;
+      buyer.verifyExpires = undefined;
+      await buyer.save();
 
       // Return success response for API call, or redirect for browser
       const buyerAcceptsJson = req.headers.accept?.includes("application/json");
@@ -82,13 +75,11 @@ export const verifyEmail = async (
           role: payload.role 
         });
       } else {
-        res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=success`);
+        res.redirect(`${process.env.FRONTEND_URL}/?openLogin=true`);
       }
       return;
     } else if (payload.role === "SELLER") {
-      const seller = await prisma.seller.findUnique({
-        where: { id: payload.id },
-      });
+      const seller = await Seller.findById(payload.id);
 
       if (!seller) {
         const acceptsJson = req.headers.accept?.includes("application/json");
@@ -115,7 +106,7 @@ export const verifyEmail = async (
         return;
       }
 
-      if (seller.verifyToken !== token || seller.verifyExpires! < new Date()) {
+      if (seller.verifyToken !== token || (seller.verifyExpires && seller.verifyExpires < new Date())) {
         const acceptsJson = req.headers.accept?.includes("application/json");
         if (acceptsJson) {
           res.status(400).json({ error: "Verification token expired or invalid" });
@@ -125,14 +116,10 @@ export const verifyEmail = async (
         return;
       }
 
-      await prisma.seller.update({
-        where: { id: seller.id },
-        data: {
-          isVerified: true,
-          verifyToken: null,
-          verifyExpires: null,
-        },
-      });
+      seller.isVerified = true;
+      seller.verifyToken = undefined;
+      seller.verifyExpires = undefined;
+      await seller.save();
 
       // Return success response for API call, or redirect for browser
       const sellerAcceptsJson = req.headers.accept?.includes("application/json");
@@ -157,14 +144,15 @@ export const verifyEmail = async (
     }
   } catch (err: any) {
     // Return error response for API call, or redirect for browser
+    const errorMessage = err?.message || err?.error || "Verification failed";
     const acceptsJson = req.headers.accept?.includes("application/json");
     if (acceptsJson) {
       res.status(400).json({ 
         success: false, 
-        error: err.message || "Verification failed" 
+        error: errorMessage
       });
     } else {
-      const errorParam = encodeURIComponent(err.message || "Verification failed");
+      const errorParam = encodeURIComponent(errorMessage);
       res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${errorParam}`);
     }
   }

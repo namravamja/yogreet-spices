@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
 import { generateVerificationToken } from "../../utils/jwt";
 import { sendVerificationEmail } from "../../helpers/mailer";
-
-const prisma = new PrismaClient();
+import { Buyer } from "../../models/Buyer";
+import { Seller } from "../../models/Seller";
 
 export const resendVerificationEmail = async (
   req: Request,
@@ -21,9 +20,7 @@ export const resendVerificationEmail = async (
     }
 
     if (role === "BUYER") {
-      const buyer = await prisma.buyer.findUnique({
-        where: { email },
-      });
+      const buyer = await Buyer.findOne({ email });
 
       if (!buyer) {
         res.status(404).json({ 
@@ -43,18 +40,14 @@ export const resendVerificationEmail = async (
 
       // Generate new verification token
       const verifyToken = generateVerificationToken({
-        id: buyer.id,
+        id: buyer._id.toString(),
         role: "BUYER",
       });
 
       // Update token and expiry (5 minutes expiry)
-      await prisma.buyer.update({
-        where: { id: buyer.id },
-        data: {
-          verifyToken,
-          verifyExpires: new Date(Date.now() + 5 * 60 * 1000),
-        },
-      });
+      buyer.verifyToken = verifyToken;
+      buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await buyer.save();
 
       // Send verification email
       try {
@@ -71,9 +64,7 @@ export const resendVerificationEmail = async (
         });
       }
     } else if (role === "SELLER") {
-      const seller = await prisma.seller.findUnique({
-        where: { email },
-      });
+      const seller = await Seller.findOne({ email });
 
       if (!seller) {
         res.status(404).json({ 
@@ -93,18 +84,14 @@ export const resendVerificationEmail = async (
 
       // Generate new verification token
       const verifyToken = generateVerificationToken({
-        id: seller.id,
+        id: seller._id.toString(),
         role: "SELLER",
       });
 
       // Update token and expiry (5 minutes expiry)
-      await prisma.seller.update({
-        where: { id: seller.id },
-        data: {
-          verifyToken,
-          verifyExpires: new Date(Date.now() + 5 * 60 * 1000),
-        },
-      });
+      seller.verifyToken = verifyToken;
+      seller.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await seller.save();
 
       // Send verification email
       try {
@@ -128,9 +115,10 @@ export const resendVerificationEmail = async (
     }
   } catch (error: any) {
     console.error("Resend verification error:", error);
+    const errorMessage = error?.message || error?.error || "Internal server error";
     res.status(500).json({ 
       success: false, 
-      error: error.message || "Internal server error" 
+      error: errorMessage
     });
   }
 };

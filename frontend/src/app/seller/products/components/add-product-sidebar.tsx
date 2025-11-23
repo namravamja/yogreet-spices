@@ -17,26 +17,29 @@ import Step4ImagesShipping from "../add/components/step4-images-shipping";
 import Step5Summary from "../add/components/step5-summary";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import type { ProductData } from "../add/page";
-import { useCreateProductMutation } from "@/services/api/sellerApi";
-import { useSellerVerification } from "@/hooks/useSellerVerification";
+import { useCreateProductMutation, useGetSellerQuery } from "@/services/api/sellerApi";
+import CompleteProfileModal from "./complete-profile-modal";
+import AccountUnderReviewModal from "./account-under-review-modal";
 
 interface AddProductSidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onProductAdded?: () => void;
-  validationEnabled?: boolean; // Testing toggle to disable validation
+  validationEnabled?: boolean;
 }
 
 export default function AddProductSidebar({
   open,
   onOpenChange,
   onProductAdded,
-  validationEnabled = true, // Default to enabled
+  validationEnabled = true,
 }: AddProductSidebarProps) {
   const [step, setStep] = useState(1);
   const formRef = useRef<HTMLDivElement>(null);
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
-  const { isFullyVerified, isLoading: isVerificationLoading } = useSellerVerification();
+  const { data: sellerData } = useGetSellerQuery(undefined);
+  const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+  const [showAccountUnderReviewModal, setShowAccountUnderReviewModal] = useState(false);
 
   const [productData, setProductData] = useState<ProductData>({
     id: "",
@@ -126,11 +129,29 @@ export default function AddProductSidebar({
   };
 
   const handleSubmit = async () => {
-    // Check if profile and verification are complete (only if validation is enabled)
-    if (validationEnabled && !isVerificationLoading && !isFullyVerified) {
-      toast.error("Please complete your profile and verification before adding products");
-      onOpenChange(false);
-      return;
+    // Skip validation if disabled
+    if (validationEnabled) {
+      const seller = sellerData?.data || sellerData;
+      if (!seller) {
+        toast.error("Unable to verify seller information. Please try again.");
+        return;
+      }
+
+      const profileCompletion = seller.profileCompletion || 0;
+      const documentCompletion = seller.documentCompletion || 0;
+      const isVerified = seller.isVerified || false;
+
+      // Check if profile or document completion is not 100%
+      if (profileCompletion < 100 || documentCompletion < 100) {
+        setShowCompleteProfileModal(true);
+        return;
+      }
+
+      // If both are 100% but seller is not verified
+      if (!isVerified) {
+        setShowAccountUnderReviewModal(true);
+        return;
+      }
     }
 
     if (!validateFields()) {
@@ -281,6 +302,7 @@ export default function AddProductSidebar({
   ];
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-lg md:max-w-xl flex flex-col h-full">
         <SheetHeader className="px-10 py-5 border-b border-stone-200 bg-white shrink-0">
@@ -397,7 +419,22 @@ export default function AddProductSidebar({
           </div>
         </div>
       </SheetContent>
-    </Sheet>
+      </Sheet>
+
+      {/* Complete Profile Modal */}
+      <CompleteProfileModal
+        open={showCompleteProfileModal}
+        onOpenChange={setShowCompleteProfileModal}
+        profileProgress={(sellerData?.data || sellerData)?.profileCompletion || 0}
+        documentVerificationProgress={(sellerData?.data || sellerData)?.documentCompletion || 0}
+      />
+
+      {/* Account Under Review Modal */}
+      <AccountUnderReviewModal
+        open={showAccountUnderReviewModal}
+        onOpenChange={setShowAccountUnderReviewModal}
+      />
+    </>
   );
 }
 

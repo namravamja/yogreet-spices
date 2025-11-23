@@ -1,6 +1,7 @@
 import { AuthApi } from "./index";
 import { BuyerApi } from "./index";
 import { SellerApi } from "./index";
+import { AdminApi } from "./index";
 
 export const authApi = AuthApi.injectEndpoints({
   overrideExisting: true,
@@ -74,22 +75,42 @@ export const authApi = AuthApi.injectEndpoints({
       }),
     }),
 
+    loginAdmin: builder.mutation({
+      query: (credentials) => ({
+        url: "/admin/login",
+        method: "POST",
+        body: credentials,
+      }),
+      invalidatesTags: ["Admin"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Manually invalidate admin query by dispatching a refetch
+          dispatch(AdminApi.util.invalidateTags(["Admin"]));
+        } catch (err) {
+          // Error handling
+        }
+      },
+    }),
+
     logout: builder.mutation({
       query: () => ({
         url: "/logout",
         method: "POST",
       }),
-      invalidatesTags: ["Buyer", "Seller"],
+      invalidatesTags: ["Buyer", "Seller", "Admin"],
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
-          // Manually invalidate both buyer and seller queries
+          // Manually invalidate both buyer, seller and admin queries
           dispatch(BuyerApi.util.invalidateTags(["Buyer"]));
           dispatch(SellerApi.util.invalidateTags(["Seller"]));
+          dispatch(AdminApi.util.invalidateTags(["Admin"]));
         } catch (err) {
           // Even on error, clear the cache
           dispatch(BuyerApi.util.invalidateTags(["Buyer"]));
           dispatch(SellerApi.util.invalidateTags(["Seller"]));
+          dispatch(AdminApi.util.invalidateTags(["Admin"]));
         }
       },
     }),
@@ -101,6 +122,7 @@ export const {
   useLoginBuyerMutation,
   useSignupSellerMutation,
   useLoginSellerMutation,
+  useLoginAdminMutation,
   useVerifyEmailQuery,
   useResendVerificationEmailMutation,
   useLogoutMutation,

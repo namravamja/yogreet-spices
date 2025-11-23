@@ -29,50 +29,92 @@ export const notFound = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const errorHandler = (
-  err: AppError | Error,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  let error = { ...err } as AppError;
-  error.message = err.message;
-
-  // Log error
-  console.error(`Error ${error.statusCode || 500}: ${error.message}`);
-
-  // Prisma errors
-  if (err.name === "PrismaClientKnownRequestError") {
-    const message = "Database operation failed";
-    error = createError(message, 400);
+  // Handle undefined or null errors
+  if (!err) {
+    console.error("❌ Undefined error caught");
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 
-  // Prisma validation errors
-  if (err.name === "PrismaClientValidationError") {
-    const message = "Invalid data provided";
-    error = createError(message, 400);
+  // Extract error message safely
+  let message = "Internal server error";
+  if (typeof err === "string") {
+    message = err;
+  } else if (err?.message) {
+    message = err.message;
+  } else if (err?.error) {
+    message = typeof err.error === "string" ? err.error : err.error?.message || "Internal server error";
+  } else if (err?.toString) {
+    message = err.toString();
+  }
+
+  let statusCode = err?.statusCode || err?.status || 500;
+
+  // Log error with full details
+  console.error(`❌ Error ${statusCode}:`, {
+    message,
+    name: err?.name,
+    stack: err?.stack,
+    originalError: err,
+    type: typeof err,
+  });
+
+  // Mongoose/MongoDB errors
+  if (err.name === "MongoServerError" || err.name === "MongoError") {
+    message = err.code === 11000 
+      ? "Duplicate entry found" 
+      : "Database operation failed";
+    statusCode = 400;
+  }
+
+  // Mongoose validation errors
+  if (err.name === "ValidationError") {
+    const validationErrors = Object.values(err.errors || {}).map((e: any) => e.message);
+    message = validationErrors.length > 0 
+      ? validationErrors.join(", ") 
+      : "Invalid data provided";
+    statusCode = 400;
+  }
+
+  // Mongoose cast errors
+  if (err.name === "CastError") {
+    message = "Invalid ID format";
+    statusCode = 400;
   }
 
   // JWT errors
   if (err.name === "JsonWebTokenError") {
-    const message = "Invalid token";
-    error = createError(message, 401);
+    message = "Invalid token";
+    statusCode = 401;
   }
 
   if (err.name === "TokenExpiredError") {
-    const message = "Token expired";
-    error = createError(message, 401);
+    message = "Token expired";
+    statusCode = 401;
   }
 
-  // Validation errors
-  if (err.name === "ValidationError") {
-    const message = "Validation failed";
-    error = createError(message, 400);
-  }
-
-  res.status(error.statusCode || 500).json({
+  // Send error response - ALWAYS ensure message is a string
+  const errorResponse: any = {
     success: false,
-    message: error.message || "Internal server error",
-    ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
-  });
+    message: message || "An unexpected error occurred",
+  };
+
+  // Only add extra fields in development
+  if (process.env.NODE_ENV === "development") {
+    errorResponse.stack = err?.stack;
+    errorResponse.details = err;
+  }
+
+  // Ensure response is sent and formatted correctly
+  if (!res.headersSent) {
+    res.status(statusCode).json(errorResponse);
+  }
 };
 
