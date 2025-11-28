@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "npm install --legacy-peer-deps && tsc",
+    "build": "npm install && tsc",
     "start": "node dist/index.js",
     "start:prod": "node dist/index.js",
     "admin:add": "ts-node scripts/add-admin.ts"
@@ -32,7 +32,6 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.0.0",
     "multer": "^2.0.0",
-    "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",

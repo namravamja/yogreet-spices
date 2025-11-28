@@ -1,5 +1,5 @@
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { CloudinaryStorage } from "../utils/cloudinaryStorage";
 import cloudinary, { isCloudinaryConfigured } from "../utils/cloudinary";
 
 // Check if Cloudinary is configured using the utility function
