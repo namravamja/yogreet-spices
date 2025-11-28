@@ -9,7 +9,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import PageHero from "@/components/shared/PageHero";
 import {
   useGetCartQuery,
@@ -156,33 +156,25 @@ export default function BuyerCartPage() {
 
   const removeItem = async (cartItemId: string) => {
     try {
-      await removeCartItem(cartItemId).unwrap();
-      
-      toast.success("Item removed from cart", {
-        duration: 2000,
-        icon: "🗑️",
-      });
+      const response = await removeCartItem(cartItemId).unwrap();
+      const successMessage = (response as any)?._message || (response as any)?.message || "Item removed from cart successfully";
+      toast.success(successMessage);
+      refetch();
     } catch (error: any) {
-      const errorMessage = error?.data?.error || error?.message || "Failed to remove item";
-      toast.error(errorMessage, {
-        duration: 3000,
-      });
+      const errorMessage = error?.data?.message || error?.data?.error || error?.message || "Failed to remove item from cart";
+      toast.error(errorMessage);
     }
   };
 
   const handleClearCart = async () => {
     try {
-      await clearCart(undefined).unwrap();
-      
-      toast.success("Cart cleared", {
-        duration: 2000,
-        icon: "🧹",
-      });
+      const response = await clearCart(undefined).unwrap();
+      const successMessage = (response as any)?._message || (response as any)?.message || "Cart cleared successfully";
+      toast.success(successMessage);
+      refetch();
     } catch (error: any) {
-      const errorMessage = error?.data?.error || error?.message || "Failed to clear cart";
-      toast.error(errorMessage, {
-        duration: 3000,
-      });
+      const errorMessage = error?.data?.message || error?.data?.error || error?.message || "Failed to clear cart";
+      toast.error(errorMessage);
     }
   };
 

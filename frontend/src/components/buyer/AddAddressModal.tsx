@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useCreateAddressMutation, useGetAddressesQuery, useGetBuyerQuery } from "@/services/api/buyerApi";
 
 interface AddressFormData {
@@ -95,14 +95,15 @@ export function AddAddressModal({ isOpen, onClose, onSuccess }: AddAddressModalP
         isDefault: formData.isDefault,
       };
 
-      await createAddress(addressData).unwrap();
-      toast.success("Address added successfully");
+      const response = await createAddress(addressData).unwrap();
+      const successMessage = (response as any)?._message || (response as any)?.message || "Address added successfully";
+      toast.success(successMessage);
       onClose();
       if (onSuccess) {
         onSuccess();
       }
     } catch (error: any) {
-      const errorMessage = error?.data?.error || error?.message || "Failed to add address";
+      const errorMessage = error?.data?.message || error?.data?.error || error?.message || "Failed to add address";
       toast.error(errorMessage);
     }
   };

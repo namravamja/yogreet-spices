@@ -9,7 +9,7 @@ import {
   ImageIcon,
   X,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Step1ProductBasics from "../add/components/step1-product-basics";
 import Step2AboutProduct from "../add/components/step2-about-product";

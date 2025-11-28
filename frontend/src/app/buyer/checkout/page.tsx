@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   MapPin,
@@ -12,7 +12,7 @@ import {
   Lock,
   Trash2,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import PageHero from "@/components/shared/PageHero";
 import {
   useGetCartQuery,
@@ -20,6 +20,7 @@ import {
   useCreateOrderMutation,
   useDeleteAddressMutation,
 } from "@/services/api/buyerApi";
+import { useGetProductsQuery } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { AddAddressModal } from "@/components/buyer/AddAddressModal";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
@@ -41,12 +42,27 @@ interface Address {
 
 type PaymentMethod = "credit_card" | "debit_card" | "paypal" | "bank_transfer";
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth("buyer");
-  const { data: cartData, isLoading: isLoadingCart } = useGetCartQuery(undefined, {
-    skip: !isAuthenticated,
+  
+  // Check if this is a "Buy Now" flow
+  const isBuyNow = searchParams.get("buyNow") === "true";
+  const buyNowProductId = searchParams.get("productId");
+  const buyNowQuantity = searchParams.get("quantity");
+  const buyNowPackage = searchParams.get("package") as "sample" | "small" | "medium" | "large" | null;
+  
+  // Fetch products for buyNow flow to get product details
+  const { data: productsData, isLoading: isLoadingProducts } = useGetProductsQuery(undefined, {
+    skip: !isBuyNow || !buyNowProductId,
   });
+  
+  // Fetch cart data (only used when not in buyNow mode)
+  const { data: cartData, isLoading: isLoadingCart } = useGetCartQuery(undefined, {
+    skip: !isAuthenticated || isBuyNow,
+  });
+  
   const { data: addressesData, isLoading: isLoadingAddresses, refetch: refetchAddresses } = useGetAddressesQuery(undefined, {
     skip: !isAuthenticated,
   });
@@ -59,10 +75,20 @@ export default function CheckoutPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
 
-  // Transform cart data
-  const cartItems = cartData ? cartData.map((item: any) => {
-    const product = item.product || {};
-    
+  // Create buyNow item from product data
+  const buyNowItem = useMemo(() => {
+    if (!isBuyNow || !buyNowProductId || !productsData?.products || !buyNowQuantity) {
+      return null;
+    }
+
+    const product = productsData.products.find((p: any) => {
+      const productId = p.id?.toString() || p.id;
+      const targetId = buyNowProductId.toString();
+      return productId === targetId;
+    });
+
+    if (!product) return null;
+
     const sampleWeight = parseFloat(product.sampleWeight || "0");
     const smallWeight = parseFloat(product.smallWeight || "0");
     const mediumWeight = parseFloat(product.mediumWeight || "0");
@@ -74,21 +100,30 @@ export default function CheckoutPage() {
     const mediumPrice = parseFloat(product.mediumPrice || "0");
     const largePrice = parseFloat(product.largePrice || "0");
     
+    // Calculate price per kg based on selected package
     let pricePerKg = 0;
-    if (smallWeight > 0 && smallPrice > 0) {
-      pricePerKg = smallPrice / smallWeight;
-    } else if (sampleWeight > 0 && samplePrice > 0) {
+    
+    if (buyNowPackage === "sample" && sampleWeight > 0 && samplePrice > 0) {
       pricePerKg = samplePrice / sampleWeight;
-    } else if (mediumWeight > 0 && mediumPrice > 0) {
+    } else if (buyNowPackage === "small" && smallWeight > 0 && smallPrice > 0) {
+      pricePerKg = smallPrice / smallWeight;
+    } else if (buyNowPackage === "medium" && mediumWeight > 0 && mediumPrice > 0) {
       pricePerKg = mediumPrice / mediumWeight;
-    } else if (largeWeight > 0 && largePrice > 0) {
+    } else if (buyNowPackage === "large" && largeWeight > 0 && largePrice > 0) {
       pricePerKg = largePrice / largeWeight;
+    } else {
+      // Fallback to small package
+      if (smallWeight > 0 && smallPrice > 0) {
+        pricePerKg = smallPrice / smallWeight;
+      } else if (sampleWeight > 0 && samplePrice > 0) {
+        pricePerKg = samplePrice / sampleWeight;
+      }
     }
     
     return {
-      id: item.id,
-      productId: item.productId,
-      weight: item.quantity,
+      id: `buynow-${product.id}`,
+      productId: product.id,
+      weight: parseFloat(buyNowQuantity),
       product: {
         id: product.id,
         productName: product.productName,
@@ -104,7 +139,66 @@ export default function CheckoutPage() {
         },
       },
     };
-  }) : [];
+  }, [isBuyNow, buyNowProductId, productsData, buyNowQuantity, buyNowPackage]);
+
+  // Transform cart data (only used when not in buyNow mode)
+  const allCartItems = useMemo(() => {
+    if (isBuyNow) return [];
+    
+    return cartData ? cartData.map((item: any) => {
+      const product = item.product || {};
+      
+      const sampleWeight = parseFloat(product.sampleWeight || "0");
+      const smallWeight = parseFloat(product.smallWeight || "0");
+      const mediumWeight = parseFloat(product.mediumWeight || "0");
+      const largeWeight = parseFloat(product.largeWeight || "0");
+      const availableStock = sampleWeight + smallWeight + mediumWeight + largeWeight;
+      
+      const samplePrice = parseFloat(product.samplePrice || "0");
+      const smallPrice = parseFloat(product.smallPrice || "0");
+      const mediumPrice = parseFloat(product.mediumPrice || "0");
+      const largePrice = parseFloat(product.largePrice || "0");
+      
+      let pricePerKg = 0;
+      if (smallWeight > 0 && smallPrice > 0) {
+        pricePerKg = smallPrice / smallWeight;
+      } else if (sampleWeight > 0 && samplePrice > 0) {
+        pricePerKg = samplePrice / sampleWeight;
+      } else if (mediumWeight > 0 && mediumPrice > 0) {
+        pricePerKg = mediumPrice / mediumWeight;
+      } else if (largeWeight > 0 && largePrice > 0) {
+        pricePerKg = largePrice / largeWeight;
+      }
+      
+      return {
+        id: item.id,
+        productId: item.productId,
+        weight: item.quantity,
+        product: {
+          id: product.id,
+          productName: product.productName,
+          productImages: product.productImages || [],
+          pricePerKg,
+          availableStock,
+          category: product.category,
+          seller: {
+            id: product.seller?.id || null,
+            fullName: product.seller?.fullName || null,
+            companyName: product.seller?.companyName || product.seller?.fullName || "Unknown Seller",
+            businessLogo: product.seller?.businessLogo || null,
+          },
+        },
+      };
+    }) : [];
+  }, [cartData, isBuyNow]);
+
+  // Use buyNow item if in buyNow mode, otherwise use cart items
+  const cartItems = useMemo(() => {
+    if (isBuyNow && buyNowItem) {
+      return [buyNowItem];
+    }
+    return allCartItems;
+  }, [isBuyNow, buyNowItem, allCartItems]);
 
   const addresses: Address[] = addressesData || [];
 
@@ -159,8 +253,9 @@ export default function CheckoutPage() {
     if (!addressToDelete) return;
 
     try {
-      await deleteAddress(addressToDelete).unwrap();
-      toast.success("Address deleted successfully");
+      const response = await deleteAddress(addressToDelete).unwrap();
+      const successMessage = (response as any)?._message || (response as any)?.message || "Address deleted successfully";
+      toast.success(successMessage);
       
       // If deleted address was selected, clear selection
       if (selectedAddressId === addressToDelete) {
@@ -177,7 +272,7 @@ export default function CheckoutPage() {
       setShowDeleteConfirm(false);
       setAddressToDelete(null);
     } catch (error: any) {
-      const errorMessage = error?.data?.error || error?.message || "Failed to delete address";
+      const errorMessage = error?.data?.message || error?.data?.error || error?.message || "Failed to delete address";
       toast.error(errorMessage);
     }
   };
@@ -186,7 +281,6 @@ export default function CheckoutPage() {
     if (addresses.length === 0) {
       toast.error("Please add a shipping address first", {
         duration: 3000,
-        icon: "⚠️",
       });
       setShowAddAddressModal(true);
       return;
@@ -203,25 +297,37 @@ export default function CheckoutPage() {
     }
 
     try {
-      await createOrder({
+      // For Buy Now flow, pass order items directly without using cart
+      const orderData: any = {
         shippingAddressId: selectedAddressId,
         paymentMethod: paymentMethod,
-      }).unwrap();
+      };
 
-      toast.success("Order placed successfully!", {
+      if (isBuyNow && cartItems.length > 0) {
+        // Pass order items directly for Buy Now
+        orderData.orderItems = cartItems.map((item: any) => ({
+          productId: item.productId || item.product?.id,
+          quantity: item.weight || item.quantity,
+        }));
+      }
+
+      const response = await createOrder(orderData).unwrap();
+      const successMessage = (response as any)?._message || (response as any)?.message || "Order placed successfully!";
+      toast.success(successMessage, {
         duration: 3000,
-        icon: "✅",
       });
 
       // Redirect to orders page
       router.push("/buyer/orders");
     } catch (error: any) {
-      const errorMessage = error?.data?.error || error?.message || "Failed to place order";
+      const errorMessage = error?.data?.message || error?.data?.error || error?.message || "Failed to place order";
       toast.error(errorMessage);
     }
   };
 
-  if (isLoadingCart || isLoadingAddresses) {
+  const isLoading = (isBuyNow ? isLoadingProducts : isLoadingCart) || isLoadingAddresses;
+  
+  if (isLoading) {
     return (
       <main className="pt-10 pb-20">
         <div className="container mx-auto px-2 max-w-7xl">
@@ -252,12 +358,14 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-2 max-w-7xl">
           <div className="text-center py-16">
             <h1 className="text-3xl font-light text-yogreet-charcoal mb-4">
-              Your cart is empty
+              {isBuyNow ? "Product not found in cart" : "Your cart is empty"}
             </h1>
             <p className="text-stone-600 mb-8">
-              Add items to your cart to proceed to checkout.
+              {isBuyNow 
+                ? "The product you're trying to purchase is not in your cart. Please try again."
+                : "Add items to your cart to proceed to checkout."}
             </p>
-            <Link href="/buyer/cart">
+            <Link href={isBuyNow ? "/explore" : "/buyer/cart"}>
               <button className="bg-yogreet-red hover:bg-yogreet-red/90 text-white px-6 py-3 font-medium transition-colors cursor-pointer rounded-xs">
                 View Cart
               </button>
@@ -284,9 +392,12 @@ export default function CheckoutPage() {
       />
 
       <div className="container mx-auto px-2 max-w-7xl">
-        <Link href="/buyer/cart" className="inline-flex items-center text-stone-600 hover:text-yogreet-red mb-6 transition-colors cursor-pointer">
+        <Link 
+          href={isBuyNow ? "/explore" : "/buyer/cart"} 
+          className="inline-flex items-center text-stone-600 hover:text-yogreet-red mb-6 transition-colors cursor-pointer"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Cart
+          {isBuyNow ? "Back to Explore" : "Back to Cart"}
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -599,5 +710,24 @@ export default function CheckoutPage() {
         </p>
       </ConfirmationModal>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white">
+        <PageHero 
+          title="Checkout" 
+          subtitle="Complete your order"
+          description=""
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">Loading...</div>
+        </div>
+      </main>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

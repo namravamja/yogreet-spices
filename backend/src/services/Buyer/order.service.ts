@@ -4,60 +4,114 @@ import { Cart } from "../../models/Cart";
 import { Product } from "../../models/Product";
 import mongoose from "mongoose";
 
+export interface OrderItemInput {
+  productId: string;
+  quantity: number;
+}
+
 export interface CreateOrderData {
   shippingAddressId: string;
   paymentMethod: string;
+  orderItems?: OrderItemInput[]; // Optional: for direct order creation (Buy Now)
 }
 
 export const createOrder = async (buyerId: string, data: CreateOrderData) => {
-  // Get all cart items
-  const cartItems = await Cart.find({ buyerId: new mongoose.Types.ObjectId(buyerId) })
-    .populate("productId")
-    .lean();
-
-  if (!cartItems || cartItems.length === 0) {
-    throw new Error("Cart is empty");
-  }
-
-  // Calculate subtotal
   let subtotal = 0;
   const orderItemsData: any[] = [];
 
-  for (const cartItem of cartItems) {
-    const product = cartItem.productId as any;
-    
-    // Calculate price per kg
-    const sampleWeight = parseFloat(product?.sampleWeight || "0");
-    const smallWeight = parseFloat(product?.smallWeight || "0");
-    const mediumWeight = parseFloat(product?.mediumWeight || "0");
-    const largeWeight = parseFloat(product?.largeWeight || "0");
-    
-    const samplePrice = parseFloat(product?.samplePrice || "0");
-    const smallPrice = parseFloat(product?.smallPrice || "0");
-    const mediumPrice = parseFloat(product?.mediumPrice || "0");
-    const largePrice = parseFloat(product?.largePrice || "0");
-    
-    let pricePerKg = 0;
-    if (smallWeight > 0 && smallPrice > 0) {
-      pricePerKg = smallPrice / smallWeight;
-    } else if (sampleWeight > 0 && samplePrice > 0) {
-      pricePerKg = samplePrice / sampleWeight;
-    } else if (mediumWeight > 0 && mediumPrice > 0) {
-      pricePerKg = mediumPrice / mediumWeight;
-    } else if (largeWeight > 0 && largePrice > 0) {
-      pricePerKg = largePrice / largeWeight;
+  // If orderItems are provided (Buy Now flow), use them directly
+  if (data.orderItems && data.orderItems.length > 0) {
+    for (const itemInput of data.orderItems) {
+      // Fetch product to get pricing and seller info
+      const product = await Product.findById(itemInput.productId).lean();
+      
+      if (!product) {
+        throw new Error(`Product ${itemInput.productId} not found`);
+      }
+
+      // Calculate price per kg
+      const sampleWeight = parseFloat((product as any)?.sampleWeight || "0");
+      const smallWeight = parseFloat((product as any)?.smallWeight || "0");
+      const mediumWeight = parseFloat((product as any)?.mediumWeight || "0");
+      const largeWeight = parseFloat((product as any)?.largeWeight || "0");
+      
+      const samplePrice = parseFloat((product as any)?.samplePrice || "0");
+      const smallPrice = parseFloat((product as any)?.smallPrice || "0");
+      const mediumPrice = parseFloat((product as any)?.mediumPrice || "0");
+      const largePrice = parseFloat((product as any)?.largePrice || "0");
+      
+      let pricePerKg = 0;
+      if (smallWeight > 0 && smallPrice > 0) {
+        pricePerKg = smallPrice / smallWeight;
+      } else if (sampleWeight > 0 && samplePrice > 0) {
+        pricePerKg = samplePrice / sampleWeight;
+      } else if (mediumWeight > 0 && mediumPrice > 0) {
+        pricePerKg = mediumPrice / mediumWeight;
+      } else if (largeWeight > 0 && largePrice > 0) {
+        pricePerKg = largePrice / largeWeight;
+      }
+
+      const quantity = itemInput.quantity || 0;
+      const itemTotal = pricePerKg * quantity;
+      subtotal += itemTotal;
+
+      orderItemsData.push({
+        productId: product._id,
+        quantity: quantity,
+        priceAtPurchase: pricePerKg,
+        sellerId: (product as any).sellerId || (product as any).seller?._id,
+      });
+    }
+  } else {
+    // Otherwise, get items from cart (normal flow)
+    const cartItems = await Cart.find({ buyerId: new mongoose.Types.ObjectId(buyerId) })
+      .populate("productId")
+      .lean();
+
+    if (!cartItems || cartItems.length === 0) {
+      throw new Error("Cart is empty");
     }
 
-    const quantity = cartItem.quantity || 0;
-    const itemTotal = pricePerKg * quantity;
-    subtotal += itemTotal;
+    for (const cartItem of cartItems) {
+      const product = cartItem.productId as any;
+      
+      // Calculate price per kg
+      const sampleWeight = parseFloat(product?.sampleWeight || "0");
+      const smallWeight = parseFloat(product?.smallWeight || "0");
+      const mediumWeight = parseFloat(product?.mediumWeight || "0");
+      const largeWeight = parseFloat(product?.largeWeight || "0");
+      
+      const samplePrice = parseFloat(product?.samplePrice || "0");
+      const smallPrice = parseFloat(product?.smallPrice || "0");
+      const mediumPrice = parseFloat(product?.mediumPrice || "0");
+      const largePrice = parseFloat(product?.largePrice || "0");
+      
+      let pricePerKg = 0;
+      if (smallWeight > 0 && smallPrice > 0) {
+        pricePerKg = smallPrice / smallWeight;
+      } else if (sampleWeight > 0 && samplePrice > 0) {
+        pricePerKg = samplePrice / sampleWeight;
+      } else if (mediumWeight > 0 && mediumPrice > 0) {
+        pricePerKg = mediumPrice / mediumWeight;
+      } else if (largeWeight > 0 && largePrice > 0) {
+        pricePerKg = largePrice / largeWeight;
+      }
 
-    orderItemsData.push({
-      productId: product._id,
-      quantity: quantity,
-      priceAtPurchase: pricePerKg,
-      sellerId: product.sellerId || product.seller?._id,
-    });
+      const quantity = cartItem.quantity || 0;
+      const itemTotal = pricePerKg * quantity;
+      subtotal += itemTotal;
+
+      orderItemsData.push({
+        productId: product._id,
+        quantity: quantity,
+        priceAtPurchase: pricePerKg,
+        sellerId: product.sellerId || product.seller?._id,
+      });
+    }
+  }
+
+  if (orderItemsData.length === 0) {
+    throw new Error("No items to order");
   }
 
   // Calculate shipping (free if subtotal >= 100, otherwise $15)
@@ -92,8 +146,10 @@ export const createOrder = async (buyerId: string, data: CreateOrderData) => {
     )
   );
 
-  // Clear cart after order creation
-  await Cart.deleteMany({ buyerId: new mongoose.Types.ObjectId(buyerId) });
+  // Clear cart after order creation (only if order was created from cart)
+  if (!data.orderItems || data.orderItems.length === 0) {
+    await Cart.deleteMany({ buyerId: new mongoose.Types.ObjectId(buyerId) });
+  }
 
   // Populate order with details
   const populatedOrder = await Order.findById(order._id)

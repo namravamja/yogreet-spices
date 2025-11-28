@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { Save, Check, FileText, MapPin, Settings } from "lucide-react";
 import Step1BusinessBasics from "./components/step1-basic-company-verification";
 import Step2AddressBanking from "./components/step2-importer-verification";
@@ -9,7 +9,7 @@ import Step4Summary from "./components/step4-ownership-identity";
 import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
  
 // NOTE: Reference MakeProfile uses API hooks and auth; for buyer verification we stub them
 type Noop = (...args: any[]) => Promise<{ unwrap: () => Promise<void> }>;
@@ -107,7 +107,7 @@ interface ProfileData {
   profileProgress?: number;
 }
 
-export default function VerfiyDocument() {
+function VerfiyDocumentContent() {
   const [step, setStep] = useState(1);
   const formRef = useRef<HTMLDivElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
@@ -1230,6 +1230,25 @@ export default function VerfiyDocument() {
       </div>
       </div>
     </main>
+  );
+}
+
+export default function VerfiyDocument() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white">
+        <PageHero 
+          title="Verify Document" 
+          subtitle="Complete your verification"
+          description=""
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">Loading...</div>
+        </div>
+      </main>
+    }>
+      <VerfiyDocumentContent />
+    </Suspense>
   );
 }
 

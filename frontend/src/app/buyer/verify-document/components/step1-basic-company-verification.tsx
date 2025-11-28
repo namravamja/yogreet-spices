@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useRef, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 interface ProfileData {
   company_registration_certificate?: string;

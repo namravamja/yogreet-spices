@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock, FiUser, FiShoppingBag } from "react-icons/fi"
 import { useSignupSellerMutation } from "@/services/api/authApi"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 import { useVerificationModal } from "@/components/auth/verification-modal-provider"
 import { motion, AnimatePresence } from "framer-motion"
 

@@ -17,7 +17,7 @@ import Step2AddressInformation from "../edit-profile/components/step2-address-in
 import Step3ShippingLogistics from "../edit-profile/components/step3-shipping-logistics";
 import Step4SocialMediaWebsite from "../edit-profile/components/step4-social-media-website";
 import { useUpdateSellerMutation } from "@/services/api/sellerApi";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetSellerQuery } from "@/services/api/sellerApi";
 

@@ -9,7 +9,7 @@ import {
   ImageIcon,
   X,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import Step1ProductBasics from "../add/components/step1-product-basics";
 import Step2AboutProduct from "../add/components/step2-about-product";
 import Step3PriceInventory from "../add/components/step3-price-inventory";
@@ -59,12 +59,18 @@ export default function AddProductSidebar({
     manufacturingDate: "",
     expiryDate: "",
     // Package pricing
+    samplePrice: "",
+    sampleWeight: "",
+    sampleDescription: "",
     smallPrice: "",
     smallWeight: "",
+    smallDescription: "",
     mediumPrice: "",
     mediumWeight: "",
+    mediumDescription: "",
     largePrice: "",
     largeWeight: "",
+    largeDescription: "",
     productImages: [],
     shippingCost: "",
   });
@@ -214,12 +220,18 @@ export default function AddProductSidebar({
         manufacturingDate: "",
         expiryDate: "",
         // Package pricing
+        samplePrice: "",
+        sampleWeight: "",
+        sampleDescription: "",
         smallPrice: "",
         smallWeight: "",
+        smallDescription: "",
         mediumPrice: "",
         mediumWeight: "",
+        mediumDescription: "",
         largePrice: "",
         largeWeight: "",
+        largeDescription: "",
         productImages: [],
         shippingCost: "",
       });
@@ -272,12 +284,18 @@ export default function AddProductSidebar({
         manufacturingDate: "",
         expiryDate: "",
         // Package pricing
+        samplePrice: "",
+        sampleWeight: "",
+        sampleDescription: "",
         smallPrice: "",
         smallWeight: "",
+        smallDescription: "",
         mediumPrice: "",
         mediumWeight: "",
+        mediumDescription: "",
         largePrice: "",
         largeWeight: "",
+        largeDescription: "",
         productImages: [],
         shippingCost: "",
       });

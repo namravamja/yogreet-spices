@@ -4,6 +4,7 @@ import { Poppins, Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "@/lib/store/provider";
 import { VerificationModalProviderWithModal } from "@/components/auth/verification-modal-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
           <VerificationModalProviderWithModal>
             {children}
           </VerificationModalProviderWithModal>
+          <Toaster position="top-right" richColors closeButton />
         </StoreProvider>
       </body>
     </html>

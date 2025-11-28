@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { Check, FileText, MapPin, Settings, Save, Truck } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import Step1BusinessIdentity from "./components/step1-business-identity";
 import Step2ExportEligibility from "./components/step2-export-eligibility";
 import Step3FoodSafetyCompliance from "./components/step3-food-safety-compliance";
@@ -59,7 +59,7 @@ interface SellerVerificationData {
   profileProgress?: number;
 }
 
-export default function SellerVerifyDocumentPage() {
+function SellerVerifyDocumentPageContent() {
   const [step, setStep] = useState(1);
   const formRef = useRef<HTMLDivElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | File[]>>({});
@@ -882,6 +882,25 @@ export default function SellerVerifyDocumentPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SellerVerifyDocumentPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white">
+        <PageHero 
+          title="Verify Document" 
+          subtitle="Complete your verification"
+          description=""
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">Loading...</div>
+        </div>
+      </main>
+    }>
+      <SellerVerifyDocumentPageContent />
+    </Suspense>
   );
 }
 

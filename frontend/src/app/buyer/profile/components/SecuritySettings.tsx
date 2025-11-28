@@ -1,10 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Key, Bell, Eye, EyeOff, Check } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { Shield, Key, Bell, Eye, EyeOff, Check, Edit, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-export default function SecuritySettings() {
+interface SecuritySettingsProps {
+  onEdit?: () => void;
+  updateData?: (updates: any) => void;
+  isLoading?: boolean;
+  isEditing?: boolean;
+}
+
+export default function SecuritySettings({ onEdit, updateData, isLoading: externalLoading, isEditing = false }: SecuritySettingsProps) {
+  const router = useRouter();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -72,16 +81,49 @@ export default function SecuritySettings() {
     }
   };
 
+  // Display mode - show data with Edit button
+  if (!isEditing) {
+    const isComplete = true; // Security settings are always considered complete
+    const buttonText = isComplete ? "Edit" : "Upload";
+    const ButtonIcon = isComplete ? Edit : Upload;
+
   return (
     <div className="bg-white border border-stone-200 shadow-sm">
       <div className="p-6 border-b border-stone-200">
-        <h2 className="text-xl font-medium text-yogreet-charcoal flex items-center">
-          <Shield className="w-5 h-5 mr-2 text-yogreet-purple" />
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-manrope font-medium text-yogreet-charcoal flex items-center">
+              <Shield className="w-5 h-5 mr-2 text-yogreet-sage" />
           Security Settings
         </h2>
-      </div>
+            <button
+              onClick={() => (onEdit ? onEdit() : router.push("/buyer/profile"))}
+              className="px-3 py-1.5 border border-yogreet-sage text-yogreet-sage rounded-md hover:bg-yogreet-sage/10 transition-colors cursor-pointer text-sm font-manrope flex items-center gap-1.5"
+            >
+              <ButtonIcon className="w-4 h-4" />
+              {buttonText}
+            </button>
+          </div>
+        </div>
 
-      <div className="p-6 space-y-8">
+        <div className="p-6 space-y-6">
+          <div>
+            <h3 className="text-lg font-medium text-stone-900 mb-4 flex items-center">
+              <Key className="w-5 h-5 mr-2" />
+              Change Password
+            </h3>
+            <p className="text-stone-600 text-sm">
+              You can change your password to keep your account secure.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Edit mode - form for Sheet
+  return (
+    <div className="space-y-6">
+
         {/* Password Change Section */}
         <div>
           <h3 className="text-lg font-medium text-stone-900 mb-4 flex items-center">
@@ -99,7 +141,7 @@ export default function SecuritySettings() {
                   type={showCurrentPassword ? "text" : "password"}
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                  className="w-full px-3 py-2 pr-10 border border-stone-300 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-transparent"
+                  className="w-full px-3 py-2 pr-10 border border-stone-300 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-transparent"
                   placeholder="Enter current password"
                 />
                 <button
@@ -121,7 +163,7 @@ export default function SecuritySettings() {
                   type={showNewPassword ? "text" : "password"}
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full px-3 py-2 pr-10 border border-stone-300 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-transparent"
+                  className="w-full px-3 py-2 pr-10 border border-stone-300 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-transparent"
                   placeholder="Enter new password"
                 />
                 <button
@@ -143,7 +185,7 @@ export default function SecuritySettings() {
                   type={showConfirmPassword ? "text" : "password"}
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-3 py-2 pr-10 border border-stone-300 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-transparent"
+                  className="w-full px-3 py-2 pr-10 border border-stone-300 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-transparent"
                   placeholder="Confirm new password"
                 />
                 <button
@@ -159,7 +201,7 @@ export default function SecuritySettings() {
             <button
               onClick={handlePasswordChange}
               disabled={isChangingPassword}
-              className="bg-terracotta-500 hover:bg-terracotta-600 disabled:bg-terracotta-400 text-white px-4 py-2 font-medium transition-colors cursor-pointer disabled:cursor-not-allowed hover:opacity-80 flex items-center"
+              className="bg-yogreet-sage hover:bg-yogreet-sage/90 disabled:bg-yogreet-sage/50 text-white px-4 py-2 font-medium transition-colors cursor-pointer disabled:cursor-not-allowed hover:opacity-80 flex items-center"
             >
               {isChangingPassword ? (
                 <>
@@ -173,7 +215,6 @@ export default function SecuritySettings() {
                 </>
               )}
             </button>
-          </div>
         </div>
       </div>
     </div>

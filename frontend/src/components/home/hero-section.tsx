@@ -5,7 +5,7 @@ import Link from "next/link"
 export function HeroSection() {
   return (
     <section 
-      className="bg-white py-10 md:py-16 relative overflow-hidden min-h-[600px] md:min-h-[670px] flex items-center"
+      className="bg-white py-8 sm:py-10 md:py-12 lg:py-16 relative overflow-hidden min-h-[500px] sm:min-h-[550px] md:min-h-[600px] lg:min-h-[670px] flex items-center"
     >
       {/* Background Video */}
       <video
@@ -29,16 +29,16 @@ export function HeroSection() {
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-20 w-full flex items-center justify-center">
         <div className="max-w-6xl text-center">
-          <h1 className="text-7xl font-poppins text-white mb-6 text-balance">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-poppins text-white mb-4 sm:mb-5 md:mb-6 text-balance leading-tight">
             Connect with Verified Spice Exporters Worldwide
           </h1>
-          <p className="text-white/90 font-inter text-lg md:text-xl mb-8 max-w-2xl mx-auto">
+          <p className="text-white/90 font-inter text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-7 md:mb-8 max-w-2xl mx-auto px-2 sm:px-0 leading-relaxed">
             Source premium quality Indian spices directly from certified exporters. Browse verified sellers, compare prices, and secure your orders with our trusted escrow system.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 mb-8 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8 justify-center px-2 sm:px-0">
             <Link 
               href="/explore"
-              className="px-6 py-4 bg-yogreet-red border border-yogreet-red text-white font-manrope font-medium hover:bg-yogreet-red/60 transition-all cursor-pointer text-center text-base md:text-lg rounded-md"
+              className="px-4 py-3 sm:px-6 sm:py-3 md:px-6 md:py-4 bg-yogreet-red border border-yogreet-red text-white font-manrope font-medium hover:bg-yogreet-red/60 transition-all cursor-pointer text-center text-sm sm:text-base md:text-lg rounded-md"
             >
               Start Buying Spices
             </Link>
@@ -54,7 +54,7 @@ export function HeroSection() {
                   });
                 }
               }}
-              className="px-8 py-4 border-2 bg-white/90 rounded-md border-white font-manrope font-medium hover:bg-white/70 transition-all cursor-pointer text-center text-base md:text-lg"
+              className="px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 border-2 bg-white/90 rounded-md border-white font-manrope font-medium hover:bg-white/70 transition-all cursor-pointer text-center text-sm sm:text-base md:text-lg"
             >
               How It Works ?
             </button>

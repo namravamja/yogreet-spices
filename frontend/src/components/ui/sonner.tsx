@@ -1,22 +1,26 @@
 'use client'
 
-import { useTheme } from 'next-themes'
-import { Toaster as Sonner, ToasterProps } from 'sonner'
+import { Toaster as Sonner } from 'sonner'
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme()
-
+const Toaster = ({ ...props }: React.ComponentProps<typeof Sonner>) => {
   return (
     <Sonner
-      theme={theme as ToasterProps['theme']}
+      theme="light"
       className="toaster group"
-      style={
-        {
-          '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
-        } as React.CSSProperties
-      }
+      duration={2400}
+      toastOptions={{
+        duration: 2400,
+        classNames: {
+          toast: 'group toast group-[.toaster]:shadow-lg group-[.toaster]:rounded-lg group-[.toaster]:border',
+          description: 'group-[.toast]:text-opacity-90',
+          actionButton: 'group-[.toast]:bg-white/20 group-[.toast]:text-current hover:group-[.toast]:bg-white/30',
+          cancelButton: 'group-[.toast]:bg-white/20 group-[.toast]:text-current hover:group-[.toast]:bg-white/30',
+          success: 'group-[.toaster]:bg-green-600 group-[.toaster]:text-white group-[.toaster]:border-green-700',
+          error: 'group-[.toaster]:bg-red-600 group-[.toaster]:text-white group-[.toaster]:border-red-700',
+          warning: 'group-[.toaster]:bg-yellow-500 group-[.toaster]:text-white group-[.toaster]:border-yellow-600',
+          info: 'group-[.toaster]:bg-blue-600 group-[.toaster]:text-white group-[.toaster]:border-blue-700',
+        },
+      }}
       {...props}
     />
   )

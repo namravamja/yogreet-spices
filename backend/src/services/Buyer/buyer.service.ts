@@ -121,7 +121,7 @@ export const updateAddress = async (
       {
         userId: new mongoose.Types.ObjectId(buyerId),
         isDefault: true,
-        _id: { $ne: new mongoose.Types.ObjectId(addressId) },
+        _id: { $ne: new mongoose.Types.ObjectId(String(addressId)) },
       },
       { $set: { isDefault: false } }
     );

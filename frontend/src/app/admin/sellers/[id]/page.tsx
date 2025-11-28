@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { useGetSellerByIdQuery, useVerifyDocumentMutation, useUnverifyDocumentMutation, useUpdateSellerVerificationStatusMutation, useMarkFieldsAsReviewedMutation } from "@/services/api/adminApi"
 import { FiChevronDown, FiChevronUp, FiMail, FiPhone, FiMapPin, FiCheckCircle, FiXCircle, FiClock, FiFileText, FiDownload, FiExternalLink } from "react-icons/fi"
 import Image from "next/image"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 
 export default function SellerDetailPage() {
   const params = useParams()

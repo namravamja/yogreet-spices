@@ -25,7 +25,7 @@ export function TopSpicesSection() {
 
   if (isLoading) {
     return (
-      <section className="bg-yogreet-light-gray py-16">
+      <section className="bg-yogreet-light-gray py-12 sm:py-14 md:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
@@ -48,7 +48,7 @@ export function TopSpicesSection() {
 
   if (sellers.length === 0) {
     return (
-      <section className="bg-yogreet-light-gray py-16">
+      <section className="bg-yogreet-light-gray py-12 sm:py-14 md:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
@@ -68,13 +68,13 @@ export function TopSpicesSection() {
   }
 
   return (
-    <section className="bg-yogreet-light-gray py-16">
+    <section className="bg-yogreet-light-gray py-12 sm:py-14 md:py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-poppins font-semibold text-yogreet-charcoal mb-3 sm:mb-4 leading-tight px-2 sm:px-0">
             Our Top Sellers
           </h2>
-          <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
+          <p className="text-yogreet-charcoal font-inter text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4 sm:px-6 md:px-0">
             Discover trusted spice exporters from India with verified credentials and quality products.
           </p>
         </div>

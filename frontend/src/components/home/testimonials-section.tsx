@@ -43,32 +43,32 @@ export function TestimonialsSection() {
   }
 
   return (
-    <section className="bg-yogreet py-16">
+    <section className="bg-yogreet py-12 sm:py-14 md:py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-poppins font-semibold text-yogreet-charcoal mb-3 sm:mb-4 leading-tight px-2 sm:px-0">
             What Our Users Say
           </h2>
-          <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
+          <p className="text-yogreet-charcoal font-inter text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4 sm:px-6 md:px-0">
             Join thousands of satisfied traders on Yogreet.
           </p>
         </div>
 
         <div className="relative max-w-3xl mx-auto">
           {/* Testimonial Card */}
-          <div className="bg-white p-8 md:p-12 shadow-md">
-            <div className="flex items-center gap-4 mb-6">
+          <div className="bg-white p-6 sm:p-8 md:p-10 lg:p-12 shadow-md">
+            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
               <img
                 src={testimonials[currentIndex].image || "/placeholder.svg"}
                 alt={testimonials[currentIndex].name}
-                className="w-16 h-16 object-cover"
+                className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded-full"
               />
               <div>
-                <h3 className="font-poppins font-semibold text-yogreet-charcoal">{testimonials[currentIndex].name}</h3>
-                <p className="text-yogreet-charcoal font-inter text-sm">{testimonials[currentIndex].role}</p>
+                <h3 className="font-poppins font-semibold text-yogreet-charcoal text-sm sm:text-base md:text-lg">{testimonials[currentIndex].name}</h3>
+                <p className="text-yogreet-charcoal font-inter text-xs sm:text-sm">{testimonials[currentIndex].role}</p>
               </div>
             </div>
-            <p className="text-yogreet-charcoal font-inter text-base leading-relaxed italic">
+            <p className="text-yogreet-charcoal font-inter text-sm sm:text-base md:text-lg leading-relaxed italic">
               "{testimonials[currentIndex].quote}"
             </p>
           </div>

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetSellerProductQuery, useDeleteProductMutation } from "@/services/api/sellerApi";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import EditProductSidebar from "../components/edit-product-sidebar";
 

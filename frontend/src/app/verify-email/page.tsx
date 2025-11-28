@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Navbar, Footer } from "@/components/layout";
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -46,6 +46,25 @@ export default function VerifyEmailPage() {
       </div>
       <Footer />
     </main>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yogreet-sage mx-auto mb-4"></div>
+            <p className="text-stone-600 font-inter">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    }>
+      <VerifyEmailPageContent />
+    </Suspense>
   );
 }
 

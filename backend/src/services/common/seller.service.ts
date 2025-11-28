@@ -1,7 +1,7 @@
 import { Seller } from "../../models/Seller";
 import { Product } from "../../models/Product";
 import { Review } from "../../models/Review";
-import { Documents } from "../../models/Documents";
+import { Documents, IDocuments } from "../../models/Documents";
 import mongoose from "mongoose";
 
 export const getPublicSellerProfile = async (sellerId: string) => {
@@ -54,6 +54,9 @@ export const getPublicSellerProfile = async (sellerId: string) => {
     // Calculate total reviews
     const totalReviews = reviews.length;
 
+    // Type assertion for populated documentsId
+    const documents = seller.documentsId as unknown as IDocuments | null;
+
     return {
       id: seller._id.toString(),
       email: seller.email,
@@ -71,23 +74,23 @@ export const getPublicSellerProfile = async (sellerId: string) => {
       socialLinks: seller.socialLinksId,
       profileCompletion: seller.profileCompletion,
       createdAt: seller.createdAt,
-      shippingType: seller.documentsId?.shippingType,
-      serviceAreas: seller.documentsId?.serviceAreas,
-      returnPolicy: seller.documentsId?.returnPolicy,
-      gstNumber: seller.documentsId?.gstNumber,
-      panNumber: seller.documentsId?.panNumber,
-      certificateOfOriginCapability: seller.documentsId?.certificateOfOriginCapability,
-      phytosanitaryCertificateCapability: seller.documentsId?.phytosanitaryCertificateCapability,
-      packagingCompliance: seller.documentsId?.packagingCompliance,
-      fumigationCertificateCapability: seller.documentsId?.fumigationCertificateCapability,
-      exportLogisticsPrepared: seller.documentsId?.exportLogisticsPrepared,
-      labTestingCapability: seller.documentsId?.labTestingCapability,
-      foodQualityCertifications: seller.documentsId?.foodQualityCertifications,
-      iecCode: seller.documentsId?.iecCode,
-      apedaRegistrationNumber: seller.documentsId?.apedaRegistrationNumber,
-      spicesBoardRegistrationNumber: seller.documentsId?.spicesBoardRegistrationNumber,
-      fssaiLicenseNumber: seller.documentsId?.fssaiLicenseNumber,
-      verificationStatus: seller.documentsId?.verificationStatus || "pending",
+      shippingType: documents?.shippingType,
+      serviceAreas: documents?.serviceAreas,
+      returnPolicy: documents?.returnPolicy,
+      gstNumber: documents?.gstNumber,
+      panNumber: documents?.panNumber,
+      certificateOfOriginCapability: documents?.certificateOfOriginCapability,
+      phytosanitaryCertificateCapability: documents?.phytosanitaryCertificateCapability,
+      packagingCompliance: documents?.packagingCompliance,
+      fumigationCertificateCapability: documents?.fumigationCertificateCapability,
+      exportLogisticsPrepared: documents?.exportLogisticsPrepared,
+      labTestingCapability: documents?.labTestingCapability,
+      foodQualityCertifications: documents?.foodQualityCertifications,
+      iecCode: documents?.iecCode,
+      apedaRegistrationNumber: documents?.apedaRegistrationNumber,
+      spicesBoardRegistrationNumber: documents?.spicesBoardRegistrationNumber,
+      fssaiLicenseNumber: documents?.fssaiLicenseNumber,
+      verificationStatus: documents?.verificationStatus || "pending",
       products: products.map((product: any) => ({
         ...product,
         id: product._id.toString(),

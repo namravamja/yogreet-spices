@@ -7,7 +7,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { FiHome, FiUsers, FiShoppingBag, FiLogOut, FiUser, FiChevronDown, FiMenu, FiX } from "react-icons/fi"
 import { useAuth } from "@/hooks/useAuth"
 import { useLogoutMutation } from "@/services/api/authApi"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 
 export function AdminNavbar() {
   const router = useRouter()

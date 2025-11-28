@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { CheckCircle, ArrowRight, FileText, Globe, Shield, Users, TrendingUp, Clock, Award, Zap, ChevronDown } from "lucide-react"
 import { Navbar, Footer } from "@/components/layout"
 import { SellerSignupModal, SellerLoginModal } from "@/components/auth"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 
 function LoginModalHandler({ setIsLoginModalOpen }: { setIsLoginModalOpen: (open: boolean) => void }) {
   const searchParams = useSearchParams()

@@ -18,7 +18,7 @@ export const getBuyer = async (req: AuthenticatedRequest, res: Response) => {
     // Reference uses { source: "cache" | "db", data: buyer } but for RTK Query we return data directly
     res.json(buyer);
   } catch (error) {
-    res.status(404).json({ error: (error as Error).message });
+    res.status(404).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -50,9 +50,9 @@ export const updateBuyer = async (req: AuthenticatedRequest, res: Response) => {
     });
 
     const buyer = await buyerService.updateBuyer(userId, updateData);
-    res.json(buyer);
+    res.json({ success: true, message: "Profile updated successfully", data: buyer });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -65,7 +65,7 @@ export const getAddresses = async (req: AuthenticatedRequest, res: Response) => 
     const addresses = await buyerService.getBuyerAddresses(userId);
     res.json(addresses);
   } catch (error) {
-    res.status(404).json({ error: (error as Error).message });
+    res.status(404).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -76,9 +76,9 @@ export const createAddress = async (req: AuthenticatedRequest, res: Response) =>
 
     const addressData: buyerService.AddressCreateData = req.body;
     const address = await buyerService.createAddress(userId, addressData);
-    res.status(201).json(address);
+    res.status(201).json({ success: true, message: "Address created successfully", data: address });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -92,9 +92,9 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response) =>
 
     const addressData: buyerService.AddressUpdateData = req.body;
     const address = await buyerService.updateAddress(userId, addressId, addressData);
-    res.json(address);
+    res.json({ success: true, message: "Address updated successfully", data: address });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -107,9 +107,9 @@ export const deleteAddress = async (req: AuthenticatedRequest, res: Response) =>
     if (!addressId) throw new Error("Invalid address ID");
 
     await buyerService.deleteAddress(userId, addressId);
-    res.status(204).send();
+    res.status(200).json({ success: true, message: "Address deleted successfully" });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -122,9 +122,9 @@ export const setDefaultAddress = async (req: AuthenticatedRequest, res: Response
     if (!addressId) throw new Error("Invalid address ID");
 
     const address = await buyerService.setDefaultAddress(userId, addressId);
-    res.json(address);
+    res.json({ success: true, message: "Default address updated successfully", data: address });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -137,7 +137,7 @@ export const getCart = async (req: AuthenticatedRequest, res: Response) => {
     const cartItems = await cartService.getCartItems(userId);
     res.json(cartItems);
   } catch (error) {
-    res.status(404).json({ error: (error as Error).message });
+    res.status(404).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -147,9 +147,9 @@ export const addToCart = async (req: AuthenticatedRequest, res: Response) => {
     if (!userId) throw new Error("Unauthorized");
 
     const cartItem = await cartService.addToCart(userId, req.body);
-    res.status(201).json(cartItem);
+    res.status(201).json({ success: true, message: "Item added to cart successfully", data: cartItem });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -160,9 +160,9 @@ export const updateCartItem = async (req: AuthenticatedRequest, res: Response) =
 
     const cartItemId = req.params.id;
     const cartItem = await cartService.updateCartItem(userId, cartItemId, req.body);
-    res.json(cartItem);
+    res.json({ success: true, message: "Cart item updated successfully", data: cartItem });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -173,9 +173,9 @@ export const removeCartItem = async (req: AuthenticatedRequest, res: Response) =
 
     const cartItemId = req.params.id;
     await cartService.removeCartItem(userId, cartItemId);
-    res.status(204).send();
+    res.status(200).json({ success: true, message: "Item removed from cart successfully" });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -185,9 +185,9 @@ export const clearCart = async (req: AuthenticatedRequest, res: Response) => {
     if (!userId) throw new Error("Unauthorized");
 
     await cartService.clearCart(userId);
-    res.status(204).send();
+    res.status(200).json({ success: true, message: "Cart cleared successfully" });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -200,7 +200,7 @@ export const getOrders = async (req: AuthenticatedRequest, res: Response) => {
     const orders = await orderService.getBuyerOrders(userId);
     res.json(orders);
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 
@@ -211,9 +211,9 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
 
     const orderData: orderService.CreateOrderData = req.body;
     const order = await orderService.createOrder(userId, orderData);
-    res.status(201).json(order);
+    res.status(201).json({ success: true, message: "Order placed successfully", data: order });
   } catch (error) {
-    res.status(400).json({ error: (error as Error).message });
+    res.status(400).json({ success: false, message: (error as Error).message });
   }
 };
 

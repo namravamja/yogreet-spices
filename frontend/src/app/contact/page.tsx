@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Mail, Phone, MapPin, Send, Linkedin, Twitter, Github, MessageSquare } from "lucide-react"
 import { Navbar, Footer } from "@/components/layout"
 import PageHero from "@/components/shared/PageHero"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({

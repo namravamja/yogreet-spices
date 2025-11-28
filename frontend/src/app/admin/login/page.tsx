@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { FiEye, FiEyeOff, FiUser, FiLock } from "react-icons/fi"
 import { useLoginAdminMutation } from "@/services/api/authApi"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 import Image from "next/image"
 
 export default function AdminLoginPage() {

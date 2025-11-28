@@ -38,6 +38,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
           };
         }
       },
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Buyer"],
     }),
 
@@ -53,6 +59,13 @@ export const buyerApi = BuyerApi.injectEndpoints({
         method: "POST",
         body: addressData,
       }),
+      transformResponse: (response: any) => {
+        // Handle wrapped response: { success: true, message: "...", data: ... }
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Buyer"],
     }),
 
@@ -62,6 +75,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         method: "PUT",
         body: addressData,
       }),
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Buyer"],
     }),
 
@@ -70,6 +89,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         url: `/addresses/${id}`,
         method: "DELETE",
       }),
+      transformResponse: (response: any) => {
+        if (response?.success) {
+          return { _message: response.message || "Address deleted successfully" };
+        }
+        return response;
+      },
       invalidatesTags: ["Buyer"],
     }),
 
@@ -78,6 +103,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         url: `/addresses/${id}/default`,
         method: "PATCH",
       }),
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Buyer"],
     }),
 
@@ -93,6 +124,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         method: "POST",
         body: data,
       }),
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Cart", "Buyer"],
     }),
 
@@ -102,6 +139,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         method: "PUT",
         body: data,
       }),
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Cart"],
     }),
 
@@ -110,6 +153,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         url: `/cart/${id}`,
         method: "DELETE",
       }),
+      transformResponse: (response: any) => {
+        if (response?.success) {
+          return { _message: response.message || "Item removed from cart successfully" };
+        }
+        return response;
+      },
       invalidatesTags: ["Cart"],
     }),
 
@@ -118,6 +167,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         url: "/cart",
         method: "DELETE",
       }),
+      transformResponse: (response: any) => {
+        if (response?.success) {
+          return { _message: response.message || "Cart cleared successfully" };
+        }
+        return response;
+      },
       invalidatesTags: ["Cart"],
     }),
 
@@ -133,6 +188,12 @@ export const buyerApi = BuyerApi.injectEndpoints({
         method: "POST",
         body: orderData,
       }),
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return { ...response.data, _message: response.message };
+        }
+        return response;
+      },
       invalidatesTags: ["Cart", "Buyer", "Orders"],
     }),
 

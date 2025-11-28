@@ -27,13 +27,13 @@ export function FeaturesSection() {
   ]
 
   return (
-    <section className="py-16 md:py-24 bg-yogreet-light-gray">
+    <section className="py-12 sm:py-14 md:py-16 lg:py-24 bg-yogreet-light-gray">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-poppins font-semibold text-yogreet-charcoal mb-3 sm:mb-4 leading-tight px-2 sm:px-0">
             Why Choose Yogreet for Your Spice Purchases?
           </h2>
-          <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
+          <p className="text-yogreet-charcoal font-inter text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4 sm:px-6 md:px-0">
             We ensure every spice purchase is secure, authentic, and delivers the quality you expect from premium Indian spices.
           </p>
         </div>
@@ -45,10 +45,10 @@ export function FeaturesSection() {
             const iconColor = iconColors[index % iconColors.length]
             
             return (
-              <div key={index} className="bg-white p-8 hover:shadow-lg transition-shadow text-center rounded-sm">
-                <IconComponent className={`w-10 h-10 ${iconColor} mb-4 mx-auto`} />
-                <h3 className="font-poppins font-semibold text-yogreet-charcoal mb-3 text-lg">{feature.title}</h3>
-                <p className="text-yogreet-charcoal font-inter text-sm leading-relaxed">{feature.description}</p>
+              <div key={index} className="bg-white p-4 sm:p-6 md:p-8 hover:shadow-lg transition-shadow text-center rounded-sm">
+                <IconComponent className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${iconColor} mb-3 sm:mb-4 mx-auto`} />
+                <h3 className="font-poppins font-semibold text-yogreet-charcoal mb-2 sm:mb-3 text-base sm:text-lg md:text-xl">{feature.title}</h3>
+                <p className="text-yogreet-charcoal font-inter text-xs sm:text-sm md:text-base leading-relaxed">{feature.description}</p>
               </div>
             )
           })}

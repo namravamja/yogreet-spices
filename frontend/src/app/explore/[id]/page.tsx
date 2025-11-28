@@ -11,8 +11,8 @@ import { useGetProductsQuery } from "@/services/api"
 import PageHero from "@/components/shared/PageHero"
 import { LoginModal, SignupModal } from "@/components/auth"
 import { useAuth } from "@/hooks/useAuth"
-import { useAddToCartMutation, useGetCartQuery } from "@/services/api/buyerApi"
-import toast from "react-hot-toast"
+import { useAddToCartMutation, useGetCartQuery, useUpdateCartItemMutation, useClearCartMutation } from "@/services/api/buyerApi"
+import { toast } from "sonner"
 
 // Transform database product to detail page format
 function transformProductForDetail(product: any) {
@@ -261,7 +261,9 @@ export default function ProductDetailPage() {
   // Scroll detection using framer-motion
   const { scrollY } = useScroll()
   const [isFixed, setIsFixed] = useState(false)
+  const [fixedLeft, setFixedLeft] = useState<number | null>(null)
   const reviewsSectionRef = useRef<HTMLDivElement>(null)
+  const packageComponentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const navbarHeight = 96 // h-24 = 96px
@@ -270,6 +272,12 @@ export default function ProductDetailPage() {
 
     const unsubscribe = scrollY.on("change", (latest) => {
       const shouldBeFixed = latest > scrollThreshold
+      
+      // Capture the exact left position before becoming fixed
+      if (shouldBeFixed && !isFixed && packageComponentRef.current) {
+        const rect = packageComponentRef.current.getBoundingClientRect()
+        setFixedLeft(rect.left)
+      }
       
       // Check if footer is approaching using ref
       if (reviewsSectionRef.current && shouldBeFixed) {
@@ -281,15 +289,19 @@ export default function ProductDetailPage() {
         // This prevents overlap with footer
         if (reviewsSectionBottom < viewportHeight + 200) {
           setIsFixed(false)
+          setFixedLeft(null)
           return
         }
       }
       
       setIsFixed(shouldBeFixed)
+      if (!shouldBeFixed) {
+        setFixedLeft(null)
+      }
     })
 
     return () => unsubscribe()
-  }, [scrollY])
+  }, [scrollY, isFixed])
 
   // Modal handlers
   const handleOpenLogin = () => {
@@ -323,13 +335,36 @@ export default function ProductDetailPage() {
 
   // Check if product is already in cart
   const isProductInCart = useMemo(() => {
-    if (!cartData || !product) return false
+    if (!cartData || !product || !isAuthenticated) return false
+    
+    const currentProductId = String(product.id)
+    
     return cartData.some((item: any) => {
-      const itemProductId = item.productId?.toString() || item.productId
-      const currentProductId = product.id?.toString() || product.id
-      return itemProductId === currentProductId
+      // Check both productId and nested product.id
+      const itemProductId = item.productId ? String(item.productId) : null
+      const nestedProductId = item.product?.id ? String(item.product.id) : null
+      
+      return (itemProductId && itemProductId === currentProductId) || 
+             (nestedProductId && nestedProductId === currentProductId)
     })
-  }, [cartData, product])
+  }, [cartData, product, isAuthenticated])
+
+  // Get quantity based on selected package
+  const getSelectedQuantity = () => {
+    if (!product) return 0
+    switch (selectedPackage) {
+      case "sample":
+        return product.sampleWeight || 0
+      case "small":
+        return product.smallWeight || 0
+      case "medium":
+        return product.mediumWeight || 0
+      case "large":
+        return product.largeWeight || 0
+      default:
+        return 0
+    }
+  }
 
   // Add to cart handler
   const handleAddToCart = async () => {
@@ -353,22 +388,7 @@ export default function ProductDetailPage() {
       return
     }
 
-    // Get quantity based on selected package
-    let quantity = 0
-    switch (selectedPackage) {
-      case "sample":
-        quantity = product.sampleWeight || 0
-        break
-      case "small":
-        quantity = product.smallWeight || 0
-        break
-      case "medium":
-        quantity = product.mediumWeight || 0
-        break
-      case "large":
-        quantity = product.largeWeight || 0
-        break
-    }
+    const quantity = getSelectedQuantity()
 
     if (quantity <= 0) {
       toast.error("Invalid package selection")
@@ -391,6 +411,30 @@ export default function ProductDetailPage() {
         duration: 3000,
       })
     }
+  }
+
+  // Buy Now handler - navigates directly to checkout without modifying cart
+  const handleBuyNow = () => {
+    // Check authentication
+    if (!isAuthenticated) {
+      handleOpenLogin()
+      return
+    }
+
+    if (!product) {
+      toast.error("Product not found")
+      return
+    }
+
+    const quantity = getSelectedQuantity()
+
+    if (quantity <= 0) {
+      toast.error("Invalid package selection")
+      return
+    }
+
+    // Navigate directly to checkout with product details - no cart modification
+    router.push(`/buyer/checkout?buyNow=true&productId=${product.id}&quantity=${quantity}&package=${selectedPackage}`)
   }
 
   const loading = isLoading || (!product && !error)
@@ -953,6 +997,8 @@ export default function ProductDetailPage() {
             {/* Placeholder to maintain grid width when fixed */}
             {isFixed && (
               <div className="lg:w-[calc((min(100vw-64px,1280px)-5rem)*2/6)] lg:max-w-[400px] h-fit invisible" aria-hidden="true">
+                {/* Guide placeholder */}
+                <div className="h-10 mb-3"></div>
                 <div className="border border-gray-200 overflow-hidden">
                   <div className="p-6 bg-white">
                     <div className="h-8 bg-gray-200  mb-4"></div>
@@ -964,16 +1010,33 @@ export default function ProductDetailPage() {
               </div>
             )}
             <motion.div 
+              ref={packageComponentRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               className={`lg:w-[calc((min(100vw-64px,1280px)-5rem)*2/6)] lg:max-w-[400px] h-fit z-10 ${
                 isFixed 
-                  ? 'lg:fixed lg:top-[116px] lg:right-[max(2rem,calc((100vw-1280px)/2+2rem))]' 
+                  ? 'lg:fixed lg:top-[116px]' 
                   : 'lg:sticky lg:top-[116px]'
               }`}
+              style={isFixed && fixedLeft !== null ? { left: `${fixedLeft}px` } : {}}
             >
-            <div className="border border-gray-200 overflow-hidden">
+              {/* Package Selection Guide */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+                className="relative inline-block bg-black text-white px-4 py-2.5 text-xs rounded-lg mb-3"
+              >
+                <div className="flex items-center gap-2">
+                  <FiInfo className="w-3 h-3 shrink-0" />
+                  <span>Select a package here!</span>
+                </div>
+                {/* Message tail/pointer */}
+                <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-black transform rotate-45"></div>
+              </motion.div>
+              
+              <div className="border border-gray-200 overflow-hidden">
               {/* Package Tabs */}
               <div className="flex border-b border-gray-200">
                 {product.samplePrice && product.sampleWeight && (
@@ -1173,7 +1236,9 @@ export default function ProductDetailPage() {
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <button
-                    className="w-full bg-yogreet-red text-white py-3 font-medium hover:bg-yogreet-red/90 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    onClick={handleBuyNow}
+                    disabled={!product || isAddingToCart}
+                    className="w-full bg-yogreet-red text-white py-3 font-medium hover:bg-yogreet-red/90 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Buy Now
                     <FiArrowLeft className="w-4 h-4 rotate-180" />
@@ -1183,7 +1248,7 @@ export default function ProductDetailPage() {
                     disabled={isAddingToCart || !product || isProductInCart}
                     className={`w-full py-3 font-medium transition-colors flex items-center justify-center ${
                       isProductInCart
-                        ? "bg-stone-100 border border-stone-300 text-stone-600 cursor-not-allowed"
+                        ? "bg-stone-200 border border-stone-300 text-stone-500 cursor-not-allowed opacity-60"
                         : "bg-white border border-yogreet-charcoal text-yogreet-charcoal hover:bg-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     }`}
                   >

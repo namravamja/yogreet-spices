@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FiX, FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi"
 import { useLoginSellerMutation } from "@/services/api/authApi"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface SellerLoginModalProps {
@@ -61,18 +61,13 @@ export function SellerLoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuc
       // If error is about email verification, show additional message with link
       if (errorMessage.toLowerCase().includes("verify") || errorMessage.toLowerCase().includes("verification")) {
         setTimeout(() => {
-          toast((t) => (
-            <div className="flex flex-col gap-2">
-              <span>{errorMessage}</span>
-              <a
-                href="/seller/verify-document/1"
-                className="text-[#212121] hover:underline font-medium text-sm"
-                onClick={() => toast.dismiss(t.id)}
-              >
-                Go to verification →
-              </a>
-            </div>
-          ), { duration: 6000 })
+          toast.error(errorMessage, {
+            duration: 6000,
+            action: {
+              label: "Go to verification →",
+              onClick: () => window.location.href = "/seller/verify-document/1",
+            },
+          })
         }, 500)
       }
     }

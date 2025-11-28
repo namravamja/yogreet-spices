@@ -93,13 +93,13 @@ export function HowItWorksSection() {
 
   return (
     <>
-    <section id="how-it-works" className="bg-white py-16 md:py-18">
+    <section id="how-it-works" className="bg-white py-12 sm:py-14 md:py-16 lg:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-poppins font-semibold text-yogreet-charcoal mb-4">
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-poppins font-semibold text-yogreet-charcoal mb-3 sm:mb-4 leading-tight px-2 sm:px-0">
             How to Buy Spices on Yogreet
           </h2>
-          <p className="text-yogreet-charcoal font-inter text-base max-w-2xl mx-auto">
+          <p className="text-yogreet-charcoal font-inter text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4 sm:px-6 md:px-0">
             Start buying premium Indian spices from verified exporters in six simple steps.
           </p>
         </div>
@@ -114,10 +114,10 @@ export function HowItWorksSection() {
               {/* Step 1 */}
               <div className="relative flex flex-col md:flex-row items-start">
                 <div className="flex-none md:w-1/2 md:pr-8 md:text-right order-2 md:order-1 mt-6 md:mt-0 pl-10 md:pl-0">
-                  <h3 className="text-xl font-medium text-yogreet-charcoal mb-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-yogreet-charcoal mb-2">
                     Create Your Buyer Account
                   </h3>
-                  <p className="text-yogreet-charcoal mb-4">
+                  <p className="text-yogreet-charcoal text-sm sm:text-base mb-4">
                     Sign up as a buyer with your business details to access verified spice exporters and start browsing premium Indian spices.
                   </p>
                   <button
@@ -132,13 +132,13 @@ export function HowItWorksSection() {
                 </div>
                 <div className="flex-none md:w-1/2 md:pl-8 order-3 mt-6 md:mt-0 pl-10">
                   <div className="bg-yogreet-light-gray p-4 rounded-lg">
-                    <h4 className="font-medium text-yogreet-charcoal mb-2">
+                    <h4 className="font-medium text-sm sm:text-base text-yogreet-charcoal mb-2">
                       Requirements:
                     </h4>
                     <ul className="space-y-2">
                       <li className="flex items-start">
                         <CheckCircle className="w-5 h-5 text-yogreet-red mr-2 shrink-0 mt-0.5" />
-                        <span>Email address</span>
+                        <span className="text-sm sm:text-base">Email address</span>
                       </li>
                       <li className="flex items-start">
                         <CheckCircle className="w-5 h-5 text-yogreet-red mr-2 shrink-0 mt-0.5" />
@@ -161,7 +161,7 @@ export function HowItWorksSection() {
               <div className="relative flex flex-col md:flex-row items-start">
                 <div className="flex-none md:w-1/2 md:pr-8 md:text-right order-2 md:order-1 mt-6 md:mt-0 pl-10 md:pl-0">
                   <div className="bg-yogreet-light-gray p-4 rounded-lg">
-                    <h4 className="font-medium text-yogreet-charcoal mb-2">
+                    <h4 className="font-medium text-sm sm:text-base text-yogreet-charcoal mb-2">
                       What You Can Do:
                     </h4>
                     <ul className="space-y-2">
@@ -188,10 +188,10 @@ export function HowItWorksSection() {
                   2
                 </div>
                 <div className="flex-none md:w-1/2 md:pl-8 order-3 mt-6 md:mt-0 pl-10">
-                  <h3 className="text-xl font-medium text-yogreet-charcoal mb-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-yogreet-charcoal mb-2">
                     Browse & Compare Spices
                   </h3>
-                  <p className="text-yogreet-charcoal mb-4">
+                  <p className="text-yogreet-charcoal text-sm sm:text-base mb-4">
                     Explore premium Indian spices from verified exporters. Compare quality, prices, certifications, and read detailed product descriptions.
                   </p>
                   <p className="text-yogreet-charcoal">
@@ -203,10 +203,10 @@ export function HowItWorksSection() {
               {/* Step 3 */}
               <div className="relative flex flex-col md:flex-row items-start">
                 <div className="flex-none md:w-1/2 md:pr-8 md:text-right order-2 md:order-1 mt-6 md:mt-0 pl-10 md:pl-0">
-                  <h3 className="text-xl font-medium text-yogreet-charcoal mb-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-yogreet-charcoal mb-2">
                     Request Free Samples
                   </h3>
-                  <p className="text-yogreet-charcoal mb-4">
+                  <p className="text-yogreet-charcoal text-sm sm:text-base mb-4">
                     Get complimentary samples to test aroma, texture, and purity before committing to large orders. No cost to you.
                   </p>
                   <p className="text-yogreet-charcoal">
@@ -218,7 +218,7 @@ export function HowItWorksSection() {
                 </div>
                 <div className="flex-none md:w-1/2 order-3 mt-6 md:mt-0 pl-10 md:pl-8">
                   <div className="bg-yogreet-light-gray p-4 rounded-lg">
-                    <h4 className="font-medium text-yogreet-charcoal mb-2">
+                    <h4 className="font-medium text-sm sm:text-base text-yogreet-charcoal mb-2">
                       Sample Process:
                     </h4>
                     <ul className="space-y-2">
@@ -247,7 +247,7 @@ export function HowItWorksSection() {
               <div className="relative flex flex-col md:flex-row items-start">
                 <div className="flex-none md:w-1/2 md:pr-8 md:text-right order-2 md:order-1 mt-6 md:mt-0 pl-10 md:pl-0">
                   <div className="bg-yogreet-light-gray p-4 rounded-lg">
-                    <h4 className="font-medium text-yogreet-charcoal mb-2">
+                    <h4 className="font-medium text-sm sm:text-base text-yogreet-charcoal mb-2">
                       Order Requirements:
                     </h4>
                     <ul className="space-y-2">
@@ -304,7 +304,7 @@ export function HowItWorksSection() {
                 </div>
                 <div className="flex-none md:w-1/2 order-3 mt-6 md:mt-0 pl-10 md:pl-8">
                   <div className="bg-yogreet-light-gray p-4 rounded-lg">
-                    <h4 className="font-medium text-yogreet-charcoal mb-2">
+                    <h4 className="font-medium text-sm sm:text-base text-yogreet-charcoal mb-2">
                       Delivery Process:
                     </h4>
                     <ul className="space-y-2">
@@ -333,7 +333,7 @@ export function HowItWorksSection() {
               <div className="relative flex flex-col md:flex-row items-start">
                 <div className="flex-none md:w-1/2 md:pr-8 md:text-right order-2 md:order-1 mt-6 md:mt-0 pl-10 md:pl-0">
                   <div className="bg-yogreet-light-gray p-4 rounded-lg">
-                    <h4 className="font-medium text-yogreet-charcoal mb-2">
+                    <h4 className="font-medium text-sm sm:text-base text-yogreet-charcoal mb-2">
                       Partnership Benefits:
                     </h4>
                     <ul className="space-y-2">
@@ -360,10 +360,10 @@ export function HowItWorksSection() {
                   6
                 </div>
                 <div className="flex-none md:w-1/2 order-3 mt-6 md:mt-0 pl-10 md:pl-8">
-                  <h3 className="text-xl font-medium text-yogreet-charcoal mb-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-medium text-yogreet-charcoal mb-2">
                     Build Long-term Partnership
                   </h3>
-                  <p className="text-yogreet-charcoal mb-4">
+                  <p className="text-yogreet-charcoal text-sm sm:text-base mb-4">
                     Establish ongoing relationships with trusted exporters for regular spice purchases and exclusive deals.
                   </p>
                   <p className="text-yogreet-charcoal">

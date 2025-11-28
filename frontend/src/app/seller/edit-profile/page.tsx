@@ -5,7 +5,7 @@ import { User, MapPin, Truck, Globe, Save, FileText } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import Step1BasicInformation from "./components/step1-basic-information";
 import Step2AboutStore from "./components/step2-about-store";
 import Step2AddressInformation from "./components/step2-address-information";
