@@ -88,7 +88,7 @@ export default function Step2AboutStore({ data, updateData, setUploadedFiles, is
         </div>
 
         <div>
-          <label className="block text-sm font-manrope font-medium text-stone-700 mb-2 flex items-center">
+          <label className="flex items-center text-sm font-manrope font-medium text-stone-700 mb-2">
             <ImageIcon className="w-4 h-4 mr-2 text-yogreet-sage" />
             Store Photos
           </label>
@@ -104,7 +104,7 @@ export default function Step2AboutStore({ data, updateData, setUploadedFiles, is
           {Array.isArray(data.storePhotos) && data.storePhotos.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {data.storePhotos.map((src, idx) => (
-                <div key={`existing-${idx}`} className="relative w-full aspect-[4/3] bg-stone-100 border border-stone-200 overflow-hidden rounded-sm">
+                <div key={`existing-${idx}`} className="relative w-full aspect-4/3 bg-stone-100 border border-stone-200 overflow-hidden rounded-sm">
                   <Image
                     src={src}
                     alt={`Store photo ${idx + 1}`}
@@ -129,7 +129,7 @@ export default function Step2AboutStore({ data, updateData, setUploadedFiles, is
           {selectedPreviews.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {selectedPreviews.map((p, idx) => (
-                <div key={`selected-${idx}`} className="relative w-full aspect-[4/3] bg-stone-100 border border-stone-200 overflow-hidden rounded-sm">
+                <div key={`selected-${idx}`} className="relative w-full aspect-4/3 bg-stone-100 border border-stone-200 overflow-hidden rounded-sm">
                   <Image
                     src={p.url}
                     alt={`Selected store photo ${idx + 1}`}
