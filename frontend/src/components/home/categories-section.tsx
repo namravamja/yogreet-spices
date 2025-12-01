@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { TURMERIC_POWDER_SPICE_URL, CUMIN_SEEDS_SPICE_URL, RED_CHILI_POWDER_SPICE_URL, CORIANDER_POWDER_SPICE_URL, CARDAMOM_PODS_SPICE_URL, CLOVES_WHOLE_SPICE_URL, FENUGREEK_SEEDS_SPICE_URL, ASAFOETIDA_POWDER_SPICE_URL, PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 
 export function CategoriesSection() {
   const router = useRouter()
@@ -8,42 +9,42 @@ export function CategoriesSection() {
   const categories = [
     {
       name: "Turmeric",
-      image: "/turmeric-powder-spice.jpg",
+      image: TURMERIC_POWDER_SPICE_URL,
       count: "120+",
     },
     {
       name: "Cumin",
-      image: "/cumin-seeds-spice.jpg",
+      image: CUMIN_SEEDS_SPICE_URL,
       count: "95+",
     },
     {
       name: "Chili",
-      image: "/red-chili-powder-spice.jpg",
+      image: RED_CHILI_POWDER_SPICE_URL,
       count: "150+",
     },
     {
       name: "Coriander",
-      image: "/coriander-powder-spice.jpg",
+      image: CORIANDER_POWDER_SPICE_URL,
       count: "110+",
     },
     {
       name: "Cardamom",
-      image: "/cardamom-pods-spice.jpg",
+      image: CARDAMOM_PODS_SPICE_URL,
       count: "80+",
     },
     {
       name: "Cloves",
-      image: "/cloves-whole-spice.jpg",
+      image: CLOVES_WHOLE_SPICE_URL,
       count: "75+",
     },
     {
       name: "Fenugreek",
-      image: "/fenugreek-seeds-spice.jpg",
+      image: FENUGREEK_SEEDS_SPICE_URL,
       count: "60+",
     },
     {
       name: "Asafoetida",
-      image: "/asafoetida-powder-spice.jpg",
+      image: ASAFOETIDA_POWDER_SPICE_URL,
       count: "45+",
     },
   ]
@@ -64,7 +65,7 @@ export function CategoriesSection() {
             >
               <div className="relative w-full h-full">
                 <img
-                  src={category.image || "/placeholder.svg"}
+                  src={category.image || PLACEHOLDER_SVG_URL}
                   alt={category.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />

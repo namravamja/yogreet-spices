@@ -15,7 +15,9 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 import { useGetSellerProductsQuery, useGetSellerQuery } from "@/services/api/sellerApi";
+import { getCookie, setCookie } from "@/utils/cookies";
 import AddProductSidebar from "./components/add-product-sidebar";
 import CompleteProfileModal from "./components/complete-profile-modal";
 import AccountUnderReviewModal from "./components/account-under-review-modal";
@@ -61,10 +63,10 @@ export default function SellerProductsPage() {
   const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
   const [showAccountUnderReviewModal, setShowAccountUnderReviewModal] = useState(false);
   
-  // Validation toggle (stored in localStorage)
+  // Validation toggle (stored in cookie)
   const [validationEnabled, setValidationEnabled] = useState(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("seller-product-validation-enabled");
+      const stored = getCookie("seller-product-validation-enabled");
       return stored !== "false"; // Default to true (enabled)
     }
     return true;
@@ -80,7 +82,7 @@ export default function SellerProductsPage() {
 
   const handleValidationToggle = (checked: boolean) => {
     setValidationEnabled(checked);
-    localStorage.setItem("seller-product-validation-enabled", String(checked));
+    setCookie("seller-product-validation-enabled", String(checked), { expires: 365 }); // 1 year
   };
 
   const handleAddProductClick = () => {
@@ -362,13 +364,13 @@ export default function SellerProductsPage() {
             >
               <div className="aspect-square relative">
                 <Image
-                  src={safeString(product.productImages?.[0] || "/placeholder.jpg")}
+                  src={safeString(product.productImages?.[0] || PLACEHOLDER_JPG_URL)}
                   alt={safeString(product.productName || "Product")}
                   fill
                   className="object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "/placeholder.jpg";
+                    target.src = PLACEHOLDER_JPG_URL;
                   }}
                 />
               </div>
@@ -429,14 +431,14 @@ export default function SellerProductsPage() {
                     <div className="relative w-12 h-12 shrink-0">
                       <Image
                         src={safeString(
-                          product.productImages?.[0] || "/placeholder.jpg"
+                          product.productImages?.[0] || PLACEHOLDER_JPG_URL
                         )}
                         alt={safeString(product.productName || "Product")}
                         fill
                         className="object-cover rounded"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.jpg";
+                          target.src = PLACEHOLDER_JPG_URL;
                         }}
                       />
                     </div>

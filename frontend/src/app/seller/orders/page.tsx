@@ -16,6 +16,7 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
 // Safe data access utilities
 const safeArray = <T,>(value: T[] | undefined | null): T[] => {
@@ -143,7 +144,7 @@ const transformApiOrderToOrder = (apiOrder: ApiOrder): Order => {
     items: orderItems.map((item, index) => ({
       id: safeString(item.id || `item-${index}`),
       name: safeString(item.product?.productName || "Unknown Product"),
-      image: safeString(item.product?.productImages?.[0] || "/placeholder.jpg"),
+      image: safeString(item.product?.productImages?.[0] || PLACEHOLDER_JPG_URL),
       price: safeNumber(item.priceAtPurchase),
       quantity: safeNumber(item.quantity || 1),
       sku: safeString(item.product?.skuCode || "N/A"),
@@ -474,12 +475,12 @@ export default function SellerOrdersPage() {
                         className="flex items-center bg-stone-50 rounded-md px-2 py-1"
                       >
                         <img
-                          src={item.image || "/placeholder.jpg"}
+                          src={item.image || PLACEHOLDER_JPG_URL}
                           alt={item.name}
                           className="w-6 h-6 object-cover rounded mr-2"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.jpg";
+                            target.src = PLACEHOLDER_JPG_URL;
                           }}
                         />
                         <span className="text-xs text-stone-700 truncate max-w-[120px] font-inter">

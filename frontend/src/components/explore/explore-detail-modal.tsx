@@ -3,6 +3,7 @@
 import { FiX, FiMapPin, FiStar } from "react-icons/fi"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
+import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 
 interface ExploreDetailModalProps {
   isOpen: boolean
@@ -62,7 +63,7 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Image */}
             <div className="relative h-80 bg-yogreet-light-gray overflow-hidden">
-              <Image src={spice.image || "/placeholder.svg"} alt={spice.name} fill className="object-cover" />
+              <Image src={spice.image || PLACEHOLDER_SVG_URL} alt={spice.name} fill className="object-cover" />
             </div>
 
             {/* Details */}

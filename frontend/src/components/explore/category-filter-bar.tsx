@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { TURMERIC_POWDER_SPICE_URL, CUMIN_SEEDS_SPICE_URL, RED_CHILI_POWDER_SPICE_URL, CORIANDER_POWDER_SPICE_URL, CARDAMOM_PODS_SPICE_URL, CLOVES_WHOLE_SPICE_URL, FENUGREEK_SEEDS_SPICE_URL, ASAFOETIDA_POWDER_SPICE_URL } from "@/constants/static-images"
 
 interface CategoryFilterBarProps {
   selectedCategory: string
@@ -11,14 +12,14 @@ interface CategoryFilterBarProps {
 
 const spiceCategories = [
   { id: "all", name: "All Spices", image: null },
-  { id: "turmeric", name: "Turmeric", image: "/turmeric-powder-spice.jpg" },
-  { id: "cumin", name: "Cumin", image: "/cumin-seeds-spice.jpg" },
-  { id: "chili", name: "Chili", image: "/red-chili-powder-spice.jpg" },
-  { id: "coriander", name: "Coriander", image: "/coriander-powder-spice.jpg" },
-  { id: "cardamom", name: "Cardamom", image: "/cardamom-pods-spice.jpg" },
-  { id: "cloves", name: "Cloves", image: "/cloves-whole-spice.jpg" },
-  { id: "fenugreek", name: "Fenugreek", image: "/fenugreek-seeds-spice.jpg" },
-  { id: "asafoetida", name: "Asafoetida", image: "/asafoetida-powder-spice.jpg" },
+  { id: "turmeric", name: "Turmeric", image: TURMERIC_POWDER_SPICE_URL },
+  { id: "cumin", name: "Cumin", image: CUMIN_SEEDS_SPICE_URL },
+  { id: "chili", name: "Chili", image: RED_CHILI_POWDER_SPICE_URL },
+  { id: "coriander", name: "Coriander", image: CORIANDER_POWDER_SPICE_URL },
+  { id: "cardamom", name: "Cardamom", image: CARDAMOM_PODS_SPICE_URL },
+  { id: "cloves", name: "Cloves", image: CLOVES_WHOLE_SPICE_URL },
+  { id: "fenugreek", name: "Fenugreek", image: FENUGREEK_SEEDS_SPICE_URL },
+  { id: "asafoetida", name: "Asafoetida", image: ASAFOETIDA_POWDER_SPICE_URL },
   { id: "pepper", name: "Pepper", image: null },
   { id: "cinnamon", name: "Cinnamon", image: null },
   { id: "nutmeg", name: "Nutmeg", image: null },

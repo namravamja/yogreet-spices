@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
 // Mock order data - replace with actual API call
 const mockOrder = {
@@ -49,7 +50,7 @@ const mockOrder = {
       priceAtPurchase: 500,
       product: {
         productName: "Premium Turmeric Powder",
-        productImages: ["/Profile.jpg"],
+        productImages: [PLACEHOLDER_JPG_URL],
         category: "Spices",
         description: "High-quality organic turmeric powder",
       },
@@ -67,7 +68,7 @@ const mockOrder = {
       priceAtPurchase: 250,
       product: {
         productName: "Organic Cumin Seeds",
-        productImages: ["/Profile.jpg"],
+        productImages: [PLACEHOLDER_JPG_URL],
         category: "Spices",
         description: "Fresh organic cumin seeds",
       },
@@ -304,7 +305,7 @@ export default function OrderDetailsPage({ params }: { params: { orderId: string
                     <div key={item.id} className="flex items-center space-x-4 p-4 border border-stone-200 rounded-lg">
                       <div className="relative w-20 h-20 shrink-0">
                         <Image
-                          src={item.product?.productImages?.[0] || "/Profile.jpg"}
+                          src={item.product?.productImages?.[0] || PLACEHOLDER_JPG_URL}
                           alt={item.product?.productName || "Product"}
                           fill
                           className="object-cover rounded"

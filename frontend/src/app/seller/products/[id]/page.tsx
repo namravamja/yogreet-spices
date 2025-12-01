@@ -21,6 +21,7 @@ import { useGetSellerProductQuery, useDeleteProductMutation } from "@/services/a
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import EditProductSidebar from "../components/edit-product-sidebar";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
 // Safe data access utilities
 const safeString = (value: any): string => {
@@ -66,7 +67,7 @@ export default function SellerProductDetailPage() {
     if (product?.productImages && product.productImages.length > 0) {
       return product.productImages;
     }
-    return ["/placeholder.jpg"];
+    return [PLACEHOLDER_JPG_URL];
   }, [product]);
 
   // Show login prompt if not authenticated
@@ -177,14 +178,14 @@ export default function SellerProductDetailPage() {
           {/* Main Image */}
           <div className="relative aspect-square bg-stone-100 overflow-hidden border border-stone-200">
             <Image
-              src={images[currentImageIndex] || "/placeholder.jpg"}
+              src={images[currentImageIndex] || PLACEHOLDER_JPG_URL}
               alt={safeString(product.productName || "Product")}
               fill
               className="object-cover"
               priority
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = "/placeholder.jpg";
+                target.src = PLACEHOLDER_JPG_URL;
               }}
             />
             {images.length > 1 && (
@@ -227,13 +228,13 @@ export default function SellerProductDetailPage() {
                   }`}
                 >
                   <Image
-                    src={img || "/placeholder.jpg"}
+                    src={img || PLACEHOLDER_JPG_URL}
                     alt={`Thumbnail ${index + 1}`}
                     fill
                     className="object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.jpg";
+                      target.src = PLACEHOLDER_JPG_URL;
                     }}
                   />
                 </button>

@@ -17,6 +17,7 @@ import {
   useClearCartMutation,
 } from "@/services/api/buyerApi";
 import { useAuth } from "@/hooks/useAuth";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
 // Mock data for now - replace with actual API calls later
 const mockCartItems = [
@@ -27,7 +28,7 @@ const mockCartItems = [
     product: {
       id: "prod-1",
       productName: "Premium Turmeric Powder",
-      productImages: ["/Profile.jpg"],
+      productImages: [PLACEHOLDER_JPG_URL],
       sellingPrice: "450.00", // Price per kg
       availableStock: "100", // Available stock in kg
       minQuantity: 1, // Minimum order weight in kg
@@ -45,7 +46,7 @@ const mockCartItems = [
     product: {
       id: "prod-2",
       productName: "Organic Cumin Seeds",
-      productImages: ["/Profile.jpg"],
+      productImages: [PLACEHOLDER_JPG_URL],
       sellingPrice: "280.00", // Price per kg
       availableStock: "50", // Available stock in kg
       minQuantity: 1, // Minimum order weight in kg
@@ -63,7 +64,7 @@ const mockCartItems = [
     product: {
       id: "prod-3",
       productName: "Red Chili Powder",
-      productImages: ["/Profile.jpg"],
+      productImages: [PLACEHOLDER_JPG_URL],
       sellingPrice: "320.00", // Price per kg
       availableStock: "80", // Available stock in kg
       minQuantity: 1, // Minimum order weight in kg
@@ -312,7 +313,7 @@ export default function BuyerCartPage() {
                             <div className="relative w-20 h-20 shrink-0">
                         <Image
                           src={
-                            item.product?.productImages?.[0] || "/Profile.jpg"
+                            item.product?.productImages?.[0] || PLACEHOLDER_JPG_URL
                           }
                           alt={item.product?.productName || "Product"}
                           fill

@@ -6,6 +6,7 @@ import { ExploreFilterBar, ExploreSpiceCard, ExplorePagination, type FilterState
 import { CategoryFilterBar } from "@/components/explore/category-filter-bar"
 import { useGetProductsQuery } from "@/services/api"
 import PageHero from "@/components/shared/PageHero"
+import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 
 const ITEMS_PER_PAGE = 40
 
@@ -34,7 +35,7 @@ function transformProduct(product: any) {
   // Get product images - always return an array
   const images = product.productImages && product.productImages.length > 0
     ? product.productImages
-    : ["/placeholder.svg"]
+    : [PLACEHOLDER_SVG_URL]
 
   // Get small package price and weight
   const smallPrice = parseFloat(product.smallPrice || "0")

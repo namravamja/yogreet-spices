@@ -6,6 +6,7 @@ import { FiX, FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi"
 import { useLoginBuyerMutation } from "@/services/api/authApi"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
+import { setCookie } from "@/utils/cookies"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -57,8 +58,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       // Small delay to ensure cache invalidation completes
       await new Promise(resolve => setTimeout(resolve, 100))
       
-      // Set buyer login state
-      localStorage.setItem('yogreet-buyer-login-state', 'true')
+      // Set buyer login state in cookie
+      setCookie('yogreet-buyer-login-state', 'true', { expires: 30 }) // 30 days
       onClose()
       
       // Call the login success callback if provided

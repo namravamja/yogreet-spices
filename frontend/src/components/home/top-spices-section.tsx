@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useGetTopSellersQuery } from "@/services/api/publicApi"
 import { Star, Store, Package } from "lucide-react"
 import Image from "next/image"
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images"
 
 export function TopSpicesSection() {
   const [isHovered, setIsHovered] = useState(false)
@@ -109,7 +110,7 @@ export function TopSpicesSection() {
                       className="object-cover hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.jpg";
+                        target.src = PLACEHOLDER_JPG_URL;
                       }}
                     />
                   ) : (

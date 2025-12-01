@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import Image from "next/image";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 import type { ProductData } from "../page";
 
 interface Step5Props {
@@ -24,7 +25,7 @@ export default function Step5Summary({ productData }: Step5Props) {
               {productData.productImages.length > 0 ? (
                 <div className="relative aspect-square w-full max-w-[240px]">
                   <Image
-                    src={productData.productImages[0] || "/placeholder.jpg"}
+                    src={productData.productImages[0] || PLACEHOLDER_JPG_URL}
                     alt={productData.productName}
                     width={240}
                     height={240}
@@ -223,7 +224,7 @@ export default function Step5Summary({ productData }: Step5Props) {
                   className="aspect-square border border-stone-200 rounded-md overflow-hidden"
                 >
                   <Image
-                    src={image || "/placeholder.jpg"}
+                    src={image || PLACEHOLDER_JPG_URL}
                     alt={`Product image ${index + 2}`}
                     width={100}
                     height={100}

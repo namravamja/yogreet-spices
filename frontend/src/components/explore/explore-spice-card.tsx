@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi"
+import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 
 export interface ExploreSpiceCardProps {
   id: string
@@ -46,7 +47,7 @@ export function ExploreSpiceCard({
   const router = useRouter()
 
   // Ensure we always have at least one image
-  const productImages = images && images.length > 0 ? images : ["/placeholder.svg"]
+  const productImages = images && images.length > 0 ? images : [PLACEHOLDER_SVG_URL]
   const hasMultipleImages = productImages.length > 1
   const currentImage = productImages[currentImageIndex] || productImages[0]
 

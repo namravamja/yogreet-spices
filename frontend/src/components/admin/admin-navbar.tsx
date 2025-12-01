@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { YOGREET_LOGO_URL } from "@/constants/static-images"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
@@ -8,6 +9,7 @@ import { FiHome, FiUsers, FiShoppingBag, FiLogOut, FiUser, FiChevronDown, FiMenu
 import { useAuth } from "@/hooks/useAuth"
 import { useLogoutMutation } from "@/services/api/authApi"
 import { toast } from "sonner"
+import { removeCookie } from "@/utils/cookies"
 
 export function AdminNavbar() {
   const router = useRouter()
@@ -26,15 +28,15 @@ export function AdminNavbar() {
       await logout(undefined).unwrap()
       toast.success("Logged out successfully")
       // Clear admin login state
-      localStorage.removeItem('yogreet-admin-login-state')
+      removeCookie('yogreet-admin-login-state')
       setShowProfileDropdown(false)
       // Refetch will automatically update the auth state
       await refetch()
       // Redirect to login page
       router.push("/admin/login")
     } catch (error: any) {
-      // Even if logout API fails, clear local state
-      localStorage.removeItem('yogreet-admin-login-state')
+      // Even if logout API fails, clear cookie state
+      removeCookie('yogreet-admin-login-state')
       setShowProfileDropdown(false)
       await refetch()
       router.push("/admin/login")
@@ -75,7 +77,7 @@ export function AdminNavbar() {
           {/* Logo */}
           <Link href="/admin" className="flex items-center cursor-pointer">
             <Image 
-              src="/Yogreet-logo.png"
+              src={YOGREET_LOGO_URL}
               alt="Yogreet Logo" 
               width={160} 
               height={60} 

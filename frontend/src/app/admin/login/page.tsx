@@ -6,6 +6,8 @@ import { FiEye, FiEyeOff, FiUser, FiLock } from "react-icons/fi"
 import { useLoginAdminMutation } from "@/services/api/authApi"
 import { toast } from "sonner"
 import Image from "next/image"
+import { YOGREET_LOGO_URL } from "@/constants/static-images"
+import { setCookie } from "@/utils/cookies"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -32,8 +34,8 @@ export default function AdminLoginPage() {
       // Small delay to ensure cache invalidation completes
       await new Promise(resolve => setTimeout(resolve, 100))
       
-      // Set admin login state
-      localStorage.setItem('yogreet-admin-login-state', 'true')
+      // Set admin login state in cookie
+      setCookie('yogreet-admin-login-state', 'true', { expires: 30 }) // 30 days
       
       // Redirect to admin page after login
       router.push("/admin")
@@ -57,7 +59,7 @@ export default function AdminLoginPage() {
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
             <Image 
-              src="/Yogreet-logo.png"
+              src={YOGREET_LOGO_URL}
               alt="Yogreet Logo" 
               width={150} 
               height={56} 

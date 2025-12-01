@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { User, Edit, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PLACEHOLDER_LOGO_URL } from "@/constants/static-images";
 
 interface SellerData {
   fullName?: string | null;
@@ -62,7 +63,7 @@ export default function BasicInformation({
           <div className="flex flex-col items-center lg:items-start">
             <div className="relative w-20 h-20 bg-stone-200 rounded-full flex items-center justify-center overflow-hidden">
               <Image
-                src={sellerData.businessLogo || "/placeholder-logo.png"}
+                src={sellerData.businessLogo || PLACEHOLDER_LOGO_URL}
                 alt={sellerData.fullName || "Seller"}
                 width={80}
                 height={80}

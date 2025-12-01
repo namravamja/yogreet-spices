@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { FiHeart, FiStar } from "react-icons/fi"
+import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 
 export interface SpiceCardProps {
   id: string
@@ -21,7 +22,7 @@ export function SpiceCard({ name, seller, image, pricePerKg, minOrder, rating, r
   return (
     <div className="bg-white overflow-hidden border border-yogreet-light-gray hover:shadow-lg transition-shadow rounded-xs">
       <div className="relative aspect-square bg-yogreet-light-gray overflow-hidden">
-        <img src={image || "/placeholder.svg"} alt={name} className="w-full h-full object-cover" />
+        <img src={image || PLACEHOLDER_SVG_URL} alt={name} className="w-full h-full object-cover" />
         <button
           onClick={() => setIsFavorite(!isFavorite)}
           className="absolute top-3 right-3 w-8 h-8 bg-white flex items-center justify-center hover:bg-yogreet-light-gray transition-colors"

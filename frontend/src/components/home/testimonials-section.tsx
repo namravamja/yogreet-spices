@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi"
+import { PROFESSIONAL_MAN_1_URL, PROFESSIONAL_WOMAN_1_URL, PROFESSIONAL_MAN_2_URL, PROFESSIONAL_WOMAN_2_URL, PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 
 export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -10,26 +11,26 @@ export function TestimonialsSection() {
     {
       name: "Rajesh Kumar",
       role: "Spice Exporter",
-      image: "/professional-man-1.jpg",
+      image: PROFESSIONAL_MAN_1_URL,
       quote:
         "Yogreet has transformed how I connect with international buyers. The platform is transparent and trustworthy.",
     },
     {
       name: "Priya Sharma",
       role: "Wholesale Buyer",
-      image: "/professional-woman-1.jpg",
+      image: PROFESSIONAL_WOMAN_1_URL,
       quote: "Finding quality spices has never been easier. I love the sample request feature before placing orders.",
     },
     {
       name: "Ahmed Hassan",
       role: "Distributor",
-      image: "/professional-man-2.png",
+      image: PROFESSIONAL_MAN_2_URL,
       quote: "The global reach and verified sellers make Yogreet my go-to platform for sourcing premium spices.",
     },
     {
       name: "Maria Santos",
       role: "Restaurant Owner",
-      image: "/professional-woman-2.png",
+      image: PROFESSIONAL_WOMAN_2_URL,
       quote: "Consistent quality and reliable delivery. Yogreet has become an essential part of my supply chain.",
     },
   ]
@@ -59,7 +60,7 @@ export function TestimonialsSection() {
           <div className="bg-white p-6 sm:p-8 md:p-10 lg:p-12 shadow-md">
             <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
               <img
-                src={testimonials[currentIndex].image || "/placeholder.svg"}
+                src={testimonials[currentIndex].image || PLACEHOLDER_SVG_URL}
                 alt={testimonials[currentIndex].name}
                 className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded-full"
               />

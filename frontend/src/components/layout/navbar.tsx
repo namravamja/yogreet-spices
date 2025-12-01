@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect, Suspense } from "react"
+import { YOGREET_LOGO_URL } from "@/constants/static-images"
 import { FiMenu, FiUser, FiLogOut, FiPackage, FiTruck, FiShoppingCart, FiBox, FiChevronDown, FiCheckCircle, FiX } from "react-icons/fi"
 import { LoginModal, SignupModal, SellerSignupModal, SellerLoginModal } from "../auth"
 import { useAuth } from "@/hooks/useAuth"
@@ -10,6 +11,7 @@ import { useLogoutMutation } from "@/services/api/authApi"
 import { useGetCartQuery } from "@/services/api/buyerApi"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
+import { removeCookie } from "@/utils/cookies"
 
 // Component to handle searchParams logic separately
 function NavbarSearchParamsHandler({ 
@@ -114,9 +116,9 @@ export function Navbar() {
     try {
       await logout(undefined).unwrap()
       toast.success("Logged out successfully")
-      // Clear any local state
-      localStorage.removeItem('yogreet-login-state')
-      localStorage.removeItem('yogreet-seller-login-state')
+      // Clear any cookie state
+      removeCookie('yogreet-buyer-login-state')
+      removeCookie('yogreet-seller-login-state')
       setShowProfileDropdown(false)
       // Refetch will automatically update the auth state
       if (refetch && typeof refetch === 'function') {
@@ -130,9 +132,9 @@ export function Navbar() {
       // Optionally redirect to home
       router.push("/")
     } catch (error: any) {
-      // Even if logout API fails, clear local state
-      localStorage.removeItem('yogreet-login-state')
-      localStorage.removeItem('yogreet-seller-login-state')
+      // Even if logout API fails, clear cookie state
+      removeCookie('yogreet-buyer-login-state')
+      removeCookie('yogreet-seller-login-state')
       setShowProfileDropdown(false)
       if (refetch && typeof refetch === 'function') {
         try {
@@ -236,7 +238,7 @@ export function Navbar() {
           {/* Logo */}
               <Link href="/" className="flex items-center cursor-pointer">
             <Image 
-              src="/Yogreet-logo.png"
+              src={YOGREET_LOGO_URL}
               alt="Yogreet Logo" 
               width={160} 
               height={60} 

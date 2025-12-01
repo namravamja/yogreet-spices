@@ -25,6 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useGetPublicSellerProfileQuery } from "@/services/api/publicApi";
+import { PLACEHOLDER_JPG_URL, PLACEHOLDER_SVG_URL } from "@/constants/static-images";
 
 // Safe data access utilities
 const safeString = (value: any): string => {
@@ -192,7 +193,7 @@ export default function SellerProfilePage() {
                   className="object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "/placeholder.jpg";
+                    target.src = PLACEHOLDER_JPG_URL;
                   }}
                 />
               ) : (
@@ -314,7 +315,7 @@ export default function SellerProfilePage() {
                       className="object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.jpg";
+                        target.src = PLACEHOLDER_JPG_URL;
                       }}
                     />
                     </motion.div>
@@ -412,7 +413,7 @@ export default function SellerProfilePage() {
                 {filteredProducts.map((product: any) => {
                   const productImages = product.productImages && product.productImages.length > 0 
                     ? product.productImages 
-                    : ["/placeholder.svg"];
+                    : [PLACEHOLDER_SVG_URL];
                   const hasMultipleImages = productImages.length > 1;
                   const currentImageIndex = productImageIndices[product.id] || 0;
                   const isHovered = productHoverStates[product.id] || false;
@@ -503,7 +504,7 @@ export default function SellerProfilePage() {
                               }`} 
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.src = "/placeholder.svg";
+                                target.src = PLACEHOLDER_SVG_URL;
                               }}
                             />
                           </motion.div>
@@ -634,7 +635,7 @@ export default function SellerProfilePage() {
                               className="object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.jpg";
+                        target.src = PLACEHOLDER_JPG_URL;
                       }}
                     />
                   ) : (

@@ -7,6 +7,7 @@ import { useSignupBuyerMutation } from "@/services/api/authApi"
 import { toast } from "sonner"
 import { useVerificationModal } from "@/components/auth/verification-modal-provider"
 import { motion, AnimatePresence } from "framer-motion"
+import { setCookie } from "@/utils/cookies"
 
 interface SignupModalProps {
   isOpen: boolean
@@ -78,11 +79,10 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
       
       toast.success(response.message || "Account created successfully! Please check your email to verify your account.")
       onClose()
-      try { 
-        localStorage.setItem("yg_just_signed_up", "1") 
-        localStorage.setItem("yg_user_role", "BUYER")
-        localStorage.setItem("yg_signup_email", formData.companyEmail)
-      } catch {}
+      // Store signup state in cookies
+      setCookie("yg_just_signed_up", "1", { expires: 1 }) // 1 day
+      setCookie("yg_user_role", "BUYER", { expires: 1 })
+      setCookie("yg_signup_email", formData.companyEmail, { expires: 1 })
       router.push("/")
       // Show verification modal after navigation
       setTimeout(() => {

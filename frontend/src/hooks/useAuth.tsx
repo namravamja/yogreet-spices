@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useGetBuyerQuery } from "@/services/api/buyerApi";
 import { useGetSellerQuery } from "@/services/api/sellerApi";
 import { useGetAdminQuery } from "@/services/api/adminApi";
+import { PLACEHOLDER_USER_URL, PLACEHOLDER_LOGO_URL } from "@/constants/static-images";
 
 interface ApiError {
   status?: number;
@@ -108,7 +109,7 @@ export function useAuth(role: "buyer" | "seller" | "admin") {
     if (role === "admin") {
       return {
         name: (adminData as AdminData)?.username || "Admin",
-        image: "/placeholder-user.jpg",
+        image: PLACEHOLDER_USER_URL,
         username: (adminData as AdminData)?.username,
         ...adminData,
       };
@@ -126,8 +127,8 @@ export function useAuth(role: "buyer" | "seller" | "admin") {
             (sellerData as SellerData)?.email?.split("@")[0] || "User",
       image:
         role === "buyer"
-          ? (buyerData as BuyerData)?.avatar || "/placeholder-user.jpg"
-          : (sellerData as SellerData)?.businessLogo || "/placeholder-logo.png",
+          ? (buyerData as BuyerData)?.avatar || PLACEHOLDER_USER_URL
+          : (sellerData as SellerData)?.businessLogo || PLACEHOLDER_LOGO_URL,
       email:
         role === "buyer"
           ? (buyerData as BuyerData)?.email

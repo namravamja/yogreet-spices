@@ -10,6 +10,7 @@ import PageHero from "@/components/shared/PageHero";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { getCookie, removeCookie } from "@/utils/cookies";
  
 // NOTE: Reference MakeProfile uses API hooks and auth; for buyer verification we stub them
 type Noop = (...args: any[]) => Promise<{ unwrap: () => Promise<void> }>;
@@ -290,10 +291,10 @@ function VerfiyDocumentContent() {
   // One-time soft prompt after signup
   useEffect(() => {
     try {
-      const flag = typeof window !== "undefined" && localStorage.getItem("yg_just_signed_up");
+      const flag = typeof window !== "undefined" && getCookie("yg_just_signed_up");
       if (flag === "1") {
         setShowSignupPrompt(true);
-        localStorage.removeItem("yg_just_signed_up");
+        removeCookie("yg_just_signed_up");
       }
     } catch {}
   }, []);

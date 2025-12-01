@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { Buyer } from "../../models/Buyer";
 import { Seller } from "../../models/Seller";
+import { getClearCookieOptions } from "../../utils/cookieOptions";
 
 interface AuthPayload {
   id: string;
@@ -30,11 +31,7 @@ export const logout = async (req: Request, res: Response) => {
     }
   }
 
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-  });
+  res.clearCookie("token", getClearCookieOptions(req));
 
   res.json({ message: "Logged out successfully" });
 };

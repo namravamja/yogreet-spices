@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import { useGetOrdersQuery } from "@/services/api/buyerApi";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
 // Status color mappings with Yogreet theme
 const statusColors: Record<string, string> = {
@@ -64,7 +65,7 @@ export default function BuyerOrdersPage() {
         priceAtPurchase: item.priceAtPurchase || 0,
         product: {
           productName: item.product?.productName || "Unknown Product",
-          productImages: item.product?.productImages || ["/placeholder.jpg"],
+          productImages: item.product?.productImages || [PLACEHOLDER_JPG_URL],
           category: item.product?.category || "N/A",
         },
         artist: {
@@ -373,7 +374,7 @@ export default function BuyerOrdersPage() {
                         <div className="relative w-16 h-16 shrink-0">
                           <Image
                             src={
-                              item.product?.productImages?.[0] || "/Profile.jpg"
+                              item.product?.productImages?.[0] || PLACEHOLDER_JPG_URL
                             }
                             alt={item.product?.productName || "Product"}
                             fill

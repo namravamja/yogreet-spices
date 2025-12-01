@@ -24,6 +24,7 @@ import { useGetProductsQuery } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { AddAddressModal } from "@/components/buyer/AddAddressModal";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
+import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
 interface Address {
   id: string;
@@ -608,7 +609,7 @@ function CheckoutPageContent() {
                       <div key={item.id} className="flex gap-3 pb-4 border-b border-stone-200 last:border-0">
                         <div className="relative w-16 h-16 shrink-0">
                           <Image
-                            src={item.product?.productImages?.[0] || "/placeholder.jpg"}
+                            src={item.product?.productImages?.[0] || PLACEHOLDER_JPG_URL}
                             alt={item.product?.productName || "Product"}
                             fill
                             className="object-cover rounded-xs"

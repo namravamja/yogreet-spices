@@ -3,11 +3,6 @@
 import { useState, useEffect } from "react"
 import {
   Package,
-  Users,
-  FileText,
-  Star,
-  Settings,
-  UserPlus,
   ArrowRight,
   Sparkles,
   Heart,
@@ -26,6 +21,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSellerVerification } from "@/hooks/useSellerVerification"
+import { getCookie } from "@/utils/cookies"
 
 const features = [
   {
@@ -132,7 +128,7 @@ export default function SellerLanding() {
     else setGreeting("Good evening")
 
     // Check if seller is logged in
-    const sellerLoginState = localStorage.getItem('yogreet-seller-login-state')
+    const sellerLoginState = getCookie('yogreet-seller-login-state')
     if (sellerLoginState === 'true') {
       setIsSellerLoggedIn(true)
     }

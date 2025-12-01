@@ -6,6 +6,7 @@ import { CheckCircle, ArrowRight, FileText, Globe, Shield, Users, TrendingUp, Cl
 import { Navbar, Footer } from "@/components/layout"
 import { SellerSignupModal, SellerLoginModal } from "@/components/auth"
 import { toast } from "sonner"
+import { PROFESSIONAL_MAN_1_URL, PROFESSIONAL_WOMAN_1_URL, PROFESSIONAL_MAN_2_URL, PROFESSIONAL_WOMAN_2_URL } from "@/constants/static-images"
 
 function LoginModalHandler({ setIsLoginModalOpen }: { setIsLoginModalOpen: (open: boolean) => void }) {
   const searchParams = useSearchParams()
@@ -183,43 +184,43 @@ export default function BecomeSellerPage() {
     {
       name: "SpiceWorld Exports",
       country: "Kochi, India",
-      image: "/professional-man-1.jpg",
+      image: PROFESSIONAL_MAN_1_URL,
       stats: { products: 24, rating: 4.9, years: 8 },
     },
     {
       name: "Golden Masala Co.",
       country: "Surat, India",
-      image: "/professional-woman-1.jpg",
+      image: PROFESSIONAL_WOMAN_1_URL,
       stats: { products: 18, rating: 4.8, years: 6 },
     },
     {
       name: "Heritage Spices",
       country: "Guntur, India",
-      image: "/professional-man-2.png",
+      image: PROFESSIONAL_MAN_2_URL,
       stats: { products: 30, rating: 5.0, years: 10 },
     },
     {
       name: "Saffron Valley",
       country: "Jammu, India",
-      image: "/professional-woman-2.png",
+      image: PROFESSIONAL_WOMAN_2_URL,
       stats: { products: 12, rating: 4.7, years: 5 },
     },
     {
       name: "Deccan Traders",
       country: "Hyderabad, India",
-      image: "/professional-man-1.jpg",
+      image: PROFESSIONAL_MAN_1_URL,
       stats: { products: 22, rating: 4.8, years: 7 },
     },
     {
       name: "Coastal Spices",
       country: "Mangalore, India",
-      image: "/professional-woman-1.jpg",
+      image: PROFESSIONAL_WOMAN_1_URL,
       stats: { products: 16, rating: 4.6, years: 4 },
     },
     {
       name: "Himalayan Spice House",
       country: "Dehradun, India",
-      image: "/professional-woman-1.jpg",
+      image: PROFESSIONAL_WOMAN_1_URL,
       stats: { products: 14, rating: 4.7, years: 5 },
     },
   ]

@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
+import { YOGREET_LOGO_URL } from "@/constants/static-images"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { useGetSellerQuery } from "@/services/api/sellerApi"
 import { useRouter } from "next/navigation"
+import { getCookie, removeCookie } from "@/utils/cookies"
 import { FiMenu, FiUser, FiLogOut, FiChevronDown, FiCheckCircle, FiFileText } from "react-icons/fi"
 import { SellerSignupModal, SellerLoginModal } from "../auth"
 
@@ -25,9 +27,9 @@ export function SellerNavbar() {
   const [profileCompletion, setProfileCompletion] = useState(0)
   const [documentCompletion, setDocumentCompletion] = useState(0)
 
-  // Check localStorage on component mount
+  // Check cookie on component mount
   useEffect(() => {
-    const savedSellerLoginState = localStorage.getItem('yogreet-seller-login-state')
+    const savedSellerLoginState = getCookie('yogreet-seller-login-state')
     if (savedSellerLoginState === 'true') {
       setIsSellerLoggedIn(true)
     }
@@ -78,7 +80,7 @@ export function SellerNavbar() {
   // Logout handler
   const handleLogout = () => {
     setIsSellerLoggedIn(false)
-    localStorage.removeItem('yogreet-seller-login-state')
+    removeCookie('yogreet-seller-login-state')
     setShowProfileDropdown(false)
   }
 
@@ -129,7 +131,7 @@ export function SellerNavbar() {
           {/* Logo */}
               <Link href="/" className="flex items-center cursor-pointer">
             <Image 
-              src="/Yogreet-logo.png"
+              src={YOGREET_LOGO_URL}
               alt="Yogreet Logo" 
               width={160} 
               height={60} 

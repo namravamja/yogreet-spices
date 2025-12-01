@@ -12,7 +12,8 @@ import Step3FoodSafetyCompliance from "./components/step3-food-safety-compliance
 import Step4ShippingLogistics from "./components/step4-shipping-logistics";
 import Step4ExportDocsShipment from "./components/step4-export-docs-shipment";
 import { useGetSellerVerificationQuery, useUpdateSellerVerificationMutation, useGetSellerQuery } from "@/services/api/sellerApi";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth"
+import { getCookie, removeCookie } from "@/utils/cookies";
 // documentCompletion is calculated on backend, no need to import calculateDocumentCompletion
 
 type CacheResponse<T> = { source: "cache" | "api"; data: T };
@@ -237,10 +238,10 @@ function SellerVerifyDocumentPageContent() {
   // After signup prompt
   useEffect(() => {
     try {
-      const flag = typeof window !== "undefined" && localStorage.getItem("yg_just_signed_up");
+      const flag = typeof window !== "undefined" && getCookie("yg_just_signed_up");
       if (flag === "1") {
         setShowSignupPrompt(true);
-        localStorage.removeItem("yg_just_signed_up");
+        removeCookie("yg_just_signed_up");
       }
     } catch {}
   }, []);

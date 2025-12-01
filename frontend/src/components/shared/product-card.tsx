@@ -1,3 +1,5 @@
+import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
+
 export interface ProductCardProps {
   id: string
   name: string
@@ -10,7 +12,7 @@ export function ProductCard({ name, image, pricePerKg, quantity }: ProductCardPr
   return (
     <div className="bg-white overflow-hidden border border-yogreet-light-gray hover:shadow-lg hover:border-gray-100 transition-all duration-300 rounded-xs">
       <div className="aspect-square bg-yogreet-light-gray overflow-hidden">
-        <img src={image || "/placeholder.svg"} alt={name} className="w-full h-full object-cover" />
+        <img src={image || PLACEHOLDER_SVG_URL} alt={name} className="w-full h-full object-cover" />
       </div>
       <div className="p-3">
         <h3 className="font-poppins font-semibold text-yogreet-charcoal mb-1 line-clamp-2 text-xs">{name}</h3>

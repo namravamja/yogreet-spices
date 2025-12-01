@@ -11,6 +11,7 @@ import { useGetProductsQuery } from "@/services/api"
 import PageHero from "@/components/shared/PageHero"
 import { LoginModal, SignupModal } from "@/components/auth"
 import { useAuth } from "@/hooks/useAuth"
+import { PLACEHOLDER_SVG_URL, PLACEHOLDER_JPG_URL } from "@/constants/static-images"
 import { useAddToCartMutation, useGetCartQuery, useUpdateCartItemMutation, useClearCartMutation } from "@/services/api/buyerApi"
 import { toast } from "sonner"
 
@@ -37,7 +38,7 @@ function transformProductForDetail(product: any) {
   // Get product images - always return an array
   const images = product.productImages && product.productImages.length > 0
     ? product.productImages
-    : ["/placeholder.svg"]
+    : [PLACEHOLDER_SVG_URL]
 
   // Get package pricing
   const samplePrice = parseFloat(product.samplePrice || "0")
@@ -173,7 +174,7 @@ export default function ProductDetailPage() {
   // Ensure we always have at least one image
   const productImages = product?.images && product.images.length > 0 
     ? product.images 
-    : ["/placeholder.svg"]
+    : [PLACEHOLDER_SVG_URL]
   
   const hasMultipleImages = productImages.length > 1
   const currentImage = productImages[currentImageIndex] || productImages[0]
