@@ -154,6 +154,8 @@ export const signupSeller = async (data: SellerSignupData) => {
 
   // TEMPORARY: Set email as verified by default (no email verification)
   (seller as any).isVerified = true;
+  // Also mark seller as authenticated so behavior matches buyer login flow
+  (seller as any).isAuthenticated = true;
   await (seller as any).save();
 
   // TEMPORARY: Email verification disabled - code commented out
