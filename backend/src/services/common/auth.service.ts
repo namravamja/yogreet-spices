@@ -36,38 +36,43 @@ export const signupBuyer = async (data: SignupData) => {
   const buyer = await Buyer.create({
     ...data,
     password: hashed,
+    // TEMPORARY: Set email as verified by default (no email verification)
+    isVerified: true,
   });
 
-  const verifyToken = generateVerificationToken({
-    id: buyer._id.toString(),
-    role: "BUYER",
-  });
+  // TEMPORARY: Email verification disabled - code commented out
+  // const verifyToken = generateVerificationToken({
+  //   id: buyer._id.toString(),
+  //   role: "BUYER",
+  // });
 
-  // Save token & expiry (5 minutes expiry)
-  buyer.verifyToken = verifyToken;
-  buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+  // // Save token & expiry (5 minutes expiry)
+  // buyer.verifyToken = verifyToken;
+  // buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+  // await buyer.save();
+
+  // // Send verification email - throw error if it fails so user knows
+  // try {
+  //   await sendVerificationEmail(buyer.email, verifyToken, "BUYER");
+  // } catch (error) {
+  //   const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  //   console.error("❌ Failed to send verification email to buyer:", errorMessage);
+  //   // Delete the buyer account if email fails to send
+  //   await Buyer.findByIdAndDelete(buyer._id);
+  //   throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
+  // }
+
+  // setTimeout(async () => {
+  //   const freshBuyer = await Buyer.findById(buyer._id);
+  //   if (freshBuyer && !freshBuyer.isVerified) {
+  //     await Buyer.findByIdAndDelete(buyer._id);
+  //   }
+  // }, 7 * 60 * 1000); // 7 minutes delay
+
   await buyer.save();
 
-  // Send verification email - throw error if it fails so user knows
-  try {
-    await sendVerificationEmail(buyer.email, verifyToken, "BUYER");
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("❌ Failed to send verification email to buyer:", errorMessage);
-    // Delete the buyer account if email fails to send
-    await Buyer.findByIdAndDelete(buyer._id);
-    throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
-  }
-
-  setTimeout(async () => {
-    const freshBuyer = await Buyer.findById(buyer._id);
-    if (freshBuyer && !freshBuyer.isVerified) {
-      await Buyer.findByIdAndDelete(buyer._id);
-    }
-  }, 7 * 60 * 1000); // 7 minutes delay
-
   return {
-    message: "Buyer created, Please check your email to verify your account.",
+    message: "Buyer created successfully. You can now log in.",
     id: buyer._id.toString(),
   };
 };
@@ -87,9 +92,10 @@ export const loginBuyer = async ({
   ) {
     throw new Error("Invalid credentials");
   }
-  if (!buyer.isVerified) {
-    throw new Error("Please verify your email before logging in");
-  }
+  // TEMPORARY: Email verification check disabled
+  // if (!buyer.isVerified) {
+  //   throw new Error("Please verify your email before logging in");
+  // }
   const token = generateToken({ id: buyer._id.toString(), role: "BUYER" });
 
   buyer.isAuthenticated = true;
@@ -146,38 +152,43 @@ export const signupSeller = async (data: SellerSignupData) => {
 
   const seller = await Seller.create(sellerData);
 
-  const verifyToken = generateVerificationToken({
-    id: (seller as any)._id.toString(),
-    role: "SELLER",
-  });
-
-  (seller as any).verifyToken = verifyToken;
-  (seller as any).verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+  // TEMPORARY: Set email as verified by default (no email verification)
+  (seller as any).isVerified = true;
   await (seller as any).save();
 
-  // Send verification email - throw error if it fails so user knows
-  try {
-    await sendVerificationEmail((seller as any).email, verifyToken, "SELLER");
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("❌ Failed to send verification email to seller:", errorMessage);
-    // Delete the seller account if email fails to send
-    await Seller.findByIdAndDelete((seller as any)._id);
-    throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
-  }
+  // TEMPORARY: Email verification disabled - code commented out
+  // const verifyToken = generateVerificationToken({
+  //   id: (seller as any)._id.toString(),
+  //   role: "SELLER",
+  // });
 
-  setTimeout(async () => {
-    const freshSeller = await Seller.findById((seller as any)._id);
-    if (freshSeller && !freshSeller.isVerified) {
-      await Seller.findByIdAndDelete((seller as any)._id);
-      console.log(
-        `Deleted unverified seller with id ${(seller as any)._id} after 7 minutes`
-      );
-    }
-  }, 7 * 60 * 1000);
+  // (seller as any).verifyToken = verifyToken;
+  // (seller as any).verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+  // await (seller as any).save();
+
+  // // Send verification email - throw error if it fails so user knows
+  // try {
+  //   await sendVerificationEmail((seller as any).email, verifyToken, "SELLER");
+  // } catch (error) {
+  //   const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  //   console.error("❌ Failed to send verification email to seller:", errorMessage);
+  //   // Delete the seller account if email fails to send
+  //   await Seller.findByIdAndDelete((seller as any)._id);
+  //   throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
+  // }
+
+  // setTimeout(async () => {
+  //   const freshSeller = await Seller.findById((seller as any)._id);
+  //   if (freshSeller && !freshSeller.isVerified) {
+  //     await Seller.findByIdAndDelete((seller as any)._id);
+  //     console.log(
+  //       `Deleted unverified seller with id ${(seller as any)._id} after 7 minutes`
+  //     );
+  //   }
+  // }, 7 * 60 * 1000);
 
   return {
-    message: "Seller created, Please check your email to verify your account.",
+    message: "Seller created successfully. You can now log in.",
     id: (seller as any)._id.toString(),
   };
 };
@@ -197,9 +208,10 @@ export const loginSeller = async ({
   ) {
     throw new Error("Invalid credentials");
   }
-  if (!seller.isVerified) {
-    throw new Error("Please verify your email before logging in");
-  }
+  // TEMPORARY: Email verification check disabled
+  // if (!seller.isVerified) {
+  //   throw new Error("Please verify your email before logging in");
+  // }
   const token = generateToken({ id: seller._id.toString(), role: "SELLER" });
 
   seller.isAuthenticated = true;

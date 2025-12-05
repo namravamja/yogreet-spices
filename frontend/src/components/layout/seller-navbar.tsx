@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation"
 import { getCookie, removeCookie } from "@/utils/cookies"
 import { FiMenu, FiUser, FiLogOut, FiChevronDown, FiCheckCircle, FiFileText } from "react-icons/fi"
 import { SellerSignupModal, SellerLoginModal } from "../auth"
+import { useDoubleTapLogout } from "@/hooks/useDoubleTapLogout"
+import { toast } from "sonner"
 
 export function SellerNavbar() {
   const router = useRouter()
@@ -77,12 +79,17 @@ export function SellerNavbar() {
     setIsSellerSignupModalOpen(true)
   }
 
-  // Logout handler
-  const handleLogout = () => {
+  // Perform actual logout
+  const performLogout = () => {
+    toast.success("Logged out successfully")
     setIsSellerLoggedIn(false)
     removeCookie('yogreet-seller-login-state')
     setShowProfileDropdown(false)
+    router.push("/")
   }
+
+  // Double tap logout handler
+  const { handleLogoutClick } = useDoubleTapLogout(performLogout)
 
   // Seller login handler
   const handleSellerLoginSuccess = () => {
@@ -323,7 +330,7 @@ export function SellerNavbar() {
                         </Link>
                         <hr className="my-2 border-gray-200" />
                         <button 
-                          onClick={handleLogout}
+                          onClick={handleLogoutClick}
                           className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
                         >
                           <FiLogOut className="w-4 h-4" />
@@ -501,7 +508,7 @@ export function SellerNavbar() {
                     Verify Document
                   </Link>
                   <button 
-                    onClick={handleLogout}
+                    onClick={handleLogoutClick}
                     className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
                   >
                     <FiLogOut className="w-4 h-4" />

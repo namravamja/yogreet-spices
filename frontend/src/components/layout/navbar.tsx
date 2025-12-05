@@ -12,6 +12,7 @@ import { useGetCartQuery } from "@/services/api/buyerApi"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { removeCookie } from "@/utils/cookies"
+import { useDoubleTapLogout } from "@/hooks/useDoubleTapLogout"
 
 // Component to handle searchParams logic separately
 function NavbarSearchParamsHandler({ 
@@ -112,7 +113,7 @@ export function Navbar() {
   }
 
   // Logout handler
-  const handleLogout = async () => {
+  const performLogout = async () => {
     try {
       await logout(undefined).unwrap()
       toast.success("Logged out successfully")
@@ -147,6 +148,9 @@ export function Navbar() {
       router.push("/")
     }
   }
+
+  // Double tap logout handler
+  const { handleLogoutClick } = useDoubleTapLogout(performLogout)
 
   // Dropdown handlers with delay
   const handleMouseEnter = () => {
@@ -368,7 +372,7 @@ export function Navbar() {
                         </Link>
                         <hr className="my-1.5 sm:my-2 border-gray-200" />
                         <button 
-                          onClick={handleLogout}
+                          onClick={handleLogoutClick}
                           className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left text-sm sm:text-base"
                         >
                           <FiLogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -496,7 +500,7 @@ export function Navbar() {
                           <button
                             onClick={() => {
                               setShowProfileDropdown(false)
-                              handleLogout()
+                              handleLogoutClick()
                             }}
                             className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
                           >

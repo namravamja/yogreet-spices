@@ -7,6 +7,7 @@ import { Navbar, Footer } from "@/components/layout"
 import { SellerSignupModal, SellerLoginModal } from "@/components/auth"
 import { toast } from "sonner"
 import { PROFESSIONAL_MAN_1_URL, PROFESSIONAL_WOMAN_1_URL, PROFESSIONAL_MAN_2_URL, PROFESSIONAL_WOMAN_2_URL } from "@/constants/static-images"
+import { SELLER_HERO_URL } from "@/constants/static-videos"
 
 function LoginModalHandler({ setIsLoginModalOpen }: { setIsLoginModalOpen: (open: boolean) => void }) {
   const searchParams = useSearchParams()
@@ -270,7 +271,7 @@ export default function BecomeSellerPage() {
             playsInline
             className="absolute inset-0 w-full h-full object-cover z-0"
           >
-            <source src="/seller-hero.mp4" type="video/mp4" />
+            <source src={SELLER_HERO_URL} type="video/mp4" />
           </video>
           {/* Overlay for readability */}
           <div className="absolute inset-0 bg-black/50 z-10"></div>

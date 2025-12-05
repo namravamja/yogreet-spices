@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { HERO_VIDEO_URL } from "@/constants/static-videos"
 
 export function HeroSection() {
   return (
@@ -15,7 +16,7 @@ export function HeroSection() {
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0"
       >
-        <source src="/hero-video.mp4" type="video/mp4" />
+        <source src={HERO_VIDEO_URL} type="video/mp4" />
       </video>
       
       {/* Overlay to reduce video opacity */}

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useLogoutMutation } from "@/services/api/authApi"
 import { toast } from "sonner"
 import { removeCookie } from "@/utils/cookies"
+import { useDoubleTapLogout } from "@/hooks/useDoubleTapLogout"
 
 export function AdminNavbar() {
   const router = useRouter()
@@ -22,8 +23,8 @@ export function AdminNavbar() {
 
   const isActive = (path: string) => pathname === path
 
-  // Logout handler
-  const handleLogout = async () => {
+  // Actual logout handler
+  const performLogout = async () => {
     try {
       await logout(undefined).unwrap()
       toast.success("Logged out successfully")
@@ -42,6 +43,9 @@ export function AdminNavbar() {
       router.push("/admin/login")
     }
   }
+
+  // Double tap logout handler
+  const { handleLogoutClick } = useDoubleTapLogout(performLogout)
 
   // Dropdown handlers with delay
   const handleMouseEnter = () => {
@@ -141,7 +145,7 @@ export function AdminNavbar() {
                         </div>
                       )}
                       <button 
-                        onClick={handleLogout}
+                        onClick={handleLogoutClick}
                         className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
                       >
                         <FiLogOut className="w-4 h-4" />
@@ -198,7 +202,7 @@ export function AdminNavbar() {
                     </div>
                   </div>
                   <button 
-                    onClick={handleLogout}
+                    onClick={handleLogoutClick}
                     className="flex items-center gap-3 px-4 py-2 text-yogreet-charcoal hover:bg-yogreet-light-gray transition-colors cursor-pointer w-full text-left"
                   >
                     <FiLogOut className="w-4 h-4" />

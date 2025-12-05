@@ -39,17 +39,18 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
 
       const response = await signupSeller(signupData).unwrap()
       
-      toast.success(response.message || "Seller account created successfully! Please check your email to verify your account.")
+      // TEMPORARY: Email verification disabled - auto redirect to login
+      toast.success("Seller account created successfully! Redirecting to login...")
       onClose()
       // Store signup state in cookies
       setCookie("yg_just_signed_up", "1", { expires: 1 }) // 1 day
       setCookie("yg_user_role", "SELLER", { expires: 1 })
       setCookie("yg_signup_email", formData.email, { expires: 1 })
-      router.push("/")
-      // Show verification modal after navigation
-      setTimeout(() => {
-        showVerificationModal()
-      }, 300)
+      router.push("/?openLogin=true")
+      // // COMMENTED OUT: Verification modal now disabled
+      // setTimeout(() => {
+      //   showVerificationModal()
+      // }, 300)
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Failed to create seller account. Please try again."
       toast.error(errorMessage)

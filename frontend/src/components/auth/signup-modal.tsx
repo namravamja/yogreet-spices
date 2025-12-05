@@ -77,17 +77,18 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
 
       const response = await signupBuyer(signupData).unwrap()
       
-      toast.success(response.message || "Account created successfully! Please check your email to verify your account.")
+      // TEMPORARY: Email verification disabled - auto login user
+      toast.success("Account created successfully! Redirecting to login...")
       onClose()
       // Store signup state in cookies
       setCookie("yg_just_signed_up", "1", { expires: 1 }) // 1 day
       setCookie("yg_user_role", "BUYER", { expires: 1 })
       setCookie("yg_signup_email", formData.companyEmail, { expires: 1 })
-      router.push("/")
-      // Show verification modal after navigation
-      setTimeout(() => {
-        showVerificationModal()
-      }, 300)
+      router.push("/?openLogin=true")
+      // // COMMENTED OUT: Verification modal now disabled
+      // setTimeout(() => {
+      //   showVerificationModal()
+      // }, 300)
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Failed to create account. Please try again."
       toast.error(errorMessage)

@@ -9,152 +9,31 @@ export const verifyEmail = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { token } = req.query;
-
-    if (!token || typeof token !== "string") {
-      const acceptsJson = req.headers.accept?.includes("application/json");
-      if (acceptsJson) {
-      res.status(400).json({ error: "Verification token is required" });
-      } else {
-        res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Verification token is required")}`);
-      }
-      return;
-    }
-
-    const payload = verifyVerificationToken(token);
-
-    if (payload.role === "BUYER") {
-      const buyer = await Buyer.findById(payload.id);
-
-      if (!buyer) {
-        const acceptsJson = req.headers.accept?.includes("application/json");
-        if (acceptsJson) {
-        res.status(400).json({ error: "Invalid verification token" });
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Invalid verification token")}`);
-        }
-        return;
-      }
-      
-      if (buyer.isVerified) {
-        // Already verified - return success but don't update
-        const acceptsJson = req.headers.accept?.includes("application/json");
-        if (acceptsJson) {
-          res.json({ 
-            success: true, 
-            message: "Email is already verified",
-            role: payload.role 
-          });
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/?openLogin=true`);
-        }
-        return;
-      }
-
-      if (buyer.verifyToken !== token || (buyer.verifyExpires && buyer.verifyExpires < new Date())) {
-        const acceptsJson = req.headers.accept?.includes("application/json");
-        if (acceptsJson) {
-          res.status(400).json({ error: "Verification token expired or invalid" });
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Verification token expired or invalid")}`);
-        }
-        return;
-      }
-
-      buyer.isVerified = true;
-      buyer.verifyToken = undefined;
-      buyer.verifyExpires = undefined;
-      await buyer.save();
-
-      // Return success response for API call, or redirect for browser
-      const buyerAcceptsJson = req.headers.accept?.includes("application/json");
-      if (buyerAcceptsJson) {
-        res.json({ 
-          success: true, 
-          message: "Email verified successfully",
-          role: payload.role 
-        });
-      } else {
-        res.redirect(`${process.env.FRONTEND_URL}/?openLogin=true`);
-      }
-      return;
-    } else if (payload.role === "SELLER") {
-      const seller = await Seller.findById(payload.id);
-
-      if (!seller) {
-        const acceptsJson = req.headers.accept?.includes("application/json");
-        if (acceptsJson) {
-        res.status(400).json({ error: "Invalid verification token" });
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Invalid verification token")}`);
-        }
-        return;
-      }
-      
-      if (seller.isVerified) {
-        // Already verified - return success but don't update
-        const acceptsJson = req.headers.accept?.includes("application/json");
-        if (acceptsJson) {
-          res.json({ 
-            success: true, 
-            message: "Email is already verified",
-            role: payload.role 
-          });
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/become-seller?openLogin=true&verified=already`);
-        }
-        return;
-      }
-
-      if (seller.verifyToken !== token || (seller.verifyExpires && seller.verifyExpires < new Date())) {
-        const acceptsJson = req.headers.accept?.includes("application/json");
-        if (acceptsJson) {
-          res.status(400).json({ error: "Verification token expired or invalid" });
-        } else {
-          res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Verification token expired or invalid")}`);
-        }
-        return;
-      }
-
-      seller.isVerified = true;
-      seller.verifyToken = undefined;
-      seller.verifyExpires = undefined;
-      await seller.save();
-
-      // Return success response for API call, or redirect for browser
-      const sellerAcceptsJson = req.headers.accept?.includes("application/json");
-      if (sellerAcceptsJson) {
-        res.json({ 
-          success: true, 
-          message: "Email verified successfully",
-          role: payload.role 
-        });
-      } else {
-        res.redirect(`${process.env.FRONTEND_URL}/become-seller?openLogin=true&verified=true`);
-      }
-      return;
-    } else {
-      const acceptsJson = req.headers.accept?.includes("application/json");
-      if (acceptsJson) {
-      res.status(400).json({ error: "Invalid role in token" });
-      } else {
-        res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Invalid role in token")}`);
-      }
-      return;
-    }
-  } catch (err: any) {
-    // Return error response for API call, or redirect for browser
-    const errorMessage = err?.message || err?.error || "Verification failed";
+    // TEMPORARY: Email verification disabled - all users automatically verified
     const acceptsJson = req.headers.accept?.includes("application/json");
     if (acceptsJson) {
-      res.status(400).json({ 
-        success: false, 
-        error: errorMessage
+      res.json({ 
+        success: true, 
+        message: "Email verification is disabled. Account is automatically verified."
       });
     } else {
-      const errorParam = encodeURIComponent(errorMessage);
-      res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${errorParam}`);
+      res.redirect(`${process.env.FRONTEND_URL}/?openLogin=true`);
+    }
+    return;
+
+    // ===== COMMENTED OUT: Original verification code below =====
+    // const { token } = req.query;
+    // if (!token || typeof token !== "string") { ... }
+    // const payload = verifyVerificationToken(token);
+    // [All original buyer and seller verification logic commented out]
+  } catch (error) {
+    const acceptsJson = req.headers.accept?.includes("application/json");
+    if (acceptsJson) {
+      res.status(500).json({ error: "Internal server error" });
+    } else {
+      res.redirect(`${process.env.FRONTEND_URL}/verify-email?status=error&message=${encodeURIComponent("Internal server error")}`);
     }
   }
 };
+
 
