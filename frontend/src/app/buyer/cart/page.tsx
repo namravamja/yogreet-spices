@@ -3,12 +3,7 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ShoppingBag,
-  ArrowRight,
-  Trash2,
-  User,
-} from "lucide-react";
+import { ShoppingBag, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import PageHero from "@/components/shared/PageHero";
 import {
@@ -19,63 +14,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
-// Mock data for now - replace with actual API calls later
-const mockCartItems = [
-  {
-    id: "cart-1",
-    productId: "prod-1",
-    weight: 5.0, // Weight in kg
-    product: {
-      id: "prod-1",
-      productName: "Premium Turmeric Powder",
-      productImages: [PLACEHOLDER_JPG_URL],
-      sellingPrice: "450.00", // Price per kg
-      availableStock: "100", // Available stock in kg
-      minQuantity: 1, // Minimum order weight in kg
-      category: "Spices",
-      artist: {
-        fullName: "John Doe",
-        storeName: "Spice Master",
-      },
-    },
-  },
-  {
-    id: "cart-2",
-    productId: "prod-2",
-    weight: 2.5, // Weight in kg
-    product: {
-      id: "prod-2",
-      productName: "Organic Cumin Seeds",
-      productImages: [PLACEHOLDER_JPG_URL],
-      sellingPrice: "280.00", // Price per kg
-      availableStock: "50", // Available stock in kg
-      minQuantity: 1, // Minimum order weight in kg
-      category: "Spices",
-      artist: {
-        fullName: "Jane Smith",
-        storeName: "Organic Spices Co",
-      },
-    },
-  },
-  {
-    id: "cart-3",
-    productId: "prod-3",
-    weight: 10.0, // Weight in kg
-    product: {
-      id: "prod-3",
-      productName: "Red Chili Powder",
-      productImages: [PLACEHOLDER_JPG_URL],
-      sellingPrice: "320.00", // Price per kg
-      availableStock: "80", // Available stock in kg
-      minQuantity: 1, // Minimum order weight in kg
-      category: "Spices",
-      artist: {
-        fullName: "Mike Johnson",
-        storeName: "Hot Spices",
-      },
-    },
-  },
-];
+
 
 export default function BuyerCartPage() {
   const { isAuthenticated } = useAuth("buyer");

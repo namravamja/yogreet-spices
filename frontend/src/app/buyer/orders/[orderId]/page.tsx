@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -18,101 +19,9 @@ import {
 } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
+import { useGetOrderQuery } from "@/services/api/buyerApi";
 
-// Mock order data - replace with actual API call
-const mockOrder = {
-  id: "ORD-001-2024",
-  status: "delivered",
-  paymentStatus: "paid",
-  placedAt: "2024-01-15T10:30:00Z",
-  deliveredAt: "2024-01-20T14:30:00Z",
-  totalAmount: 1250,
-  shippingCost: 50,
-  taxAmount: 100,
-  paymentMethod: "Credit Card",
-  estimatedDelivery: "2024-01-20T00:00:00Z",
-  updatedAt: "2024-01-18T14:20:00Z",
-  shippingAddress: {
-    firstName: "John",
-    lastName: "Doe",
-    addressLine1: "123 Main Street",
-    city: "Mumbai",
-    state: "Maharashtra",
-    postalCode: "400001",
-    country: "India",
-    phone: "+91 98765 43210",
-  },
-  orderItems: [
-    {
-      id: "item-1",
-      productId: "prod-1",
-      quantity: 2,
-      priceAtPurchase: 500,
-      product: {
-        productName: "Premium Turmeric Powder",
-        productImages: [PLACEHOLDER_JPG_URL],
-        category: "Spices",
-        description: "High-quality organic turmeric powder",
-      },
-      artist: {
-        storeName: "Spice Master",
-        fullName: "John Doe",
-        email: "john@spicemaster.com",
-        phone: "+91 98765 43210",
-      },
-    },
-    {
-      id: "item-2",
-      productId: "prod-2",
-      quantity: 1,
-      priceAtPurchase: 250,
-      product: {
-        productName: "Organic Cumin Seeds",
-        productImages: [PLACEHOLDER_JPG_URL],
-        category: "Spices",
-        description: "Fresh organic cumin seeds",
-      },
-      artist: {
-        storeName: "Organic Spices Co",
-        fullName: "Jane Smith",
-        email: "jane@organicspices.com",
-        phone: "+91 98765 43211",
-      },
-    },
-  ],
-  tracking: {
-    carrier: "BlueDart",
-    trackingNumber: "BD123456789",
-    status: "delivered",
-    updates: [
-      {
-        status: "order_placed",
-        message: "Order placed successfully",
-        timestamp: "2024-01-15T10:30:00Z",
-      },
-      {
-        status: "confirmed",
-        message: "Order confirmed by seller",
-        timestamp: "2024-01-15T14:20:00Z",
-      },
-      {
-        status: "processing",
-        message: "Order is being prepared",
-        timestamp: "2024-01-16T09:15:00Z",
-      },
-      {
-        status: "shipped",
-        message: "Order shipped via BlueDart",
-        timestamp: "2024-01-17T16:45:00Z",
-      },
-      {
-        status: "delivered",
-        message: "Order delivered successfully",
-        timestamp: "2024-01-20T14:30:00Z",
-      },
-    ],
-  },
-};
+// Order details fetched from API via `useGetOrderQuery`
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -145,12 +54,61 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-export default function OrderDetailsPage({ params }: { params: { orderId: string } }) {
-  const [isLoading] = useState(false);
-  const [error] = useState(null);
+export default function OrderDetailsPage() {
+  const params = useParams();
+  const orderId = params?.orderId as string | undefined;
 
-  // Use mock data for now
-  const order = mockOrder;
+  const { data: orderData, isLoading: isLoadingOrder, error: orderError } = useGetOrderQuery(
+    orderId as string,
+    { skip: !orderId }
+  );
+
+  const isLoading = isLoadingOrder;
+  const error = orderError;
+
+  // Normalize API response to the shape used by this component
+  const order = orderData
+    ? {
+        id: orderData.id || orderData._id,
+        status: orderData.status || "pending",
+        paymentStatus: orderData.paymentStatus || "unpaid",
+        placedAt: orderData.placedAt || orderData.createdAt,
+        deliveredAt: orderData.deliveredAt,
+        totalAmount: orderData.totalAmount || 0,
+        shippingCost: orderData.shippingCost || 0,
+        taxAmount: orderData.taxAmount || 0,
+        paymentMethod: orderData.paymentMethod || "N/A",
+        estimatedDelivery: orderData.estimatedDelivery,
+        updatedAt: orderData.updatedAt,
+        // backend populates `shippingAddressId`; accept that or `shippingAddress`/`address`
+        shippingAddress: orderData.shippingAddress || orderData.shippingAddressId || orderData.address || null,
+        orderItems: (orderData.orderItems || orderData.items || []).map((item: any) => ({
+          id: item.id || item._id,
+          productId: item.productId || item.product?.id || item.product?._id,
+          quantity: item.quantity || item.qty || 0,
+          priceAtPurchase: item.priceAtPurchase || item.price || 0,
+          product:
+            item.product ||
+            ({
+              productName: item.productName || item.name,
+              productImages: item.productImages || [],
+              category: item.category,
+              description: item.description || item.shortDescription,
+            } as any),
+          artist: item.product?.seller || item.artist || {},
+        })),
+        tracking:
+          orderData.tracking ||
+          (orderData.trackingNumber
+            ? {
+                carrier: orderData.carrier,
+                trackingNumber: orderData.trackingNumber,
+                status: orderData.status,
+                updates: orderData.trackingUpdates || [],
+              }
+            : undefined),
+      }
+    : null;
 
   if (isLoading) {
     return (
@@ -409,15 +367,27 @@ export default function OrderDetailsPage({ params }: { params: { orderId: string
                   Shipping Address
                 </h3>
                 <div className="text-sm text-stone-600">
-                  <p className="font-medium text-yogreet-charcoal">
-                    {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}
-                  </p>
-                  <p>{order.shippingAddress?.addressLine1}</p>
-                  <p>
-                    {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.postalCode}
-                  </p>
-                  <p>{order.shippingAddress?.country}</p>
-                  <p className="mt-2">{order.shippingAddress?.phone}</p>
+                  {(() => {
+                    const addr = order.shippingAddress || {};
+                    const fullName = [addr.firstName, addr.lastName].filter(Boolean).join(" ");
+                    const line1 = addr.addressLine1 || addr.address || null;
+                    const cityState = [addr.city, addr.state].filter(Boolean).join(", ");
+                    const cityStatePostal = [cityState, addr.postalCode].filter(Boolean).join(" ");
+                    const country = addr.country || null;
+                    const phone = addr.phone || addr.phoneNumber || null;
+
+                    return (
+                      <>
+                        {fullName ? (
+                          <p className="font-medium text-yogreet-charcoal">{fullName}</p>
+                        ) : null}
+                        {line1 ? <p>{line1}</p> : null}
+                        {cityStatePostal ? <p>{cityStatePostal}</p> : null}
+                        {country ? <p>{country}</p> : null}
+                        {phone ? <p className="mt-2">{phone}</p> : null}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

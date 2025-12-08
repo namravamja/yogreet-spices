@@ -217,4 +217,19 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
+export const getOrder = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const orderId = req.params.id;
+    if (!orderId) throw new Error("Invalid order ID");
+
+    const order = await orderService.getOrderById(userId, orderId);
+    res.json(order);
+  } catch (error) {
+    res.status(400).json({ success: false, message: (error as Error).message });
+  }
+};
+
 

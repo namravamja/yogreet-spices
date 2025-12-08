@@ -173,7 +173,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         <div className="px-9 py-4">
           <div className="text-center mb-8">
             <h2 className="text-3xl mt-4 font-poppins font-bold text-yogreet-charcoal">
-              Welcome back to Yogreet
+              Welcome back to Yogreet, Buyer
             </h2>
             <p className="mt-2 font-inter text-gray-600">
               Connect with global spice traders
@@ -198,7 +198,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                     value={(formData as any)[name]}
                     onChange={handleChange}
                     disabled={isLoading}
-                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
+                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-red focus:border-yogreet-red disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
                     placeholder={placeholder}
                   />
                   {name === "password" && (
@@ -222,7 +222,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-[#212121] focus:ring-[#212121] border-gray-300 rounded cursor-pointer"
+                  className="h-4 w-4 text-yogreet-red focus:ring-yogreet-red border-gray-300 rounded cursor-pointer"
                 />
                 <label
                   htmlFor="remember-me"
@@ -233,7 +233,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
               </div>
               <button
                 type="button"
-                className="text-sm text-[#212121] hover:text-yogreet-charcoal font-medium cursor-pointer font-inter"
+                className="text-sm text-yogreet-red hover:text-yogreet-charcoal font-medium cursor-pointer font-inter"
               >
                 Forgot password?
               </button>
@@ -243,7 +243,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-[#212121] hover:bg-[#212121]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#212121] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
+              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-red hover:bg-yogreet-red/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-red disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
             >
               {isLoading ? (
                 <>
@@ -259,7 +259,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           <div className="mt-6 text-center">
             <button
               onClick={onSwitchToSignup}
-              className="font-medium text-[#212121] hover:text-yogreet-charcoal cursor-pointer font-inter"
+              className="font-medium text-yogreet-red hover:text-yogreet-charcoal cursor-pointer font-inter"
             >
               New to Yogreet? Create your account
             </button>

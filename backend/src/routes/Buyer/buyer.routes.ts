@@ -42,6 +42,7 @@ router.delete("/cart", asyncHandler(buyerController.clearCart as any));
 
 // Order routes
 router.get("/orders", asyncHandler(buyerController.getOrders as any));
+router.get("/orders/:id", asyncHandler(buyerController.getOrder as any));
 router.post("/orders", asyncHandler(buyerController.createOrder as any));
 
 export default router;

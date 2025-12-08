@@ -136,7 +136,7 @@ export function SellerNavbar() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4">
             <div className="flex justify-between items-center h-24">
           {/* Logo */}
-              <Link href="/" className="flex items-center cursor-pointer">
+              <Link href="/become-seller" className="flex items-center cursor-pointer">
             <Image 
               src={YOGREET_LOGO_URL}
               alt="Yogreet Logo" 

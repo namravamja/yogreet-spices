@@ -207,7 +207,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                     value={(formData as any)[name]}
                     onChange={handleChange}
                     disabled={isLoading}
-                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
+                    className={`block w-full pl-10 ${name === "password" ? "pr-10" : "pr-3"} py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-red focus:border-yogreet-red disabled:bg-gray-50 disabled:text-gray-500 font-inter`}
                     placeholder={placeholder}
                   />
                   {name === "password" && (
@@ -229,7 +229,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-[#212121] hover:bg-[#212121]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#212121] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
+              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-red hover:bg-yogreet-red/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-red disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
             >
               {isLoading ? (
                 <>
@@ -245,7 +245,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
           <div className="mt-6 text-center">
             <button
               onClick={onSwitchToLogin}
-              className="font-medium text-[#212121] hover:text-yogreet-charcoal cursor-pointer font-inter"
+              className="font-medium text-yogreet-red hover:text-yogreet-charcoal cursor-pointer font-inter"
             >
               Already have an account? Sign in
             </button>

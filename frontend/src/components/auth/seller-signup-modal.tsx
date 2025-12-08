@@ -46,7 +46,8 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
       setCookie("yg_just_signed_up", "1", { expires: 1 }) // 1 day
       setCookie("yg_user_role", "SELLER", { expires: 1 })
       setCookie("yg_signup_email", formData.email, { expires: 1 })
-      router.push("/?openLogin=true")
+      // Open seller login specifically instead of buyer login
+      router.push("/?openSellerLogin=true")
       // // COMMENTED OUT: Verification modal now disabled
       // setTimeout(() => {
       //   showVerificationModal()
@@ -169,7 +170,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.fullName}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Enter your full name"
                 />
               </div>
@@ -192,7 +193,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.companyName}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Enter your store/company name"
                 />
               </div>
@@ -215,7 +216,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Enter your email"
                 />
               </div>
@@ -238,7 +239,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#212121] focus:border-[#212121] disabled:bg-gray-50 disabled:text-gray-500 font-inter"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yogreet-sage focus:border-yogreet-sage disabled:bg-gray-50 disabled:text-gray-500 font-inter"
                   placeholder="Create a password"
                 />
                 <button
@@ -260,7 +261,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center gap-2 mt-6 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-[#212121] hover:bg-[#212121]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#212121] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
+              className="w-full flex justify-center items-center gap-2 mt-6 py-3 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-yogreet-sage hover:bg-yogreet-sage/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yogreet-sage disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors font-manrope"
             >
               {isLoading ? (
                 <>
@@ -276,7 +277,7 @@ export function SellerSignupModal({ isOpen, onClose, onSwitchToLogin }: SellerSi
           <div className="mt-6 text-center">
             <button
               onClick={onSwitchToLogin}
-              className="font-medium text-[#212121] hover:text-yogreet-charcoal cursor-pointer font-inter"
+              className="font-medium text-yogreet-sage hover:text-yogreet-charcoal cursor-pointer font-inter"
             >
               Already have a seller account? Sign in
             </button>

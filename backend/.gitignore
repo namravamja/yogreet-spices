@@ -53,3 +53,5 @@ dump.rdb
 # TypeScript cache
 *.tsbuildinfo
 
+*.tar.gz
+deploy_and_upload.sh

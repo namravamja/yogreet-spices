@@ -19,24 +19,33 @@ function NavbarSearchParamsHandler({
   isAuthenticated, 
   isAuthLoading, 
   setIsLoginModalOpen,
+  setIsSellerLoginModalOpen,
   router 
 }: { 
   isAuthenticated: boolean
   isAuthLoading: boolean
   setIsLoginModalOpen: (open: boolean) => void
+  setIsSellerLoginModalOpen: (open: boolean) => void
   router: ReturnType<typeof useRouter>
 }) {
   const searchParams = useSearchParams()
 
-  // Check for openLogin query parameter and open login modal
+  // Check for openLogin (buyer) and openSellerLogin (seller) query parameters and open corresponding modal
   useEffect(() => {
     const openLogin = searchParams.get("openLogin")
+    const openSellerLogin = searchParams.get("openSellerLogin")
+    if (openSellerLogin === "true" && !isAuthenticated && !isAuthLoading) {
+      setIsSellerLoginModalOpen(true)
+      // Clean up URL by removing the query parameter
+      router.replace("/", { scroll: false })
+      return
+    }
     if (openLogin === "true" && !isAuthenticated && !isAuthLoading) {
       setIsLoginModalOpen(true)
       // Clean up URL by removing the query parameter
       router.replace("/", { scroll: false })
     }
-  }, [searchParams, isAuthenticated, isAuthLoading, router, setIsLoginModalOpen])
+  }, [searchParams, isAuthenticated, isAuthLoading, router, setIsLoginModalOpen, setIsSellerLoginModalOpen])
 
   return null
 }
@@ -233,6 +242,7 @@ export function Navbar() {
           isAuthenticated={isAuthenticated}
           isAuthLoading={isAuthLoading}
           setIsLoginModalOpen={setIsLoginModalOpen}
+          setIsSellerLoginModalOpen={setIsSellerLoginModalOpen}
           router={router}
         />
       </Suspense>
@@ -393,7 +403,7 @@ export function Navbar() {
                   </button>
                   <button 
                     onClick={handleSignupClick}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 border border-yogreet-purple text-yogreet-purple font-manrope font-medium text-xs sm:text-sm md:text-base hover:bg-yogreet-purple hover:text-white transition-all cursor-pointer rounded-sm"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 border border-yogreet-red text-yogreet-red font-manrope font-medium text-xs sm:text-sm md:text-base hover:bg-yogreet-red hover:text-white transition-all cursor-pointer rounded-sm"
                   >
                     Sign Up
                   </button>
@@ -532,7 +542,7 @@ export function Navbar() {
                 </button>
                 <button
                   onClick={handleSignupClick}
-                  className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm border border-yogreet-purple text-yogreet-purple font-manrope font-medium hover:bg-yogreet-purple hover:text-white transition-all cursor-pointer rounded-sm"
+                  className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm border border-yogreet-red text-yogreet-red font-manrope font-medium hover:bg-yogreet-red hover:text-white transition-all cursor-pointer rounded-sm"
                 >
                   Sign Up
                 </button>

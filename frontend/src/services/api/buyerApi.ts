@@ -177,6 +177,18 @@ export const buyerApi = BuyerApi.injectEndpoints({
     }),
 
     // Order operations
+    // Get single order by id
+    getOrder: builder.query({
+      query: (id: string) => `/orders/${id}`,
+      providesTags: (result, error, id) => (result ? [{ type: "Orders", id }] : ["Orders"]),
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
     getOrders: builder.query({
       query: () => "/orders",
       providesTags: ["Orders"],
@@ -214,6 +226,7 @@ export const {
   useRemoveCartItemMutation,
   useClearCartMutation,
   useGetOrdersQuery,
+  useGetOrderQuery,
   useCreateOrderMutation,
 } = buyerApi;
 

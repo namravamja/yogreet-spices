@@ -223,3 +223,49 @@ export const getBuyerOrders = async (buyerId: string) => {
   return ordersWithItems;
 };
 
+export const getOrderById = async (buyerId: string, orderId: string) => {
+  if (!orderId) throw new Error("Invalid order ID");
+
+  const order = await Order.findById(orderId)
+    .populate({ path: "shippingAddressId" })
+    .lean();
+
+  if (!order) throw new Error("Order not found");
+
+  // Ensure the requesting buyer owns this order
+  if (order.buyerId?.toString() !== buyerId) {
+    throw new Error("Forbidden: access to this order is denied");
+  }
+
+  const orderItems = await OrderItem.find({ orderId: order._id })
+    .populate({ path: "productId", select: "productName productImages category" })
+    .populate({ path: "sellerId", select: "fullName companyName" })
+    .lean();
+
+  return {
+    ...order,
+    id: order._id.toString(),
+    orderItems: orderItems.map((item: any) => ({
+      id: item._id.toString(),
+      productId: item.productId?._id?.toString() || item.productId?.toString(),
+      quantity: item.quantity,
+      priceAtPurchase: item.priceAtPurchase,
+      product: item.productId
+        ? {
+            id: item.productId._id.toString(),
+            productName: item.productId.productName,
+            productImages: item.productId.productImages || [],
+            category: item.productId.category,
+          }
+        : null,
+      seller: item.sellerId
+        ? {
+            id: item.sellerId._id.toString(),
+            fullName: item.sellerId.fullName,
+            companyName: item.sellerId.companyName || item.sellerId.fullName,
+          }
+        : null,
+    })),
+  };
+};
+
