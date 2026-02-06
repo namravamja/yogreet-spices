@@ -9,100 +9,92 @@ export const resendVerificationEmail = async (
   res: Response
 ): Promise<void> => {
   try {
-    // TEMPORARY: Email verification disabled
-    res.status(400).json({ 
-      success: false, 
-      error: "Email verification is temporarily disabled. All accounts are automatically verified." 
-    });
-    return;
-
-    // ===== COMMENTED OUT: Original code below =====
-    // const { email, role } = req.body;
-    // if (!email || !role) {
-    //   res.status(400).json({ 
-    //     success: false, 
-    //     error: "Email and role are required" 
-    //   });
-    //   return;
-    // }
-    // if (role === "BUYER") {
-    //   const buyer = await Buyer.findOne({ email });
-    //   if (!buyer) {
-    //     res.status(404).json({ 
-    //       success: false, 
-    //       error: "Email not found" 
-    //     });
-    //     return;
-    //   }
-    //   if (buyer.isVerified) {
-    //     res.status(400).json({ 
-    //       success: false, 
-    //       error: "Email is already verified" 
-    //     });
-    //     return;
-    //   }
-    //   const verifyToken = generateVerificationToken({
-    //     id: buyer._id.toString(),
-    //     role: "BUYER",
-    //   });
-    //   buyer.verifyToken = verifyToken;
-    //   buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
-    //   await buyer.save();
-    //   try {
-    //     await sendVerificationEmail(buyer.email, verifyToken, "BUYER");
-    //     res.json({ 
-    //       success: true, 
-    //       message: "Verification email sent successfully" 
-    //     });
-    //   } catch (error) {
-    //     console.error("Failed to send verification email:", error);
-    //     res.status(500).json({ 
-    //       success: false, 
-    //       error: "Failed to send verification email" 
-    //     });
-    //   }
-    // } else if (role === "SELLER") {
-    //   const seller = await Seller.findOne({ email });
-    //   if (!seller) {
-    //     res.status(404).json({ 
-    //       success: false, 
-    //       error: "Email not found" 
-    //     });
-    //     return;
-    //   }
-    //   if (seller.isVerified) {
-    //     res.status(400).json({ 
-    //       success: false, 
-    //       error: "Email is already verified" 
-    //     });
-    //     return;
-    //   }
-    //   const verifyToken = generateVerificationToken({
-    //     id: seller._id.toString(),
-    //     role: "SELLER",
-    //   });
-    //   seller.verifyToken = verifyToken;
-    //   seller.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
-    //   await seller.save();
-    //   try {
-    //     await sendVerificationEmail(seller.email, verifyToken, "SELLER");
-    //     res.json({ 
-    //       success: true, 
-    //       message: "Verification email sent successfully" 
-    //     });
-    //   } catch (error) {
-    //     console.error("Failed to send verification email:", error);
-    //     res.status(500).json({ 
-    //       success: false, 
-    //       error: "Failed to send verification email" 
-    //     });
-    //   }
-    // } else {
-    //   res.status(400).json({ 
-    //     success: false, 
-    //     error: "Invalid role. Must be BUYER or SELLER" 
-    //   });
-    // }
+    const { email, role } = req.body;
+    if (!email || !role) {
+      res.status(400).json({ 
+        success: false, 
+        error: "Email and role are required" 
+      });
+      return;
+    }
+    if (role === "BUYER") {
+      const buyer = await Buyer.findOne({ email });
+      if (!buyer) {
+        res.status(404).json({ 
+          success: false, 
+          error: "Email not found" 
+        });
+        return;
+      }
+      if (buyer.isVerified) {
+        res.status(400).json({ 
+          success: false, 
+          error: "Email is already verified" 
+        });
+        return;
+      }
+      const verifyToken = generateVerificationToken({
+        id: buyer._id.toString(),
+        role: "BUYER",
+      });
+      buyer.verifyToken = verifyToken;
+      buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await buyer.save();
+      try {
+        await sendVerificationEmail(buyer.email, verifyToken, "BUYER");
+        res.json({ 
+          success: true, 
+          message: "Verification email sent successfully" 
+        });
+      } catch (error) {
+        console.error("Failed to send verification email:", error);
+        res.status(500).json({ 
+          success: false, 
+          error: "Failed to send verification email" 
+        });
+      }
+    } else if (role === "SELLER") {
+      const seller = await Seller.findOne({ email });
+      if (!seller) {
+        res.status(404).json({ 
+          success: false, 
+          error: "Email not found" 
+        });
+        return;
+      }
+      if (seller.isVerified) {
+        res.status(400).json({ 
+          success: false, 
+          error: "Email is already verified" 
+        });
+        return;
+      }
+      const verifyToken = generateVerificationToken({
+        id: seller._id.toString(),
+        role: "SELLER",
+      });
+      seller.verifyToken = verifyToken;
+      seller.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await seller.save();
+      try {
+        await sendVerificationEmail(seller.email, verifyToken, "SELLER");
+        res.json({ 
+          success: true, 
+          message: "Verification email sent successfully" 
+        });
+      } catch (error) {
+        console.error("Failed to send verification email:", error);
+        res.status(500).json({ 
+          success: false, 
+          error: "Failed to send verification email" 
+        });
+      }
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        error: "Invalid role. Must be BUYER or SELLER" 
+      });
+    }
   } catch (error: any) {
     console.error("Resend verification error:", error);
     const errorMessage = error?.message || error?.error || "Internal server error";
