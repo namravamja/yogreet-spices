@@ -8,6 +8,7 @@ export interface IProduct extends Document {
   form?: string;
   shortDescription: string;
   productImages: string[];
+  barcodeImage?: string | null;
   shippingCost: string;
   
   // About Product
@@ -46,6 +47,7 @@ const ProductSchema = new Schema<IProduct>(
     form: { type: String },
     shortDescription: { type: String, required: true },
     productImages: { type: [String], default: [] },
+    barcodeImage: { type: String, default: null },
     shippingCost: { type: String, required: true },
     
     // About Product
@@ -88,4 +90,3 @@ ProductSchema.set("toObject", { virtuals: true });
 ProductSchema.set("toJSON", { virtuals: true });
 
 export const Product = mongoose.model<IProduct>("Product", ProductSchema);
-

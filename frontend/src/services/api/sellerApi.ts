@@ -184,6 +184,37 @@ export const sellerApi = SellerApi.injectEndpoints({
       }),
       invalidatesTags: ["Seller", "Products"],
     }),
+
+    // Get seller orders
+    getSellerOrders: builder.query({
+      query: ({ page = 1, limit = 10, status }: { page?: number; limit?: number; status?: string }) => {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+        if (status) params.set("status", status);
+        return `/orders?${params.toString()}`;
+      },
+      providesTags: ["Orders"],
+      transformResponse: (response: any) => {
+        // Accept either { orders, pagination } or direct object with data
+        if (response && typeof response === "object" && "orders" in response) {
+          return response;
+        }
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    updateOrderStatus: builder.mutation({
+      query: ({ orderId, status }: { orderId: string; status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" }) => ({
+        url: `/orders/${orderId}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["Orders"],
+    }),
   }),
 });
 
@@ -197,5 +228,6 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useGetSellerOrdersQuery,
+  useUpdateOrderStatusMutation,
 } = sellerApi;
-

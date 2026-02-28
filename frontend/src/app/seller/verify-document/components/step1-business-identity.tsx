@@ -1,7 +1,10 @@
 "use client";
 
 import type React from "react";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
+import { VerifiableInput, useVerificationTracker, VerificationStatus } from "@/components/shared/VerifiableInput";
+import { useGetVerificationStatusQuery } from "@/services/api/verificationApi";
+import { FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 
 interface SellerVerificationDataStep1 {
   panNumber: string;
@@ -23,15 +26,31 @@ interface Step1Props {
   ) => void;
   onSave?: () => Promise<boolean>;
   isLoading?: boolean;
+  onVerificationStatusChange?: (allVerified: boolean) => void;
 }
 
-export default function Step1BusinessIdentity({ data, updateData, setUploadedFiles }: Step1Props) {
+export default function Step1BusinessIdentity({ data, updateData, setUploadedFiles, onVerificationStatusChange }: Step1Props) {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [localFiles, setLocalFiles] = useState<Record<string, File | null>>({});
+  
+  // Fetch stored verification status from database
+  const { data: storedStatus } = useGetVerificationStatusQuery();
+  const autoVerified = storedStatus?.autoVerified || {};
+  
+  // Track verification status for auto-verifiable fields
+  const verificationTracker = useVerificationTracker(['panNumber', 'gstNumber', 'aadharNumber']);
 
   const handleChange = (field: keyof SellerVerificationDataStep1, value: any) => {
     updateData({ [field]: value } as Partial<SellerVerificationDataStep1>);
   };
+
+  // Handle verification status change for any field
+  const handleVerificationChange = useCallback((field: string) => (status: VerificationStatus) => {
+    verificationTracker.updateFieldStatus(field, status);
+    // Notify parent about verification status
+    const allVerified = verificationTracker.areAllFieldsVerified();
+    onVerificationStatusChange?.(allVerified);
+  }, [verificationTracker, onVerificationStatusChange]);
 
   const renderUpload = (id: string, label: string) => {
     const file = localFiles[id] || null;
@@ -128,37 +147,109 @@ export default function Step1BusinessIdentity({ data, updateData, setUploadedFil
     <div>
       <h2 className="text-xl sm:text-2xl font-light text-yogreet-charcoal mb-4 sm:mb-6">Business Identity Verification</h2>
 
-      {/* PAN Number and GST Number */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">PAN Number</label>
-          <input
-            type="text"
-            value={data.panNumber || ""}
-            onChange={(e) => handleChange("panNumber", e.target.value)}
-            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">GST Number</label>
-          <input
-            type="text"
-            value={data.gstNumber || ""}
-            onChange={(e) => handleChange("gstNumber", e.target.value)}
-            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
-          />
+      {/* Auto-verification info banner */}
+      <div className="mb-6 p-4 bg-yogreet-sage/5 border border-yogreet-sage/20 rounded-lg">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 w-8 h-8 bg-yogreet-sage/10 rounded-full flex items-center justify-center">
+            <FiAlertTriangle className="w-4 h-4 text-yogreet-sage" />
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-yogreet-charcoal">Auto-Verification Enabled</h4>
+            <p className="text-xs text-stone-500 mt-1">
+              PAN, GST, and Aadhaar numbers are automatically verified when you finish typing. 
+              Cross-verification ensures PAN embedded in GST matches your PAN number.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Aadhaar Number */}
+      {/* Stored verification status display */}
+      {(autoVerified.panNumber?.verified || autoVerified.gstNumber?.verified || autoVerified.aadharNumber?.verified) && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <FiCheckCircle className="w-4 h-4 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-green-800">Previously Verified Documents</h4>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {autoVerified.panNumber?.verified && (
+                  <div className="text-xs bg-white px-3 py-2 rounded border border-green-200">
+                    <span className="font-medium text-green-700">PAN:</span>{" "}
+                    <span className="text-stone-600">{data.panNumber}</span>
+                    <div className="text-stone-400 mt-0.5">
+                      Verified {autoVerified.panNumber.verifiedAt ? new Date(autoVerified.panNumber.verifiedAt).toLocaleDateString() : ""}
+                    </div>
+                  </div>
+                )}
+                {autoVerified.gstNumber?.verified && (
+                  <div className="text-xs bg-white px-3 py-2 rounded border border-green-200">
+                    <span className="font-medium text-green-700">GST:</span>{" "}
+                    <span className="text-stone-600">{data.gstNumber}</span>
+                    <div className="text-stone-400 mt-0.5">
+                      Verified {autoVerified.gstNumber.verifiedAt ? new Date(autoVerified.gstNumber.verifiedAt).toLocaleDateString() : ""}
+                    </div>
+                  </div>
+                )}
+                {autoVerified.aadharNumber?.verified && (
+                  <div className="text-xs bg-white px-3 py-2 rounded border border-green-200">
+                    <span className="font-medium text-green-700">Aadhaar:</span>{" "}
+                    <span className="text-stone-600">{data.aadharNumber?.replace(/(\d{4})/g, '$1 ').trim()}</span>
+                    <div className="text-stone-400 mt-0.5">
+                      Verified {autoVerified.aadharNumber.verifiedAt ? new Date(autoVerified.aadharNumber.verifiedAt).toLocaleDateString() : ""}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAN Number and GST Number with auto-verification */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <VerifiableInput
+          id="panNumber"
+          label="PAN Number"
+          value={data.panNumber || ""}
+          onChange={(value) => handleChange("panNumber", value)}
+          documentType="pan"
+          placeholder="AAAAA0000A"
+          formatHint="Format: 5 letters + 4 digits + 1 letter (e.g., ABCDE1234F)"
+          crossCheckData={data.gstNumber ? { gst: data.gstNumber } : undefined}
+          onVerificationChange={handleVerificationChange('panNumber')}
+          minLengthToVerify={10}
+          initialStoredStatus={autoVerified.panNumber}
+        />
+        <VerifiableInput
+          id="gstNumber"
+          label="GST Number"
+          value={data.gstNumber || ""}
+          onChange={(value) => handleChange("gstNumber", value)}
+          documentType="gst"
+          placeholder="22AAAAA0000A1Z5"
+          formatHint="Format: 2 digits (state) + PAN + entity code + Z + checksum"
+          crossCheckData={data.panNumber ? { pan: data.panNumber } : undefined}
+          onVerificationChange={handleVerificationChange('gstNumber')}
+          minLengthToVerify={15}
+          initialStoredStatus={autoVerified.gstNumber}
+        />
+      </div>
+
+      {/* Aadhaar Number with auto-verification */}
       <div className="mt-6">
-        <label className="block text-sm font-medium text-stone-700 mb-2">Aadhaar Number</label>
-              <input
-                type="text"
+        <VerifiableInput
+          id="aadharNumber"
+          label="Aadhaar Number"
           value={data.aadharNumber || ""}
-          onChange={(e) => handleChange("aadharNumber", e.target.value)}
-                className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
-              />
+          onChange={(value) => handleChange("aadharNumber", value)}
+          documentType="aadhaar"
+          placeholder="XXXX XXXX XXXX"
+          formatHint="12-digit Aadhaar number (with Verhoeff checksum validation)"
+          onVerificationChange={handleVerificationChange('aadharNumber')}
+          minLengthToVerify={12}
+          initialStoredStatus={autoVerified.aadharNumber}
+        />
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">

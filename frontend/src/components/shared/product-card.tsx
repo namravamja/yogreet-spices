@@ -1,4 +1,5 @@
 import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
+import { formatCurrency } from "@/utils/currency"
 
 export interface ProductCardProps {
   id: string
@@ -19,7 +20,7 @@ export function ProductCard({ name, image, pricePerKg, quantity }: ProductCardPr
         <div className="space-y-1 mb-2">
           <div className="flex justify-between items-center">
             <span className="text-yogreet-warm-gray font-inter text-xs">Price per kg</span>
-            <span className="font-poppins font-semibold text-black text-xs">${pricePerKg}</span>
+            <span className="font-poppins font-semibold text-black text-xs">{formatCurrency(pricePerKg, "INR")}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-yogreet-warm-gray font-inter text-xs">Available Qty</span>

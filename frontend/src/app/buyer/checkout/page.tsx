@@ -14,12 +14,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import PageHero from "@/components/shared/PageHero";
-import {
-  useGetCartQuery,
-  useGetAddressesQuery,
-  useCreateOrderMutation,
-  useDeleteAddressMutation,
-} from "@/services/api/buyerApi";
+import { useGetCartQuery, useGetAddressesQuery, useCreateOrderMutation, useDeleteAddressMutation } from "@/services/api/buyerApi";
+import { useCreatePaymentMutation } from "@/services/api/publicApi";
+import { formatCurrency, mapCountryToCurrency, defaultCurrency } from "@/utils/currency";
 import { useGetProductsQuery } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { AddAddressModal } from "@/components/buyer/AddAddressModal";
@@ -69,6 +66,7 @@ function CheckoutPageContent() {
   });
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [deleteAddress, { isLoading: isDeletingAddress }] = useDeleteAddressMutation();
+  const [createPayment, { isLoading: isCreatingPayment }] = useCreatePaymentMutation();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("credit_card");
@@ -244,6 +242,15 @@ function CheckoutPageContent() {
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
+  const selectedAddress = useMemo(
+    () => addresses.find((a) => a.id === selectedAddressId) || null,
+    [addresses, selectedAddressId]
+  );
+  const currency = useMemo(
+    () => mapCountryToCurrency(selectedAddress?.country) || defaultCurrency(),
+    [selectedAddress]
+  );
+
   const handleDeleteClick = (addressId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent address selection when clicking delete
     setAddressToDelete(addressId);
@@ -277,6 +284,19 @@ function CheckoutPageContent() {
       toast.error(errorMessage);
     }
   };
+
+  // Dynamically load Razorpay script
+  const loadRazorpay = () =>
+    new Promise<boolean>((resolve) => {
+      if (typeof window === "undefined") return resolve(false);
+      if ((window as any).Razorpay) return resolve(true);
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
 
   const handlePlaceOrder = async () => {
     if (addresses.length === 0) {
@@ -312,14 +332,59 @@ function CheckoutPageContent() {
         }));
       }
 
+      // 1) Create order in backend
       const response = await createOrder(orderData).unwrap();
-      const successMessage = (response as any)?._message || (response as any)?.message || "Order placed successfully!";
-      toast.success(successMessage, {
-        duration: 3000,
-      });
+      const orderId = (response as any)?.id || (response as any)?._id;
+      if (!orderId) {
+        toast.error("Could not create order");
+        return;
+      }
 
-      // Redirect to orders page
-      router.push("/buyer/orders");
+      // 2) Create Razorpay order (TEST MODE) via backend
+      const payPayload: any = await createPayment(orderId).unwrap();
+      const rp = (payPayload && payPayload.razorpay) || {};
+      if (!rp?.orderId || !rp?.keyId) {
+        toast.error("Failed to initialize payment");
+        // Fallback: go to order details
+        router.push(`/buyer/orders/${orderId}`);
+        return;
+      }
+
+      // 3) Load Razorpay script and open checkout
+      const ok = await loadRazorpay();
+      if (!ok) {
+        toast.error("Failed to load Razorpay");
+        router.push(`/buyer/orders/${orderId}`);
+        return;
+      }
+
+      const rzpOptions: any = {
+        key: rp.keyId,
+        amount: rp.amount, // in paise
+        currency: rp.currency || currency,
+        name: "Yogreet Spices",
+        description: `Order #${String(orderId).slice(0, 8).toUpperCase()}`,
+        order_id: rp.orderId,
+        theme: { color: "#CC2A2A" },
+        handler: function (_resp: any) {
+          // Do not trust frontend signals; webhooks will mark HELD
+          toast.success("Payment initiated. Funds will be secured once verified.");
+          router.push(`/buyer/orders/${orderId}`);
+        },
+        modal: {
+          ondismiss: () => {
+            toast.error("Payment cancelled");
+            router.push(`/buyer/orders/${orderId}`);
+          },
+        },
+        prefill: {
+          name: "",
+          email: "",
+          contact: "",
+        },
+      };
+      const rzp = new (window as any).Razorpay(rzpOptions);
+      rzp.open();
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.data?.error || error?.message || "Failed to place order";
       toast.error(errorMessage);
@@ -620,10 +685,10 @@ function CheckoutPageContent() {
                             {item.product?.productName || "Unknown Product"}
                           </h3>
                           <p className="text-xs text-stone-500 mb-1">
-                            {weight.toFixed(1)} kg × ${pricePerKg.toFixed(2)}
+                          {weight.toFixed(1)} kg × {formatCurrency(pricePerKg, currency)}
                           </p>
                           <p className="font-medium text-yogreet-charcoal text-sm">
-                            ${(pricePerKg * weight).toFixed(2)}
+                            {formatCurrency(pricePerKg * weight, currency)}
                           </p>
                         </div>
                       </div>
@@ -636,23 +701,23 @@ function CheckoutPageContent() {
                   <div className="flex justify-between">
                     <span className="text-stone-600">Subtotal</span>
                     <span className="text-yogreet-charcoal">
-                      ${subtotal.toFixed(2)}
+                      {formatCurrency(subtotal, currency)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Shipping</span>
                     <span className="text-yogreet-charcoal">
-                      {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                      {shipping === 0 ? "Free" : formatCurrency(shipping, currency)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Tax</span>
-                    <span className="text-yogreet-charcoal">${tax.toFixed(2)}</span>
+                    <span className="text-yogreet-charcoal">{formatCurrency(tax, currency)}</span>
                   </div>
                   <hr className="border-stone-200" />
                   <div className="flex justify-between font-medium text-lg">
                     <span className="text-yogreet-charcoal">Total</span>
-                    <span className="text-yogreet-red">${total.toFixed(2)}</span>
+                    <span className="text-yogreet-red">{formatCurrency(total, currency)}</span>
                   </div>
                 </div>
 

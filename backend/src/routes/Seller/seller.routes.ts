@@ -4,6 +4,7 @@ import { verifyToken } from "../../middleware/authMiddleware";
 import { uploadFlexibleImages, uploadSellerVerificationDocuments } from "../../middleware/multer";
 import { asyncHandler } from "../../middleware/errorHandler";
 import productRoutes from "./product.routes";
+import orderRoutes from "./order.routes";
 
 const router = express.Router();
 
@@ -40,6 +41,6 @@ router.put(
 
 // Product routes (delegated to separate product routes file)
 router.use("/products", productRoutes);
+router.use("/orders", orderRoutes);
 
 export default router;
-

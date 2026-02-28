@@ -15,9 +15,11 @@ export default function Step3ImagesShipping({
   handleInputChange,
 }: Step3Props) {
   const [loading, setLoading] = useState(false);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    const inputEl = e.currentTarget;
+    const files = inputEl.files;
     if (!files || files.length === 0) return;
 
     setLoading(true);
@@ -45,7 +47,7 @@ export default function Step3ImagesShipping({
       const updatedImages = [...productData.productImages, ...base64Images];
       handleInputChange("productImages", updatedImages);
 
-      e.target.value = "";
+      if (inputEl) inputEl.value = "";
     } catch (err) {
       console.error("Image upload error:", err);
       setLoading(false);
@@ -61,11 +63,12 @@ export default function Step3ImagesShipping({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Upload Button */}
+      {/* Product Images */}
       <div>
+        <h3 className="text-sm font-medium text-yogreet-charcoal mb-2">Product Images</h3>
         <label
           htmlFor="productImages"
-          className={`inline-flex items-center gap-2 cursor-pointer rounded-md border border-dashed border-stone-400 p-4 text-stone-600 hover:border-yogreet-sage hover:text-yogreet-sage transition-colors font-inter ${
+          className={`inline-flex items-center gap-2 cursor-pointer rounded-xs border border-dashed border-stone-400 p-4 text-stone-600 hover:border-yogreet-sage hover:text-yogreet-sage transition-colors font-inter ${
             loading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
@@ -87,13 +90,81 @@ export default function Step3ImagesShipping({
         </p>
       </div>
 
+      {/* Barcode Image */}
+      <div>
+        <h3 className="text-sm font-medium text-yogreet-charcoal mb-2">Product Barcode (Admin-only)</h3>
+        <label
+          htmlFor="barcodeImage"
+          className={`inline-flex items-center gap-2 cursor-pointer rounded-xs border border-dashed border-stone-400 p-4 text-stone-600 hover:border-yogreet-sage hover:text-yogreet-sage transition-colors font-inter ${
+            barcodeLoading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          <Upload className="w-6 h-6" />
+          <span>{barcodeLoading ? "Uploading..." : "Upload product barcode (admin-only)"}</span>
+          <input
+            id="barcodeImage"
+            type="file"
+            accept="image/*"
+            disabled={barcodeLoading}
+            onChange={async (e) => {
+              const inputEl = e.currentTarget;
+              const file = inputEl.files?.[0];
+              if (!file) return;
+              setBarcodeLoading(true);
+              try {
+                const base64 = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    if (typeof reader.result === "string") resolve(reader.result);
+                    else reject(new Error("File reading error"));
+                  };
+                  reader.onerror = () => reject(new Error("File reading failed"));
+                  reader.readAsDataURL(file);
+                });
+                handleInputChange("barcodeImage", base64);
+                if (inputEl) inputEl.value = "";
+              } catch (err) {
+                console.error("Barcode upload error:", err);
+              } finally {
+                setBarcodeLoading(false);
+              }
+            }}
+            className="hidden"
+          />
+        </label>
+        {productData.barcodeImage ? (
+          <div className="mt-3 relative w-40 h-40 border border-stone-300 rounded-xs overflow-hidden bg-white">
+            <Image
+              src={productData.barcodeImage}
+              alt="Product barcode"
+              fill
+              className="object-contain p-1"
+              sizes="160px"
+              unoptimized
+            />
+            <button
+              type="button"
+              aria-label="Remove barcode"
+              onClick={() => handleInputChange("barcodeImage", "")}
+              className="absolute top-1 right-1 bg-white rounded-full p-1 text-stone-600 hover:text-red-600 shadow-sm transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs mt-1 text-stone-500 font-inter">
+            Required: clear photo of the product barcode. Visible only to admin.
+          </p>
+        )}
+      </div>
+
       {/* Image Previews */}
       {productData.productImages.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
           {productData.productImages.map((imgSrc, index) => (
             <div
               key={`${imgSrc}-${index}`}
-              className="relative aspect-square rounded-md overflow-hidden border border-stone-300"
+              className="relative aspect-square rounded-xs overflow-hidden border border-stone-300 bg-white"
             >
               <Image
                 src={imgSrc}
@@ -118,4 +189,3 @@ export default function Step3ImagesShipping({
     </div>
   );
 }
-

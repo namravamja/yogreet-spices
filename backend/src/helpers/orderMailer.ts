@@ -186,3 +186,56 @@ export const sendOrderConfirmationEmail = async (
   await transporter.sendMail(message);
 };
 
+export const sendAutoReleaseWarningEmail = async (
+  email: string,
+  fullName: string,
+  orderId: string,
+  autoReleaseAt: Date
+) => {
+  const shortOrderId = orderId.slice(0, 8);
+  const message = {
+    from: '"Yogreet Spices" <no-reply@yogreet.com>',
+    to: email,
+    subject: `Action needed: Confirm delivery for Order #${shortOrderId}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;padding:20px;background:#ffffff;border:1px solid #eee;">
+        <h2 style="margin-top:0;color:#111827;">Confirm your delivery</h2>
+        <p>Hi ${fullName || "there"},</p>
+        <p>Your payment for order <strong>#${shortOrderId}</strong> is being securely held.</p>
+        <p>Please confirm delivery within the next 24 hours. If no action is taken, the payment will be automatically released on <strong>${autoReleaseAt.toLocaleString(
+          "en-IN"
+        )}</strong>.</p>
+        <p style="margin:24px 0;">
+          <a href="${process.env.FRONTEND_URL}/buyer/orders/${orderId}" style="display:inline-block;padding:12px 18px;background:#6b8e6b;color:#fff;text-decoration:none;border-radius:6px;">Review Order</a>
+        </p>
+        <p style="color:#6b7280;font-size:12px;">This is a test-mode notification for escrow confirmation.</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(message);
+};
+
+export const sendAutoReleasedEmail = async (
+  email: string,
+  fullName: string,
+  orderId: string
+) => {
+  const shortOrderId = orderId.slice(0, 8);
+  const message = {
+    from: '"Yogreet Spices" <no-reply@yogreet.com>',
+    to: email,
+    subject: `Payment released for Order #${shortOrderId}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;padding:20px;background:#ffffff;border:1px solid #eee;">
+        <h2 style="margin-top:0;color:#111827;">Payment released</h2>
+        <p>Hi ${fullName || "there"},</p>
+        <p>The payment for order <strong>#${shortOrderId}</strong> has been automatically released because the 24-hour confirmation period ended.</p>
+        <p style="margin:24px 0;">
+          <a href="${process.env.FRONTEND_URL}/buyer/orders/${orderId}" style="display:inline-block;padding:12px 18px;background:#6b8e6b;color:#fff;text-decoration:none;border-radius:6px;">View Order</a>
+        </p>
+        <p style="color:#6b7280;font-size:12px;">If there is an issue with your order, contact support.</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(message);
+};

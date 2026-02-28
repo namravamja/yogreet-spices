@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { FiHeart, FiStar } from "react-icons/fi"
 import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
+import { formatCurrency } from "@/utils/currency"
 
 export interface SpiceCardProps {
   id: string
@@ -57,7 +58,7 @@ export function SpiceCard({ name, seller, image, pricePerKg, minOrder, rating, r
         <div className="space-y-1 mb-3 pb-3 border-b border-yogreet-light-gray">
           <div className="flex justify-between items-center">
             <span className="text-yogreet-charcoal font-inter text-xs">Price</span>
-            <span className="font-poppins font-semibold text-black">${pricePerKg}/kg</span>
+            <span className="font-poppins font-semibold text-black">{formatCurrency(pricePerKg, "INR")}/kg</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-yogreet-charcoal font-inter text-xs">Min Order</span>

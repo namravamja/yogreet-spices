@@ -56,23 +56,26 @@ export const getProducts = async () => {
       .lean();
 
     // Transform to match expected format
-    return products.map((product: any) => ({
-      ...product,
-      id: product._id.toString(),
-      seller: product.sellerId ? {
-        id: product.sellerId._id?.toString(),
-        email: product.sellerId.email,
-        companyName: product.sellerId.companyName,
-        fullName: product.sellerId.fullName,
-        businessType: product.sellerId.businessType,
-        businessLogo: product.sellerId.businessLogo,
-        about: product.sellerId.about,
-        productCategories: product.sellerId.productCategories,
-        createdAt: product.sellerId.createdAt,
-        businessAddress: product.sellerId.businessAddressId,
-      } : null,
-      Review: product.reviews || [],
-    }));
+    return products.map((product: any) => {
+      const { barcodeImage, ...rest } = product;
+      return {
+        ...rest,
+        id: product._id.toString(),
+        seller: product.sellerId ? {
+          id: product.sellerId._id?.toString(),
+          email: product.sellerId.email,
+          companyName: product.sellerId.companyName,
+          fullName: product.sellerId.fullName,
+          businessType: product.sellerId.businessType,
+          businessLogo: product.sellerId.businessLogo,
+          about: product.sellerId.about,
+          productCategories: product.sellerId.productCategories,
+          createdAt: product.sellerId.createdAt,
+          businessAddress: product.sellerId.businessAddressId,
+        } : null,
+        Review: product.reviews || [],
+      };
+    });
   } catch (error: any) {
     const errorMessage = error?.message || error?.error || "Unknown error occurred";
     throw new Error(`Failed to fetch products: ${errorMessage}`);
@@ -127,6 +130,7 @@ export const createProduct = async (sellerId: string, data: CreateProductData) =
       form: data.form?.trim(),
         shortDescription: data.shortDescription.trim(),
         productImages: data.productImages,
+        barcodeImage: (data as any).barcodeImage,
         shippingCost: data.shippingCost.trim(),
         // About Product
       purityLevel: data.purityLevel?.trim(),
@@ -206,11 +210,14 @@ export const getSellerProducts = async (sellerId: string) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    return products.map((product: any) => ({
-      ...product,
-      id: product._id.toString(),
-      Review: product.reviews || [],
-    }));
+    return products.map((product: any) => {
+      const { barcodeImage, ...rest } = product;
+      return {
+        ...rest,
+        id: product._id.toString(),
+        Review: product.reviews || [],
+      };
+    });
   } catch (error) {
     throw new Error(`Failed to fetch seller products: ${(error as Error).message}`);
   }
@@ -236,8 +243,9 @@ export const getSellerProduct = async (sellerId: string, productId: string) => {
       throw new Error("Product not found or you don't have permission to view it");
     }
 
+    const { barcodeImage, ...rest } = product as any;
     return {
-      ...product,
+      ...rest,
       id: product._id.toString(),
       Review: (product as any).reviews?.map((review: any) => ({
         id: review._id.toString(),
@@ -290,6 +298,7 @@ export const updateProduct = async (sellerId: string, productId: string, data: U
     if (data.form !== undefined) updateData.form = data.form?.trim() || null;
     if (data.shortDescription !== undefined) updateData.shortDescription = data.shortDescription.trim();
     if (data.productImages !== undefined) updateData.productImages = data.productImages;
+    if ((data as any).barcodeImage !== undefined) updateData.barcodeImage = (data as any).barcodeImage;
     if (data.shippingCost !== undefined) updateData.shippingCost = data.shippingCost.trim();
     
     // About Product

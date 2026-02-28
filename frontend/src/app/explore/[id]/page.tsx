@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { PLACEHOLDER_SVG_URL, PLACEHOLDER_JPG_URL } from "@/constants/static-images"
 import { useAddToCartMutation, useGetCartQuery, useUpdateCartItemMutation, useClearCartMutation } from "@/services/api/buyerApi"
 import { toast } from "sonner"
+import { formatCurrency } from "@/utils/currency"
 
 // Transform database product to detail page format
 function transformProductForDetail(product: any) {
@@ -908,9 +909,9 @@ export default function ProductDetailPage() {
                                   <span className="text-yogreet-warm-gray">Price: </span>
                                   <span className="text-black font-medium">
                                     {product.smallPricePerKg && product.largePricePerKg
-                                      ? `$${product.smallPricePerKg.toFixed(2)}-$${product.largePricePerKg.toFixed(2)}`
+                                      ? `${formatCurrency(product.smallPricePerKg, "INR")}-${formatCurrency(product.largePricePerKg, "INR")}`
                                       : product.price
-                                      ? `From $${product.price.toFixed(2)}`
+                                      ? `From ${formatCurrency(product.price, "INR")}`
                                       : "N/A"}
                                   </span>
                                 </div>
@@ -1126,34 +1127,37 @@ export default function ProductDetailPage() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-2xl font-bold text-black">
-                      ${selectedPackage === "sample"
-                        ? product.samplePricePerKg?.toFixed(2) || "0.00"
-                        : selectedPackage === "small" 
-                        ? product.smallPricePerKg?.toFixed(2) || product.price.toFixed(2)
-                        : selectedPackage === "medium"
-                        ? product.mediumPricePerKg?.toFixed(2) || "0.00"
-                        : product.largePricePerKg?.toFixed(2) || "0.00"}/kg
+                      {formatCurrency(
+                        selectedPackage === "sample"
+                          ? Number(product.samplePricePerKg || 0)
+                          : selectedPackage === "small"
+                          ? Number(product.smallPricePerKg || product.price || 0)
+                          : selectedPackage === "medium"
+                          ? Number(product.mediumPricePerKg || 0)
+                          : Number(product.largePricePerKg || 0),
+                        "INR"
+                      )}/kg
                     </span>
                     <FiInfo className="w-4 h-4 text-gray-400" />
                   </div>
                   {selectedPackage === "sample" && product.samplePrice && product.sampleWeight && (
                     <p className="text-sm text-yogreet-warm-gray">
-                      ${product.samplePrice.toFixed(2)} for {product.sampleWeight}kg
+                      {formatCurrency(product.samplePrice, "INR")} for {product.sampleWeight}kg
                     </p>
                   )}
                   {selectedPackage === "small" && product.smallPrice && product.smallWeight && (
                     <p className="text-sm text-yogreet-warm-gray">
-                      ${product.smallPrice.toFixed(2)} for {product.smallWeight}kg
+                      {formatCurrency(product.smallPrice, "INR")} for {product.smallWeight}kg
                     </p>
                   )}
                   {selectedPackage === "medium" && product.mediumPrice && product.mediumWeight && (
                     <p className="text-sm text-yogreet-warm-gray">
-                      ${product.mediumPrice.toFixed(2)} for {product.mediumWeight}kg
+                      {formatCurrency(product.mediumPrice, "INR")} for {product.mediumWeight}kg
                     </p>
                   )}
                   {selectedPackage === "large" && product.largePrice && product.largeWeight && (
                     <p className="text-sm text-yogreet-warm-gray">
-                      ${product.largePrice.toFixed(2)} for {product.largeWeight}kg
+                      {formatCurrency(product.largePrice, "INR")} for {product.largeWeight}kg
                     </p>
                   )}
                 </div>

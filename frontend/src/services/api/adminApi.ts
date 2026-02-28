@@ -10,7 +10,7 @@ export const AdminApi = createApi({
     baseUrl: BASE_API_URL,
     credentials: "include",
   }),
-  tagTypes: ["Admin", "Sellers", "Buyers", "Stats"],
+  tagTypes: ["Admin", "Sellers", "Buyers", "Stats", "Disputes"],
   endpoints: (builder) => ({
     // Get admin info from token
     getAdmin: builder.query({
@@ -90,6 +90,37 @@ export const AdminApi = createApi({
       }),
       invalidatesTags: (result, error, arg) => [{ type: "Sellers", id: arg.sellerId }],
     }),
+
+    // List disputes
+    getDisputes: builder.query({
+      query: () => "/admin/disputes",
+      providesTags: ["Disputes"],
+      transformResponse: (response: any) => {
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Refund payment
+    refundPayment: builder.mutation({
+      query: ({ orderId, amount }: { orderId: string; amount?: number }) => ({
+        url: `/admin/payments/${orderId}/refund`,
+        method: "POST",
+        body: amount ? { amount } : undefined,
+      }),
+      invalidatesTags: ["Disputes", "Stats"],
+    }),
+
+    // Force release payment
+    forceReleasePayment: builder.mutation({
+      query: ({ orderId }: { orderId: string }) => ({
+        url: `/admin/payments/${orderId}/force-release`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Disputes", "Stats"],
+    }),
   }),
 });
 
@@ -103,5 +134,7 @@ export const {
   useUnverifyDocumentMutation,
   useUpdateSellerVerificationStatusMutation,
   useMarkFieldsAsReviewedMutation,
+  useGetDisputesQuery,
+  useRefundPaymentMutation,
+  useForceReleasePaymentMutation,
 } = AdminApi;
-

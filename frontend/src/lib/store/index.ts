@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { AuthApi, BuyerApi, SellerApi, ProductApi, AdminApi } from "@/services/api"; // base API with injectEndpoints
 import { PublicApi } from "@/services/api/publicApi"; // Import PublicApi directly
+import { VerificationApi } from "@/services/api/verificationApi"; // Import VerificationApi
 import "@/services/api/authApi"; // This ensures auth endpoints are injected into the base api
 import "@/services/api/buyerApi";
 import "@/services/api/sellerApi";
@@ -16,6 +17,7 @@ export const makeStore = () =>
       [ProductApi.reducerPath]: ProductApi.reducer,
       [PublicApi.reducerPath]: PublicApi.reducer,
       [AdminApi.reducerPath]: AdminApi.reducer,
+      [VerificationApi.reducerPath]: VerificationApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(
@@ -24,7 +26,8 @@ export const makeStore = () =>
         SellerApi.middleware,
         ProductApi.middleware,
         PublicApi.middleware,
-        AdminApi.middleware
+        AdminApi.middleware,
+        VerificationApi.middleware
       ),
   });
 

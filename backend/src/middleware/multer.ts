@@ -152,6 +152,17 @@ export const uploadProductImages = multer({
   },
 }).array("productImages", 15);
 
+export const uploadProductMedia = multer({
+  ...multerConfig,
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+    files: 16,
+  },
+}).fields([
+  { name: "productImages", maxCount: 15 },
+  { name: "barcodeImage", maxCount: 1 },
+]);
+
 export const uploadFlexibleImages = (
   fieldConfigs: Array<{ name: string; maxCount: number }>
 ) => {
@@ -241,4 +252,3 @@ export const handleMulterError = (
 
   next(error);
 };
-

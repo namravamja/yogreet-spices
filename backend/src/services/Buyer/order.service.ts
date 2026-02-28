@@ -3,6 +3,7 @@ import { OrderItem } from "../../models/OrderItem";
 import { Cart } from "../../models/Cart";
 import { Product } from "../../models/Product";
 import mongoose from "mongoose";
+import { Address } from "../../models/Address";
 
 export interface OrderItemInput {
   productId: string;
@@ -119,6 +120,11 @@ export const createOrder = async (buyerId: string, data: CreateOrderData) => {
   const taxAmount = subtotal * 0.08;
   const totalAmount = subtotal + shippingCost + taxAmount;
 
+  // Determine gateway and currency from shipping address
+  const shippingAddress = await Address.findById(data.shippingAddressId).lean();
+  const gateway: "razorpay" = "razorpay";
+  const currency = "INR";
+
   // Create order
   const order = await Order.create({
     buyerId: new mongoose.Types.ObjectId(buyerId),
@@ -129,7 +135,10 @@ export const createOrder = async (buyerId: string, data: CreateOrderData) => {
     status: "pending",
     shippingAddressId: new mongoose.Types.ObjectId(data.shippingAddressId),
     paymentMethod: data.paymentMethod,
-    paymentStatus: "unpaid",
+    paymentStatus: "pending",
+    gateway,
+    currency,
+    mode: "test",
     placedAt: new Date(),
   });
 
@@ -268,4 +277,3 @@ export const getOrderById = async (buyerId: string, orderId: string) => {
     })),
   };
 };
-

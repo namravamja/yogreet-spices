@@ -73,6 +73,7 @@ export default function EditProductSidebar({
     largeWeight: "",
     largeDescription: "",
     productImages: [],
+    barcodeImage: "",
     shippingCost: "",
   });
 
@@ -118,6 +119,7 @@ export default function EditProductSidebar({
         largeWeight: product.largeWeight || "",
         largeDescription: product.largeDescription || "",
         productImages: product.productImages || [],
+        barcodeImage: "",
         shippingCost: product.shippingCost || "",
       });
       setStep(1); // Reset to first step when opening
@@ -267,7 +269,18 @@ export default function EditProductSidebar({
       formData.append("productImages", JSON.stringify(allImageUrls));
       
       // Append other product data
-      const { productImages, id, createdAt, updatedAt, ...otherData } = productData;
+      // Append barcode image if provided
+      if (productData.barcodeImage) {
+        try {
+          const resp = await fetch(productData.barcodeImage);
+          const blob = await resp.blob();
+          const file = new File([blob], `barcode-image.jpg`, { type: blob.type || "image/jpeg" });
+          formData.append("barcodeImage", file);
+        } catch (err) {
+          console.error("Failed to convert barcode image:", err);
+        }
+      }
+      const { productImages, barcodeImage, id, createdAt, updatedAt, ...otherData } = productData;
       Object.entries(otherData).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
           if (Array.isArray(value)) {
@@ -460,4 +473,3 @@ export default function EditProductSidebar({
     </Sheet>
   );
 }
-

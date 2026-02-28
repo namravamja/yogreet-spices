@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { FilterDropdown } from "./filter-dropdown"
+import { formatCurrency } from "@/utils/currency"
 
 interface FilterBarProps {
   onFilterChange: (filters: FilterState) => void
@@ -37,10 +38,10 @@ export function ExploreFilterBar({ onFilterChange, sellers = [], locations = [],
 
   // Prepare options with counts (mock counts for now, can be calculated from products)
   const priceRangeOptions = [
-    { value: "0-50", label: "$0 - $50/kg", count: 1250 },
-    { value: "50-100", label: "$50 - $100/kg", count: 890 },
-    { value: "100-200", label: "$100 - $200/kg", count: 450 },
-    { value: "200+", label: "$200+/kg", count: 120 },
+    { value: "0-50", label: `${formatCurrency(0, "INR")} - ${formatCurrency(50, "INR")}/kg`, count: 1250 },
+    { value: "50-100", label: `${formatCurrency(50, "INR")} - ${formatCurrency(100, "INR")}/kg`, count: 890 },
+    { value: "100-200", label: `${formatCurrency(100, "INR")} - ${formatCurrency(200, "INR")}/kg`, count: 450 },
+    { value: "200+", label: `${formatCurrency(200, "INR")}+/kg`, count: 120 },
   ]
 
   const locationOptions = locations.map((loc) => ({

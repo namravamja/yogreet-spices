@@ -29,11 +29,10 @@ export const SellerApi = createApi({
     baseUrl: `${BASE_API_URL}/seller`,
     credentials: "include",
   }),
-  tagTypes: ["Seller", "Products"],
+  tagTypes: ["Seller", "Products", "Orders"],
   endpoints: () => ({}),
 });
 
 export { ProductApi, useGetProductsQuery } from "./productApi";
 export { PublicApi, useGetPublicSellerProfileQuery } from "./publicApi";
 export { AdminApi, useGetAdminQuery, useGetAllSellersQuery, useGetAllBuyersQuery, useGetAdminStatsQuery, useGetSellerByIdQuery, useVerifyDocumentMutation, useUnverifyDocumentMutation } from "./adminApi";
-

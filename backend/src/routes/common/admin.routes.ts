@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as adminController from "../../controllers/common/admin.controller";
+import * as adminPayments from "../../controllers/common/adminPayments.controller";
 import { verifyToken } from "../../middleware/authMiddleware";
 import { asyncHandler } from "../../middleware/errorHandler";
 
@@ -17,5 +18,10 @@ router.post("/sellers/mark-fields-reviewed", verifyToken, asyncHandler(adminCont
 router.get("/buyers", verifyToken, asyncHandler(adminController.getAllBuyers as any));
 router.get("/stats", verifyToken, asyncHandler(adminController.getAdminStats as any));
 
-export default router;
+// Payments & disputes
+router.get("/disputes", verifyToken, asyncHandler(adminPayments.listDisputes as any));
+router.post("/payments/:orderId/refund", verifyToken, asyncHandler(adminPayments.refund as any));
+router.post("/payments/:orderId/force-release", verifyToken, asyncHandler(adminPayments.forceRelease as any));
+router.post("/payments/:orderId/resolve-dispute", verifyToken, asyncHandler(adminPayments.resolveDispute as any));
 
+export default router;

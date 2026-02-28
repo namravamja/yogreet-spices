@@ -59,6 +59,7 @@ export interface ProductData {
   largeWeight: string;
   largeDescription: string;
   productImages: string[];
+  barcodeImage: string;
   shippingCost: string;
   createdAt: string;
   updatedAt: string;
@@ -127,6 +128,7 @@ export default function AddProductPage() {
     largeWeight: "",
     largeDescription: "",
     productImages: [],
+    barcodeImage: "",
     shippingCost: "",
   });
 
@@ -219,6 +221,10 @@ export default function AddProductPage() {
       toast.error("At least one product image is required");
       return false;
     }
+    if (!productData.barcodeImage) {
+      toast.error("Product barcode image is required");
+      return false;
+    }
 
     return true;
   };
@@ -249,9 +255,22 @@ export default function AddProductPage() {
           formData.append("productImages", base64String);
         }
       }
+      // Convert barcode image
+      if (productData.barcodeImage) {
+        try {
+          const resp = await fetch(productData.barcodeImage);
+          const blob = await resp.blob();
+          const file = new File([blob], `barcode-image.jpg`, {
+            type: blob.type || "image/jpeg",
+          });
+          formData.append("barcodeImage", file);
+        } catch (err) {
+          console.error("Failed to convert barcode image:", err);
+        }
+      }
       
       // Append other product data
-      const { productImages, id, createdAt, updatedAt, ...otherData } = productData;
+      const { productImages, barcodeImage, id, createdAt, updatedAt, ...otherData } = productData;
       Object.entries(otherData).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
           if (Array.isArray(value)) {
@@ -457,4 +476,3 @@ export default function AddProductPage() {
     </div>
   );
 }
-

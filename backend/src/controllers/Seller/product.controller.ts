@@ -45,15 +45,17 @@ export const createProduct = async (req: AuthenticatedRequest, res: Response) =>
     // Prepare product data from body
     const productData: any = { ...req.body };
 
-    // Handle uploaded images - uploadProductImages uses .array() so files are directly in req.files
-    const files = req.files as Express.Multer.File[] | undefined;
-    if (files && Array.isArray(files) && files.length > 0) {
-      const imageUrls = files
-        .map((f: any) => f?.path || f?.location || f?.secure_url)
-        .filter(Boolean);
-      if (imageUrls.length > 0) {
-        productData.productImages = imageUrls;
-      }
+    const filesAny = req.files as any;
+    if (Array.isArray(filesAny)) {
+      const imageUrls = filesAny.map((f: any) => f?.path || f?.location || f?.secure_url).filter(Boolean);
+      if (imageUrls.length > 0) productData.productImages = imageUrls;
+    } else if (filesAny && typeof filesAny === "object") {
+      const productImagesArr = Array.isArray(filesAny["productImages"]) ? filesAny["productImages"] : [];
+      const barcodeArr = Array.isArray(filesAny["barcodeImage"]) ? filesAny["barcodeImage"] : [];
+      const imgUrls = productImagesArr.map((f: any) => f?.path || f?.location || f?.secure_url).filter(Boolean);
+      if (imgUrls.length > 0) productData.productImages = imgUrls;
+      const barcodeUrl = barcodeArr[0]?.path || barcodeArr[0]?.location || barcodeArr[0]?.secure_url;
+      if (barcodeUrl) productData.barcodeImage = barcodeUrl;
     }
 
     // Handle productImages if it's a string (from FormData when no files uploaded)
@@ -82,6 +84,9 @@ export const createProduct = async (req: AuthenticatedRequest, res: Response) =>
     if (!productData.productImages || productData.productImages.length === 0) {
       return res.status(400).json({ error: "At least one product image is required" });
     }
+    if (!productData.barcodeImage) {
+      return res.status(400).json({ error: "Product barcode image is required" });
+    }
 
     // Create product
     const product = await productService.createProduct(userId, productData);
@@ -104,13 +109,16 @@ export const updateProduct = async (req: AuthenticatedRequest, res: Response) =>
     // Prepare product data from body
     const productData: any = { ...req.body };
 
-    // Handle uploaded images - uploadProductImages uses .array() so files are directly in req.files
-    const files = req.files as Express.Multer.File[] | undefined;
+    const filesAny = req.files as any;
     let newImageUrls: string[] = [];
-    if (files && Array.isArray(files) && files.length > 0) {
-      newImageUrls = files
-        .map((f: any) => f?.path || f?.location || f?.secure_url)
-        .filter(Boolean);
+    let newBarcodeUrl: string | undefined;
+    if (Array.isArray(filesAny) && filesAny.length > 0) {
+      newImageUrls = filesAny.map((f: any) => f?.path || f?.location || f?.secure_url).filter(Boolean);
+    } else if (filesAny && typeof filesAny === "object") {
+      const productImagesArr = Array.isArray(filesAny["productImages"]) ? filesAny["productImages"] : [];
+      const barcodeArr = Array.isArray(filesAny["barcodeImage"]) ? filesAny["barcodeImage"] : [];
+      newImageUrls = productImagesArr.map((f: any) => f?.path || f?.location || f?.secure_url).filter(Boolean);
+      newBarcodeUrl = barcodeArr[0]?.path || barcodeArr[0]?.location || barcodeArr[0]?.secure_url;
     }
 
     // Handle productImages if it's a string (from FormData)
@@ -141,6 +149,9 @@ export const updateProduct = async (req: AuthenticatedRequest, res: Response) =>
       // No new files, but existing images were sent - use those
       productData.productImages = existingImageUrls;
     }
+    if (newBarcodeUrl) {
+      productData.barcodeImage = newBarcodeUrl;
+    }
     // If neither, productImages will be undefined and won't be updated
 
     // Update product
@@ -169,4 +180,3 @@ export const deleteProduct = async (req: AuthenticatedRequest, res: Response) =>
     res.status(statusCode).json({ error: (error as Error).message });
   }
 };
-

@@ -11,6 +11,7 @@ import {
   useRemoveCartItemMutation,
   useClearCartMutation,
 } from "@/services/api/buyerApi";
+import { formatCurrency } from "@/utils/currency";
 import { useAuth } from "@/hooks/useAuth";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
@@ -331,16 +332,10 @@ export default function BuyerCartPage() {
 
                           <div className="flex items-center justify-between border-t border-stone-200 pt-3">
                             <div className="flex flex-col gap-0.5">
-                              <p className="text-sm text-stone-500">
-                                ${pricePerKg.toFixed(2)} per kg
-                              </p>
-                              <p className="text-xs text-stone-400">
-                                {weight.toFixed(1)} kg × ${pricePerKg.toFixed(2)}
-                              </p>
+                              <p className="text-sm text-stone-500">{formatCurrency(pricePerKg, "INR")} per kg</p>
+                              <p className="text-xs text-stone-400">{weight.toFixed(1)} kg × {formatCurrency(pricePerKg, "INR")}</p>
                             </div>
-                            <p className="font-medium text-yogreet-charcoal text-lg">
-                              ${(pricePerKg * weight).toFixed(2)}
-                            </p>
+                            <p className="font-medium text-yogreet-charcoal text-lg">{formatCurrency(pricePerKg * weight, "INR")}</p>
                           </div>
                         </div>
                       </div>
@@ -362,24 +357,20 @@ export default function BuyerCartPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
                     <span className="text-stone-600">Subtotal</span>
-                    <span className="text-yogreet-charcoal">
-                      ${subtotal.toFixed(2)}
-                    </span>
+                    <span className="text-yogreet-charcoal">{formatCurrency(subtotal, "INR")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Shipping</span>
-                    <span className="text-yogreet-charcoal">
-                      {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
-                    </span>
+                    <span className="text-yogreet-charcoal">{shipping === 0 ? "Free" : formatCurrency(shipping, "INR")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Tax</span>
-                    <span className="text-yogreet-charcoal">${tax.toFixed(2)}</span>
+                    <span className="text-yogreet-charcoal">{formatCurrency(tax, "INR")}</span>
                   </div>
                   <hr className="border-stone-200" />
                   <div className="flex justify-between font-medium text-lg">
                     <span className="text-yogreet-charcoal">Total</span>
-                    <span className="text-yogreet-red">${total.toFixed(2)}</span>
+                    <span className="text-yogreet-red">{formatCurrency(total, "INR")}</span>
                   </div>
                 </div>
 

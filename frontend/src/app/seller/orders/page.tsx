@@ -15,8 +15,10 @@ import {
   Loader2,
   User,
 } from "lucide-react";
+import { useUpdateOrderStatusMutation, useGetSellerOrdersQuery } from "@/services/api/sellerApi";
 import { useAuth } from "@/hooks/useAuth";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
+import { formatCurrency } from "@/utils/currency";
 
 // Safe data access utilities
 const safeArray = <T,>(value: T[] | undefined | null): T[] => {
@@ -80,7 +82,7 @@ export interface ApiOrder {
   status?: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   shippingAddressId?: number;
   paymentMethod?: string;
-  paymentStatus?: "paid" | "unpaid" | "failed";
+  paymentStatus?: "pending" | "held" | "released" | "refunded";
   placedAt?: string;
   updatedAt?: string;
   buyer?: ApiBuyer;
@@ -127,6 +129,7 @@ export interface Order {
     phone: string;
   };
   paymentMethod: string;
+  paymentHeld?: boolean;
   trackingNumber?: string;
   estimatedDelivery?: string;
 }
@@ -167,6 +170,7 @@ const transformApiOrderToOrder = (apiOrder: ApiOrder): Order => {
       apiOrder.paymentMethod === "card"
         ? "Credit Card"
         : safeString(apiOrder.paymentMethod || "N/A").toUpperCase(),
+    paymentHeld: apiOrder.paymentStatus === "held",
     trackingNumber: undefined,
     estimatedDelivery: undefined,
   };
@@ -178,30 +182,30 @@ export default function SellerOrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const { isAuthenticated, isLoading: authLoading } = useAuth("seller");
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  // TODO: Replace with actual API call once backend endpoint is available
-  // const {
-  //   data: apiResponse,
-  //   isLoading,
-  //   isError,
-  //   error,
-  // } = useGetSellerOrdersQuery(
-  //   {
-  //     page: currentPage,
-  //     limit,
-  //     status: statusFilter !== "all" ? statusFilter : undefined,
-  //   },
-  //   {
-  //     skip: !isAuthenticated,
-  //   }
-  // );
+  // Load seller orders from API
+  const {
+    data: apiResponse,
+    isLoading,
+    isError,
+    error,
+  } = useGetSellerOrdersQuery(
+    {
+      page: currentPage,
+      limit,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    },
+    {
+      skip: !isAuthenticated,
+    }
+  );
 
-  const isLoading = false; // TODO: Set from API call
-  const isError = false; // TODO: Set from API call
-  const error: any = null; // TODO: Set from API call
-  const apiResponse: any = null; // TODO: Get from API call
+  // Defaults for SSR safety if hook was skipped
+  // (variables already provided by hook when not skipped)
 
   // Extract orders data from cache response format using useMemo
   const ordersData = useMemo(() => {
@@ -447,6 +451,16 @@ export default function SellerOrdersPage() {
                       {getStatusIcon(order.status)}
                       <span className="ml-1 capitalize font-inter">{order.status}</span>
                     </div>
+                    {order.paymentHeld && (
+                      <>
+                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          Payment Held (Test Mode)
+                        </div>
+                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                          Awaiting Buyer Confirmation
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-stone-600 mb-4 font-inter">
@@ -456,15 +470,48 @@ export default function SellerOrdersPage() {
                         ? new Date(order.date).toLocaleDateString()
                         : "N/A"}
                     </div>
-                    <div>
-                      <span className="font-medium">Total:</span> ₹
-                      {order.total.toFixed(2)}
-                    </div>
+                    <div><span className="font-medium">Total:</span> {formatCurrency(order.total, "INR")}</div>
                     <div>
                       <span className="font-medium">Items:</span>{" "}
                       {order.items.length} item
                       {order.items.length > 1 ? "s" : ""}
                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-2">
+                    <label htmlFor={`status-${order.id}`} className="text-sm text-stone-700 font-inter">Change status:</label>
+                    <select
+                      id={`status-${order.id}`}
+                      defaultValue={order.status}
+                      onChange={async (e) => {
+                        const next = e.target.value as Order["status"];
+                        if (!order.id) return;
+                        try {
+                          setUpdatingId(order.id);
+                          await updateOrderStatus({ orderId: order.id, status: next }).unwrap();
+                          (e.target as HTMLSelectElement).blur();
+                          if (typeof window !== "undefined") {
+                            window.location.reload();
+                          }
+                        } catch {} finally {
+                          setUpdatingId(null);
+                        }
+                      }}
+                      disabled={updatingId === order.id}
+                      className="px-2 py-1 border border-stone-300 rounded-md bg-white text-sm"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                    {updatingId === order.id && (
+                      <span className="inline-flex items-center text-xs text-stone-600">
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Updating…
+                      </span>
+                    )}
                   </div>
 
                   {/* Order Items Preview */}
@@ -556,4 +603,3 @@ export default function SellerOrdersPage() {
     </div>
   );
 }
-

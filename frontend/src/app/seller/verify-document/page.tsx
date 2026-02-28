@@ -68,6 +68,12 @@ function SellerVerifyDocumentPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure consistent hydration by waiting for mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Handle verification status from email verification redirect
   useEffect(() => {
@@ -246,9 +252,18 @@ function SellerVerifyDocumentPageContent() {
     } catch {}
   }, []);
 
-  // Load data (if available) - combines profile and verification data - only load once when data first becomes available
+  // Track if verification data has been loaded
+  const [verificationDataLoaded, setVerificationDataLoaded] = useState(false);
+
+  // Load data (if available) - combines profile and verification data
   useEffect(() => {
-    if (sellerData && !originalData) {
+    // Wait until we have verification data (which contains the document fields)
+    if (!rawVerificationData) return;
+    
+    // Only load once when verification data first becomes available
+    if (verificationDataLoaded) return;
+    
+    if (sellerData) {
       try {
         const loaded: SellerVerificationData = {
           // Step 1: Business Identity Verification
@@ -288,12 +303,13 @@ function SellerVerifyDocumentPageContent() {
         };
         setData(loaded);
         setOriginalData(loaded);
+        setVerificationDataLoaded(true);
       } catch (err) {
         console.error("Error loading seller verification data:", err);
         toast.error("Failed to load data. Please refresh the page.");
       }
     }
-  }, [sellerData, originalData]);
+  }, [sellerData, rawVerificationData, verificationDataLoaded]);
 
   const updateData = (updates: Partial<SellerVerificationData>) => {
     try {
@@ -686,32 +702,60 @@ function SellerVerifyDocumentPageContent() {
     }
   };
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-stone-600">Loading seller verification...</div>
+      <main className="min-h-screen bg-white">
+        <PageHero
+          title="Seller Verification"
+          subtitle=""
+          description="Complete the 4-step verification to start exporting."
+          showBackButton={false}
+          breadcrumb={{
+            items: [
+              { label: "Home", href: "/seller" },
+              { label: "Verify Documents", isActive: true },
+            ],
+          }}
+        />
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-stone-600">Loading seller verification...</div>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (fetchError) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <div className="text-lg text-red-600">Error loading data</div>
-          <button
-            onClick={() => {
-              refetch();
-              toast.error("Please refresh the page or contact support.");
-            }}
-            className="px-4 py-2 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors"
-          >
-            Retry
-          </button>
+      <main className="min-h-screen bg-white">
+        <PageHero
+          title="Seller Verification"
+          subtitle=""
+          description="Complete the 4-step verification to start exporting."
+          showBackButton={false}
+          breadcrumb={{
+            items: [
+              { label: "Home", href: "/seller" },
+              { label: "Verify Documents", isActive: true },
+            ],
+          }}
+        />
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
+          <div className="flex flex-col items-center justify-center h-64 space-y-4">
+            <div className="text-lg text-red-600">Error loading data</div>
+            <button
+              onClick={() => {
+                refetch();
+                toast.error("Please refresh the page or contact support.");
+              }}
+              className="px-4 py-2 bg-yogreet-sage text-white rounded-md hover:bg-yogreet-sage/90 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -890,13 +934,22 @@ export default function SellerVerifyDocumentPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-white">
-        <PageHero 
-          title="Verify Document" 
-          subtitle="Complete your verification"
-          description=""
+        <PageHero
+          title="Seller Verification"
+          subtitle=""
+          description="Complete the 4-step verification to start exporting."
+          showBackButton={false}
+          breadcrumb={{
+            items: [
+              { label: "Home", href: "/seller" },
+              { label: "Verify Documents", isActive: true },
+            ],
+          }}
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">Loading...</div>
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-stone-600">Loading...</div>
+          </div>
         </div>
       </main>
     }>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,10 +16,14 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import PageHero from "@/components/shared/PageHero";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 import { useGetOrderQuery } from "@/services/api/buyerApi";
+import { formatCurrency } from "@/utils/currency";
+import { useConfirmReleaseMutation, useRaiseDisputeMutation } from "@/services/api/publicApi";
+import { toast } from "sonner";
 
 // Order details fetched from API via `useGetOrderQuery`
 
@@ -65,6 +69,42 @@ export default function OrderDetailsPage() {
 
   const isLoading = isLoadingOrder;
   const error = orderError;
+  const [confirmRelease, { isLoading: isReleasing }] = useConfirmReleaseMutation();
+  const [raiseDispute, { isLoading: isDisputing }] = useRaiseDisputeMutation();
+  const [disputeFile, setDisputeFile] = useState<File | null>(null);
+  const [disputePreview, setDisputePreview] = useState<string | null>(null);
+  const [nowTs, setNowTs] = useState<number>(Date.now());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!orderData || !(orderData as any).autoReleaseAt) return;
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [orderData]);
+
+  const remainingMs = useMemo(() => {
+    const t = (orderData as any)?.autoReleaseAt;
+    if (!t) return null;
+    const end = new Date(t as any).getTime();
+    return Math.max(0, end - nowTs);
+  }, [orderData, nowTs]);
+
+  const formatRemaining = (ms?: number | null) => {
+    if (ms === null || ms === undefined) return "";
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (days > 0) {
+      return `${days}d ${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   // Normalize API response to the shape used by this component
   const order = orderData
@@ -72,6 +112,8 @@ export default function OrderDetailsPage() {
         id: orderData.id || orderData._id,
         status: orderData.status || "pending",
         paymentStatus: orderData.paymentStatus || "unpaid",
+        deliveryStatus: (orderData as any).deliveryStatus,
+        autoReleaseAt: (orderData as any).autoReleaseAt,
         placedAt: orderData.placedAt || orderData.createdAt,
         deliveredAt: orderData.deliveredAt,
         totalAmount: orderData.totalAmount || 0,
@@ -196,6 +238,23 @@ export default function OrderDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
+            {(order.paymentStatus === "held") && (
+              <div className="bg-green-50 border border-green-200 rounded-xs p-4 flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-green-700 shrink-0 mt-0.5" />
+                <p className="text-sm text-green-800">
+                  Secure Payment Protection (Test Mode) — Your payment is securely held and will be released after you confirm delivery.
+                </p>
+              </div>
+            )}
+            {order.paymentStatus === "held" && order.deliveryStatus === "delivered" && order.autoReleaseAt && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xs p-4 flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-yellow-800 shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-900">
+                  Confirm delivery to release payment. Otherwise, it will auto-release on {new Date(order.autoReleaseAt as any).toLocaleString()}.
+                </p>
+              </div>
+            )}
+
             {/* Order Status */}
             <div className="bg-white border border-stone-200 shadow-sm">
               <div className="p-6">
@@ -281,14 +340,10 @@ export default function OrderDetailsPage() {
                         <p className="text-sm text-stone-600">
                           {item.product?.description}
                         </p>
-                        <p className="text-sm text-stone-600">
-                          Qty: {item.quantity} × ₹{item.priceAtPurchase}
-                        </p>
+                        <p className="text-sm text-stone-600">Qty: {item.quantity} × {formatCurrency(item.priceAtPurchase, (orderData as any)?.currency || "INR")}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-yogreet-charcoal">
-                          ₹{item.quantity * item.priceAtPurchase}
-                        </p>
+                        <p className="font-medium text-yogreet-charcoal">{formatCurrency(item.quantity * item.priceAtPurchase, (orderData as any)?.currency || "INR")}</p>
                       </div>
                     </div>
                   ))}
@@ -308,22 +363,20 @@ export default function OrderDetailsPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-stone-600">Subtotal:</span>
-                    <span className="text-yogreet-charcoal">
-                      ₹{order.totalAmount - (order.shippingCost || 0) - (order.taxAmount || 0)}
-                    </span>
+                    <span className="text-yogreet-charcoal">{formatCurrency(order.totalAmount - (order.shippingCost || 0) - (order.taxAmount || 0), (orderData as any)?.currency || "INR")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Shipping:</span>
-                    <span className="text-yogreet-charcoal">₹{order.shippingCost || 0}</span>
+                    <span className="text-yogreet-charcoal">{formatCurrency(order.shippingCost || 0, (orderData as any)?.currency || "INR")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-600">Tax:</span>
-                    <span className="text-yogreet-charcoal">₹{order.taxAmount || 0}</span>
+                    <span className="text-yogreet-charcoal">{formatCurrency(order.taxAmount || 0, (orderData as any)?.currency || "INR")}</span>
                   </div>
                   <hr className="border-stone-200 my-2" />
                   <div className="flex justify-between text-lg font-medium">
                     <span className="text-yogreet-charcoal">Total:</span>
-                    <span className="text-yogreet-red">₹{order.totalAmount}</span>
+                    <span className="text-yogreet-red">{formatCurrency(order.totalAmount, (orderData as any)?.currency || "INR")}</span>
                   </div>
                 </div>
               </div>
@@ -398,7 +451,125 @@ export default function OrderDetailsPage() {
                 <h3 className="text-lg font-medium text-yogreet-charcoal mb-4">
                   Actions
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {order.paymentStatus === "held" && order.status !== "cancelled" && (
+                    <button
+                      disabled={isReleasing}
+                      onClick={async () => {
+                        try {
+                          await confirmRelease(order.id).unwrap();
+                          window.location.reload();
+                        } catch (e: any) {
+                          console.error(e);
+                        }
+                      }}
+                      className={`w-full bg-yogreet-sage hover:bg-yogreet-sage/90 text-white px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center ${isReleasing ? "opacity-80 cursor-wait" : ""}`}
+                    >
+                      {isReleasing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Confirm & Release Payment
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
+                  {(order.status !== "cancelled") &&
+                   order.deliveryStatus !== "disputed" &&
+                   ((order.paymentStatus === "held") ||
+                    (order.deliveryStatus === "delivered" || order.status?.toLowerCase() === "delivered")) && (
+                    <div className="space-y-2">
+                      {order.autoReleaseAt && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-stone-600">Time left to raise an issue</span>
+                          <span
+                            className={`px-2 py-1 rounded ${
+                              remainingMs && remainingMs > 0 ? "bg-yellow-100 text-yellow-800" : "bg-stone-100 text-stone-700"
+                            }`}
+                          >
+                            {remainingMs && remainingMs > 0 ? formatRemaining(remainingMs) : "Window closed"}
+                          </span>
+                        </div>
+                      )}
+                      <label className="block text-sm text-stone-700">Upload product barcode photo</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] || null;
+                          setDisputeFile(f);
+                          if (disputePreview) {
+                            try { URL.revokeObjectURL(disputePreview); } catch {}
+                          }
+                          if (f) {
+                            setDisputePreview(URL.createObjectURL(f));
+                          } else {
+                            setDisputePreview(null);
+                          }
+                        }}
+                        className="block w-full text-sm text-stone-700"
+                        ref={fileInputRef}
+                      />
+                      {disputePreview && (
+                        <div className="flex items-center gap-3 p-2 border border-stone-200 rounded">
+                          <img src={disputePreview} alt="Dispute preview" className="w-16 h-16 object-contain rounded bg-white" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (disputePreview) {
+                                try { URL.revokeObjectURL(disputePreview); } catch {}
+                              }
+                              setDisputePreview(null);
+                              setDisputeFile(null);
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                            }}
+                            className="px-2 py-1 text-xs border border-stone-300 rounded hover:bg-stone-50 cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        disabled={isDisputing || (remainingMs !== null && remainingMs <= 0)}
+                        onClick={async () => {
+                          if (!disputeFile) {
+                            fileInputRef.current?.click();
+                            return;
+                          }
+                          if (remainingMs !== null && remainingMs <= 0) {
+                            toast.error("The dispute window has closed for this order");
+                            return;
+                          }
+                          try {
+                            await raiseDispute({ orderId: order.id, file: disputeFile }).unwrap();
+                            toast.success("Issue raised successfully. Our team will review your evidence.");
+                            window.location.reload();
+                          } catch (e: any) {
+                            console.error(e);
+                            toast.error("Failed to raise issue. Please try again.");
+                          }
+                        }}
+                        className={`w-full border border-stone-300 text-stone-700 hover:bg-stone-50 px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center ${isDisputing ? "opacity-80 cursor-wait" : ""}`}
+                      >
+                        {isDisputing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            Raise an Issue
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                   <button className="w-full bg-yogreet-red hover:bg-yogreet-red/90 text-white px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center">
                     <Download className="w-4 h-4 mr-2" />
                     Download Invoice

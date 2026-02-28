@@ -49,6 +49,17 @@ export interface IDocuments extends Document {
   verifiedDocuments: string[]; // Array of document field names verified by admin
   changedFields: string[]; // Array of field names that were changed by seller and need admin review
   
+  // Auto-Verification Status (for documents verified via API/algorithm)
+  autoVerified: {
+    panNumber?: { verified: boolean; verifiedAt?: Date; details?: string };
+    gstNumber?: { verified: boolean; verifiedAt?: Date; details?: string };
+    aadharNumber?: { verified: boolean; verifiedAt?: Date; details?: string };
+    iecCode?: { verified: boolean; verifiedAt?: Date; details?: string };
+    bankIfscCode?: { verified: boolean; verifiedAt?: Date; bankName?: string; branchName?: string };
+    bankAccountNumber?: { verified: boolean; verifiedAt?: Date; details?: string };
+    fssaiLicenseNumber?: { verified: boolean; verifiedAt?: Date; details?: string };
+  };
+  
   // Legacy fields (keeping for backward compatibility)
   gstCertificate?: string;
   panCard?: string;
@@ -105,6 +116,46 @@ const DocumentsSchema = new Schema<IDocuments>(
     verificationNotes: { type: String },
     verifiedDocuments: { type: [String], default: [] },
     changedFields: { type: [String], default: [] },
+    
+    // Auto-Verification Status (for documents verified via API/algorithm)
+    autoVerified: {
+      panNumber: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        details: { type: String },
+      },
+      gstNumber: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        details: { type: String },
+      },
+      aadharNumber: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        details: { type: String },
+      },
+      iecCode: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        details: { type: String },
+      },
+      bankIfscCode: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        bankName: { type: String },
+        branchName: { type: String },
+      },
+      bankAccountNumber: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        details: { type: String },
+      },
+      fssaiLicenseNumber: {
+        verified: { type: Boolean, default: false },
+        verifiedAt: { type: Date },
+        details: { type: String },
+      },
+    },
     
     // Legacy fields
     gstCertificate: { type: String },

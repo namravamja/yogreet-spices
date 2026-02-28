@@ -9,7 +9,7 @@ export const PublicApi = createApi({
     baseUrl: BASE_API_URL,
     credentials: "include",
   }),
-  tagTypes: ["Seller", "Product"],
+  tagTypes: ["Seller", "Product", "Orders"],
   endpoints: (builder) => ({
     // Get top sellers
     getTopSellers: builder.query({
@@ -21,8 +21,42 @@ export const PublicApi = createApi({
       query: (sellerId: string) => `/sellers/${sellerId}`,
       providesTags: (result, error, sellerId) => [{ type: "Seller", id: sellerId }],
     }),
+
+    // Payments and escrow actions
+    createPayment: builder.mutation({
+      query: (orderId: string) => ({
+        url: `/payments/create/${orderId}`,
+        method: "POST",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+    }),
+    confirmRelease: builder.mutation({
+      query: (orderId: string) => ({
+        url: `/payments/${orderId}/release`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, id) => [{ type: "Orders", id }, "Orders"],
+    }),
+    raiseDispute: builder.mutation({
+      query: ({ orderId, file }: { orderId: string; file: File }) => {
+        const fd = new FormData();
+        fd.append("buyerBarcodeImage", file);
+        return {
+          url: `/payments/${orderId}/dispute`,
+          method: "POST",
+          body: fd,
+        };
+      },
+      invalidatesTags: (_r, _e, arg) => [{ type: "Orders", id: arg.orderId }, "Orders"],
+    }),
+    markDelivered: builder.mutation({
+      query: (orderId: string) => ({
+        url: `/payments/${orderId}/delivered`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_r, _e, id) => [{ type: "Orders", id }, "Orders"],
+    }),
   }),
 });
 
-export const { useGetTopSellersQuery, useGetPublicSellerProfileQuery } = PublicApi;
-
+export const { useGetTopSellersQuery, useGetPublicSellerProfileQuery, useCreatePaymentMutation, useConfirmReleaseMutation, useRaiseDisputeMutation, useMarkDeliveredMutation } = PublicApi;

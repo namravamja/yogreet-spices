@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { formatCurrency } from "@/utils/currency"
 
 export function FilterSidebar() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -43,8 +44,8 @@ export function FilterSidebar() {
             className="w-full"
           />
           <div className="flex justify-between text-yogreet-charcoal font-inter text-sm">
-            <span>${priceRange[0]}</span>
-            <span>${priceRange[1]}</span>
+            <span>{formatCurrency(priceRange[0], "INR")}</span>
+            <span>{formatCurrency(priceRange[1], "INR")}</span>
           </div>
         </div>
       </div>

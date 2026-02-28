@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi"
 import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
+import { formatCurrency } from "@/utils/currency"
 
 export interface ExploreSpiceCardProps {
   id: string
@@ -231,11 +232,11 @@ export function ExploreSpiceCard({
         {/* Price */}
         <div className="mb-2">
           <p className="text-base font-poppins font-semibold text-black">
-            From ${price.toFixed(2)}/kg
+            From {formatCurrency(price, "INR")}/kg
           </p>
           {smallPrice && smallWeight && (
             <p className="text-xs text-yogreet-warm-gray font-inter mt-0.5">
-              ${smallPrice.toFixed(2)} for {smallWeight}kg
+              {formatCurrency(smallPrice, "INR")} for {smallWeight}kg
             </p>
           )}
         </div>

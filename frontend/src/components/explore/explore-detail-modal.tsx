@@ -4,6 +4,7 @@ import { FiX, FiMapPin, FiStar } from "react-icons/fi"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
+import { formatCurrency } from "@/utils/currency"
 
 interface ExploreDetailModalProps {
   isOpen: boolean
@@ -93,7 +94,9 @@ export function ExploreDetailModal({ isOpen, spice, onClose }: ExploreDetailModa
 
               {/* Price */}
               <div className="mb-6 pb-6 border-b border-gray-200">
-                <p className="text-3xl font-poppins font-semibold text-yogreet-red mb-2">${spice.price}/kg</p>
+                <p className="text-3xl font-poppins font-semibold text-yogreet-red mb-2">
+                  {formatCurrency(spice.price, "INR")}/kg
+                </p>
               </div>
 
               {/* Buttons */}

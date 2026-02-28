@@ -1,7 +1,10 @@
 "use client";
 
 import type React from "react";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
+import { VerifiableInput, useVerificationTracker, VerificationStatus } from "@/components/shared/VerifiableInput";
+import { useGetVerificationStatusQuery } from "@/services/api/verificationApi";
+import { FiShield } from "react-icons/fi";
 
 interface SellerFoodSafetyData {
   fssaiLicenseNumber: string;
@@ -18,15 +21,31 @@ interface Step3Props {
   ) => void;
   onSave?: () => Promise<boolean>;
   isLoading?: boolean;
+  onVerificationStatusChange?: (allVerified: boolean) => void;
 }
 
-export default function Step3FoodSafetyCompliance({ data, updateData, setUploadedFiles }: Step3Props) {
+export default function Step3FoodSafetyCompliance({ data, updateData, setUploadedFiles, onVerificationStatusChange }: Step3Props) {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [localFiles, setLocalFiles] = useState<Record<string, File | null>>({});
+  
+  // Fetch stored verification status from database
+  const { data: storedStatus } = useGetVerificationStatusQuery();
+  const autoVerified = storedStatus?.autoVerified || {};
+  
+  // Track verification status for FSSAI
+  const verificationTracker = useVerificationTracker(['fssaiLicenseNumber']);
 
   const handleChange = (field: keyof SellerFoodSafetyData, value: any) => {
     updateData({ [field]: value } as Partial<SellerFoodSafetyData>);
   };
+
+  // Handle verification status change
+  const handleVerificationChange = useCallback((field: string) => (status: VerificationStatus) => {
+    verificationTracker.updateFieldStatus(field, status);
+    // Notify parent about verification status
+    const allVerified = verificationTracker.areAllFieldsVerified();
+    onVerificationStatusChange?.(allVerified);
+  }, [verificationTracker, onVerificationStatusChange]);
 
   const renderUpload = (id: string, label: string) => {
     const file = localFiles[id] || null;
@@ -122,14 +141,38 @@ export default function Step3FoodSafetyCompliance({ data, updateData, setUploade
     <div>
       <h2 className="text-xl sm:text-2xl font-light text-yogreet-charcoal mb-4 sm:mb-6">Food & Safety Compliance</h2>
 
+      {/* FSSAI verification info banner */}
+      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+            <FiShield className="w-4 h-4 text-amber-600" />
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-amber-800">FSSAI Format Validation</h4>
+            <p className="text-xs text-amber-700 mt-1">
+              Your FSSAI license number format is validated automatically. The license type is determined from the first 2 digits:
+              <span className="block mt-1 text-amber-600">
+                10/11/12 = Basic Registration | 20/21/22 = State License
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* FSSAI License Number with auto-verification */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-3">
-          <label className="block text-sm font-medium text-stone-700 mb-2">FSSAI License Number</label>
-          <input
-            type="text"
+          <VerifiableInput
+            id="fssaiLicenseNumber"
+            label="FSSAI License Number"
             value={data.fssaiLicenseNumber || ""}
-            onChange={(e) => handleChange("fssaiLicenseNumber", e.target.value)}
-            className="w-full px-4 py-3 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage"
+            onChange={(value) => handleChange("fssaiLicenseNumber", value)}
+            documentType="fssai"
+            placeholder="XXXXXXXXXXXXXX"
+            formatHint="14-digit FSSAI license number (starts with license type code)"
+            onVerificationChange={handleVerificationChange('fssaiLicenseNumber')}
+            minLengthToVerify={14}
+            initialStoredStatus={autoVerified.fssaiLicenseNumber}
           />
         </div>
       </div>
