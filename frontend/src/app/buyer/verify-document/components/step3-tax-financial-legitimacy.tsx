@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { toast } from "sonner";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 interface ProfileData {
   tax_registration_certificate_document?: string;
@@ -34,6 +34,13 @@ export default function Step3TaxFinancialLegitimacy({
 }: Step3Props) {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [localFiles, setLocalFiles] = useState<Record<string, File | null>>({});
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(previews).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
   const handleInputChange = (field: keyof ProfileData, value: any) => {
     try {
       updateData({ [field]: value });
@@ -45,6 +52,7 @@ export default function Step3TaxFinancialLegitimacy({
 
   const renderUpload = (id: string, label: string) => {
     const file = localFiles[id] || null;
+    const existingUrl = (data as any)?.[id] as string | undefined;
     return (
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-2">{label}</label>
@@ -58,10 +66,19 @@ export default function Step3TaxFinancialLegitimacy({
           onChange={(e) => {
             const f = e.target.files?.[0] || null;
             setLocalFiles((prev) => ({ ...prev, [id]: f }));
-            if (f) setUploadedFiles((prev) => ({ ...(typeof prev === "function" ? {} : prev), [id]: f } as any));
+            if (f) {
+              setUploadedFiles((prev) => ({ ...(typeof prev === "function" ? {} : prev), [id]: f } as any));
+              if (f.type?.startsWith("image/")) {
+                setPreviews((p) => {
+                  const prevUrl = p[id];
+                  if (prevUrl) URL.revokeObjectURL(prevUrl);
+                  return { ...p, [id]: URL.createObjectURL(f) };
+                });
+              }
+            }
           }}
         />
-        {!file ? (
+        {!file && !existingUrl ? (
           <div
             onClick={() => inputRefs.current[id]?.click()}
             className="mt-1 flex items-center justify-center px-6 py-12 border-2 border-dashed border-stone-300 rounded-md hover:border-yogreet-purple/50 transition-colors cursor-pointer"
@@ -73,12 +90,21 @@ export default function Step3TaxFinancialLegitimacy({
               <p className="text-xs text-yogreet-warm-gray">PDF, JPG, PNG up to 10MB</p>
             </div>
           </div>
-        ) : (
+        ) : file ? (
           <div className="mt-1 p-3 border-2 border-dashed border-stone-300 rounded-md">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-stone-700">{file.name}</p>
-                <p className="text-xs text-stone-500">{(file.size / 1024).toFixed(1)} KB</p>
+              <div className="flex items-center gap-3">
+                {previews[id] && (
+                  <img
+                    src={previews[id]}
+                    alt="Preview"
+                    className="w-28 h-20 object-cover rounded border border-stone-200"
+                  />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-stone-700">{file.name}</p>
+                  <p className="text-xs text-stone-500">{(file.size / 1024).toFixed(1)} KB</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -90,10 +116,47 @@ export default function Step3TaxFinancialLegitimacy({
                     delete (next as any)[id];
                     return next;
                   });
+                  if (previews[id]) {
+                    URL.revokeObjectURL(previews[id]);
+                    setPreviews((p) => {
+                      const n = { ...p };
+                      delete n[id];
+                      return n;
+                    });
+                  }
                   if (inputRefs.current[id]) inputRefs.current[id]!.value = "";
                 }}
               >
                 Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 p-3 border-2 border-dashed border-stone-300 rounded-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {existingUrl && !existingUrl.toLowerCase().endsWith(".pdf") ? (
+                  <img
+                    src={existingUrl}
+                    alt="Uploaded"
+                    className="w-28 h-20 object-cover rounded border border-stone-200"
+                  />
+                ) : (
+                  <div className="w-28 h-20 flex items-center justify-center rounded border border-stone-200 text-xs text-stone-600">
+                    PDF document
+                  </div>
+                )}
+                <div className="truncate">
+                  <p className="text-sm font-medium text-stone-700">Existing document</p>
+                  <p className="text-xs text-stone-500 max-w-xs truncate">{existingUrl}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-stone-600 hover:text-stone-800"
+                onClick={() => inputRefs.current[id]?.click()}
+              >
+                Replace
               </button>
             </div>
           </div>
@@ -159,6 +222,4 @@ export default function Step3TaxFinancialLegitimacy({
     </div>
   );
 }
-
-
 

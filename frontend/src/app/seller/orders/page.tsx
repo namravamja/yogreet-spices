@@ -130,6 +130,7 @@ export interface Order {
   };
   paymentMethod: string;
   paymentHeld?: boolean;
+  paymentStatus?: "pending" | "held" | "released" | "refunded";
   trackingNumber?: string;
   estimatedDelivery?: string;
 }
@@ -171,6 +172,7 @@ const transformApiOrderToOrder = (apiOrder: ApiOrder): Order => {
         ? "Credit Card"
         : safeString(apiOrder.paymentMethod || "N/A").toUpperCase(),
     paymentHeld: apiOrder.paymentStatus === "held",
+    paymentStatus: apiOrder.paymentStatus,
     trackingNumber: undefined,
     estimatedDelivery: undefined,
   };
@@ -451,7 +453,7 @@ export default function SellerOrdersPage() {
                       {getStatusIcon(order.status)}
                       <span className="ml-1 capitalize font-inter">{order.status}</span>
                     </div>
-                    {order.paymentHeld && (
+                    {order.paymentStatus === "held" && (
                       <>
                         <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                           Payment Held (Test Mode)
@@ -460,6 +462,16 @@ export default function SellerOrdersPage() {
                           Awaiting Buyer Confirmation
                         </div>
                       </>
+                    )}
+                    {order.paymentStatus === "refunded" && (
+                      <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        Refunded by Admin
+                      </div>
+                    )}
+                    {order.paymentStatus === "released" && (
+                      <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        Payment Released
+                      </div>
                     )}
                   </div>
 

@@ -11,6 +11,7 @@ import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { getCookie, removeCookie } from "@/utils/cookies";
+import { useAutoVerifyMutation, useSaveVerificationStep1Mutation, useUploadVerificationStep1DocsMutation, useGetBuyerQuery } from "@/services/api/buyerApi";
  
 // NOTE: Reference MakeProfile uses API hooks and auth; for buyer verification we stub them
 type Noop = (...args: any[]) => Promise<{ unwrap: () => Promise<void> }>;
@@ -116,6 +117,9 @@ function VerfiyDocumentContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [autoVerify, { isLoading: isAutoVerifying }] = useAutoVerifyMutation();
+  const [saveStep1Details] = useSaveVerificationStep1Mutation();
+  const [uploadStep1Docs] = useUploadVerificationStep1DocsMutation();
   
   // Handle verification status from email verification redirect
   useEffect(() => {
@@ -142,8 +146,9 @@ function VerfiyDocumentContent() {
     }
   }, [searchParams, pathname]);
 
-  // Stubs to mimic API layer from the reference MakeProfile
-  const isLoading = false;
+  // Buyer API data
+  const { data: buyerApiData, isLoading: isBuyerLoading, refetch: refetchBuyer } = useGetBuyerQuery(undefined as any);
+  const isLoading = isBuyerLoading;
   const isUpdating = false;
   const isUpdatingBusinessAddress = false;
   const isUpdatingWarehouseAddress = false;
@@ -151,7 +156,7 @@ function VerfiyDocumentContent() {
   const isUpdatingSocialLinks = false;
 
   const refetch = () => {};
-  const rawArtistData: any = null;
+  const rawArtistData: any = buyerApiData ?? null;
   const fetchError: any = null;
 
   const updateArtist = (payload: any) => ({
@@ -299,21 +304,44 @@ function VerfiyDocumentContent() {
     } catch {}
   }, []);
 
+  // Load any locally saved verification data if API data is not available
+  useEffect(() => {
+    if (artistData) return;
+    try {
+      if (typeof window !== "undefined") {
+        const raw = window.localStorage.getItem("yg_buyer_verify_original");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setOriginalData(parsed);
+          setProfileData((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {}
+  }, [artistData]);
+
+  // Persist working data locally for resilience
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("yg_buyer_verify_profile", JSON.stringify(profileData));
+      }
+    } catch {}
+  }, [profileData]);
+
   useEffect(() => {
     if (artistData) {
       try {
         const loadedData = {
-          fullName: artistData.fullName || "",
-          storeName: artistData.storeName || "",
-          email: artistData.email || "",
-          mobile: artistData.mobile || "",
-          businessType: artistData.businessType || "",
-          businessRegistrationNumber:
-            artistData.businessRegistrationNumber || "",
-          productCategories: Array.isArray(artistData.productCategories)
-            ? artistData.productCategories
-            : [],
-          businessLogo: artistData.businessLogo || "",
+          // Map buyer fields into the underscore fields used by this form
+          company_registration_certificate: artistData.companyRegistrationCertificate || "",
+          company_registration_number: artistData.companyRegistrationNumber || "",
+          company_name: artistData.companyName || "",
+          date_of_incorporation: artistData.dateOfIncorporation ? new Date(artistData.dateOfIncorporation).toISOString().slice(0, 10) : "",
+          ssm_company_profile_document: artistData.ssmCompanyProfileDocument || "",
+          business_trade_license_document: artistData.businessTradeLicenseDocument || "",
+          business_license_number: artistData.businessLicenseNumber || "",
+          business_license_issuing_authority: artistData.businessLicenseIssuingAuthority || "",
+          business_license_expiry_date: artistData.businessLicenseExpiryDate ? new Date(artistData.businessLicenseExpiryDate).toISOString().slice(0, 10) : "",
           businessAddress: {
             street: artistData.businessAddress?.street || "",
             city: artistData.businessAddress?.city || "",
@@ -399,45 +427,7 @@ function VerfiyDocumentContent() {
   };
 
   const validateStep = (stepNumber: number): boolean => {
-    try {
-      switch (stepNumber) {
-        case 1:
-          if (!profileData.fullName?.trim()) return toast.error("Full name is required"), false;
-          if (!profileData.storeName?.trim()) return toast.error("Store name is required"), false;
-          if (!profileData.email?.trim()) return toast.error("Email is required"), false;
-          if (!profileData.mobile?.trim()) return toast.error("Mobile number is required"), false;
-          if (!profileData.businessType?.trim()) return toast.error("Business type is required"), false;
-          if (!profileData.businessRegistrationNumber?.trim()) return toast.error("Business registration number is required"), false;
-          if (!Array.isArray(profileData.productCategories) || profileData.productCategories.length === 0)
-            return toast.error("At least one product category is required"), false;
-          break;
-        case 2:
-          if (!profileData.businessAddress?.street?.trim()) return toast.error("Business street address is required"), false;
-          if (!profileData.businessAddress?.city?.trim()) return toast.error("Business city is required"), false;
-          if (!profileData.businessAddress?.state?.trim()) return toast.error("Business state is required"), false;
-          if (!profileData.businessAddress?.country?.trim()) return toast.error("Business country is required"), false;
-          if (!profileData.businessAddress?.pinCode?.trim()) return toast.error("Business PIN code is required"), false;
-          if (!profileData.bankAccountName?.trim()) return toast.error("Bank account name is required"), false;
-          if (!profileData.bankName?.trim()) return toast.error("Bank name is required"), false;
-          if (!profileData.accountNumber?.trim()) return toast.error("Account number is required"), false;
-          if (!profileData.ifscCode?.trim()) return toast.error("IFSC code is required"), false;
-          if (!profileData.panNumber?.trim()) return toast.error("PAN number is required"), false;
-          break;
-        case 3:
-          if (!profileData.shippingType?.trim()) return toast.error("Shipping type is required"), false;
-          if (!profileData.inventoryVolume?.trim()) return toast.error("Inventory volume is required"), false;
-          if (!profileData.supportContact?.trim()) return toast.error("Support contact is required"), false;
-          if (!Array.isArray(profileData.serviceAreas) || profileData.serviceAreas.length === 0)
-            return toast.error("At least one service area is required"), false;
-          if (!profileData.termsAgreed) return toast.error("You must agree to the terms and conditions"), false;
-          break;
-      }
-      return true;
-    } catch (error) {
-      console.error("Validation error:", error);
-      toast.error("Validation failed. Please check your inputs.");
-      return false;
-    }
+    return true;
   };
 
   const updateProfileData = (updates: Partial<ProfileData>) => {
@@ -573,15 +563,14 @@ function VerfiyDocumentContent() {
   };
 
   const handleSubmit = async () => {
-    for (let i = 1; i <= 3; i++) {
-      if (!validateStep(i)) {
-        setStep(i);
-        return;
-      }
+    try {
+      prepareDataForSubmission(profileData);
+      await autoVerify(undefined as any).unwrap();
+      toast.success("Verification approved automatically");
+      router.push("/");
+    } catch (e: any) {
+      toast.error(e?.data?.message || "Failed to auto-verify");
     }
-    prepareDataForSubmission(profileData);
-    toast.success("Submitted for verification!");
-    router.push("/");
   };
 
   const scrollToTop = () => {
@@ -594,55 +583,41 @@ function VerfiyDocumentContent() {
   const saveStep1Data = async (): Promise<boolean> => {
     try {
       if (!validateStep(1)) return false;
-      if (!originalData) {
-        toast.error("Original data not loaded yet");
-        return false;
-      }
       const step1Data = {
-        fullName: profileData.fullName,
-        storeName: profileData.storeName,
-        email: profileData.email,
-        mobile: profileData.mobile,
-        businessType: profileData.businessType,
-        businessRegistrationNumber: profileData.businessRegistrationNumber,
-        productCategories: profileData.productCategories,
+        company_registration_certificate: profileData.company_registration_certificate,
+        company_registration_number: profileData.company_registration_number,
+        company_name: profileData.company_name,
+        date_of_incorporation: profileData.date_of_incorporation,
+        ssm_company_profile_document: profileData.ssm_company_profile_document,
+        business_trade_license_document: profileData.business_trade_license_document,
+        business_license_number: profileData.business_license_number,
+        business_license_issuing_authority: profileData.business_license_issuing_authority,
+        business_license_expiry_date: profileData.business_license_expiry_date,
       };
       const originalStep1Data = {
-        fullName: originalData.fullName,
-        storeName: originalData.storeName,
-        email: originalData.email,
-        mobile: originalData.mobile,
-        businessType: originalData.businessType,
-        businessRegistrationNumber: originalData.businessRegistrationNumber,
-        productCategories: originalData.productCategories,
+        company_registration_certificate: originalData?.company_registration_certificate || "",
+        company_registration_number: originalData?.company_registration_number || "",
+        company_name: originalData?.company_name || "",
+        date_of_incorporation: originalData?.date_of_incorporation || "",
+        ssm_company_profile_document: originalData?.ssm_company_profile_document || "",
+        business_trade_license_document: originalData?.business_trade_license_document || "",
+        business_license_number: originalData?.business_license_number || "",
+        business_license_issuing_authority: originalData?.business_license_issuing_authority || "",
+        business_license_expiry_date: originalData?.business_license_expiry_date || "",
       };
       const calculateProgress = () => {
         try {
           let completed = 0;
           const total = 23;
-          if (profileData?.fullName?.trim()) completed++;
-          if (profileData?.storeName?.trim()) completed++;
-          if (profileData?.email?.trim()) completed++;
-          if (profileData?.mobile?.trim()) completed++;
-          if (profileData?.businessType?.trim()) completed++;
-          if (profileData?.businessRegistrationNumber?.trim()) completed++;
-          if (Array.isArray(profileData?.productCategories) && profileData.productCategories.length > 0) completed++;
-          if (profileData?.businessAddress?.street?.trim()) completed++;
-          if (profileData?.businessAddress?.city?.trim()) completed++;
-          if (profileData?.businessAddress?.state?.trim()) completed++;
-          if (profileData?.businessAddress?.country?.trim()) completed++;
-          if (profileData?.businessAddress?.pinCode?.trim()) completed++;
-          if (profileData?.bankAccountName?.trim()) completed++;
-          if (profileData?.bankName?.trim()) completed++;
-          if (profileData?.accountNumber?.trim()) completed++;
-          if (profileData?.ifscCode?.trim()) completed++;
-          if (profileData?.gstNumber?.trim()) completed++;
-          if (profileData?.panNumber?.trim()) completed++;
-          if (profileData?.shippingType?.trim()) completed++;
-          if (Array.isArray(profileData?.serviceAreas) && profileData.serviceAreas.length > 0) completed++;
-          if (profileData?.inventoryVolume?.trim()) completed++;
-          if (profileData?.returnPolicy?.trim()) completed++;
-          if (profileData?.termsAgreed) completed++;
+          if (profileData?.company_registration_certificate?.trim()) completed++;
+          if (profileData?.company_registration_number?.trim()) completed++;
+          if (profileData?.company_name?.trim()) completed++;
+          if (profileData?.date_of_incorporation?.trim()) completed++;
+          if (profileData?.ssm_company_profile_document?.trim()) completed++;
+          if (profileData?.business_trade_license_document?.trim()) completed++;
+          if (profileData?.business_license_number?.trim()) completed++;
+          if (profileData?.business_license_issuing_authority?.trim()) completed++;
+          if (profileData?.business_license_expiry_date?.trim()) completed++;
           return Math.round((completed / total) * 100);
         } catch (error) {
           console.error("Error calculating progress:", error);
@@ -651,35 +626,47 @@ function VerfiyDocumentContent() {
       };
       const profileProgress = calculateProgress();
       (step1Data as any).profileProgress = profileProgress;
-      const hasBusinessLogoFile = uploadedFiles.businessLogo;
-      if (!hasDataChanged(step1Data, originalStep1Data) && !hasBusinessLogoFile) {
-        toast.success("No changes detected in Step 1");
-        return true;
+
+      const changedFields = getChangedFields(step1Data, originalStep1Data);
+      if (Object.keys(changedFields).length > 0) {
+        await saveStep1Details(changedFields).unwrap();
       }
-      if (hasBusinessLogoFile) {
+      const docFiles = {
+        company_registration_certificate: uploadedFiles["company_registration_certificate"],
+        ssm_company_profile_document: uploadedFiles["ssm_company_profile_document"],
+        business_trade_license_document: uploadedFiles["business_trade_license_document"],
+      } as Record<string, File | undefined>;
+      const hasDocFiles = Object.values(docFiles).some(Boolean);
+      if (hasDocFiles) {
         const formData = new FormData();
-        Object.entries(step1Data).forEach(([key, value]) => {
-          if (key === "productCategories") {
-            formData.append(key, JSON.stringify(value));
-          } else if (key === "profileProgress") {
-            return;
-          } else {
-            formData.append(key, String(value));
-          }
+        Object.entries(docFiles).forEach(([key, file]) => {
+          if (file) formData.append(key, file);
         });
-        formData.append("businessLogo", hasBusinessLogoFile);
-        await updateArtist(formData).unwrap();
-        if ((step1Data as any).profileProgress !== undefined) {
-          await updateArtist({ profileProgress }).unwrap();
-        }
-      } else {
-        const changedFields = getChangedFields(step1Data, originalStep1Data);
-        if (Object.keys(changedFields).length > 0) {
-          await updateArtist(changedFields).unwrap();
+        const uploaded = await uploadStep1Docs(formData).unwrap();
+        const updates: Partial<ProfileData> = {};
+        if (uploaded.companyRegistrationCertificate) updates.company_registration_certificate = uploaded.companyRegistrationCertificate;
+        if (uploaded.ssmCompanyProfileDocument) updates.ssm_company_profile_document = uploaded.ssmCompanyProfileDocument;
+        if (uploaded.businessTradeLicenseDocument) updates.business_trade_license_document = uploaded.businessTradeLicenseDocument;
+        if (Object.keys(updates).length) {
+          setProfileData((prev) => ({ ...prev, ...updates }));
         }
       }
-      setOriginalData((prev) => (prev ? { ...prev, ...step1Data } : null));
-      toast.success("Step 1 data saved successfully!");
+
+      setOriginalData((prev) => {
+        const next = prev ? { ...prev, ...step1Data } : ({ ...step1Data } as any);
+        try {
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem("yg_buyer_verify_original", JSON.stringify(next));
+          }
+        } catch {}
+        return next;
+      });
+      refetchBuyer();
+      if (Object.keys(changedFields).length === 0 && !hasDocFiles) {
+        toast.success("No changes detected in Step 1");
+      } else {
+        toast.success("Step 1 data saved successfully!");
+      }
       refetch();
       return true;
     } catch (err: any) {
@@ -692,15 +679,26 @@ function VerfiyDocumentContent() {
   const saveStep2Data = async (): Promise<boolean> => {
     try {
       if (!validateStep(2)) return false;
-      if (!originalData) {
-        toast.error("Original data not loaded yet");
-        return false;
-      }
       let hasChanges = false;
+      const originalBusinessAddress = originalData?.businessAddress || {
+        street: "",
+        city: "",
+        state: "",
+        country: "",
+        pinCode: "",
+      };
+      const originalWarehouseAddress = originalData?.warehouseAddress || {
+        sameAsBusiness: true,
+        street: "",
+        city: "",
+        state: "",
+        country: "",
+        pinCode: "",
+      };
       if (
         hasDataChanged(
           profileData.businessAddress,
-          originalData.businessAddress
+          originalBusinessAddress
         )
       ) {
         try {
@@ -716,7 +714,7 @@ function VerfiyDocumentContent() {
       if (
         hasDataChanged(
           profileData.warehouseAddress,
-          originalData.warehouseAddress
+          originalWarehouseAddress
         )
       ) {
         try {
@@ -769,13 +767,13 @@ function VerfiyDocumentContent() {
         panNumber: profileData.panNumber,
       };
       const originalBankingData = {
-        bankAccountName: originalData.bankAccountName,
-        bankName: originalData.bankName,
-        accountNumber: originalData.accountNumber,
-        ifscCode: originalData.ifscCode,
-        upiId: originalData.upiId,
-        gstNumber: originalData.gstNumber,
-        panNumber: originalData.panNumber,
+        bankAccountName: originalData?.bankAccountName || "",
+        bankName: originalData?.bankName || "",
+        accountNumber: originalData?.accountNumber || "",
+        ifscCode: originalData?.ifscCode || "",
+        upiId: originalData?.upiId || "",
+        gstNumber: originalData?.gstNumber || "",
+        panNumber: originalData?.panNumber || "",
       };
       const calculateProgress = () => {
         try {
@@ -830,8 +828,8 @@ function VerfiyDocumentContent() {
       if (!hasChanges) {
         toast.success("No changes detected in Step 2");
       } else {
-        setOriginalData((prev) =>
-          prev
+        setOriginalData((prev) => {
+          const next = prev
             ? {
                 ...prev,
                 businessAddress: profileData.businessAddress,
@@ -839,8 +837,19 @@ function VerfiyDocumentContent() {
                 ...bankingData,
                 profileProgress: profileProgress,
               }
-            : null
-        );
+            : ({
+                businessAddress: profileData.businessAddress,
+                warehouseAddress: profileData.warehouseAddress,
+                ...bankingData,
+                profileProgress: profileProgress,
+              } as any);
+          try {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem("yg_buyer_verify_original", JSON.stringify(next));
+            }
+          } catch {}
+          return next;
+        });
         toast.success("Step 2 data saved successfully!");
       }
       refetch();
@@ -855,12 +864,14 @@ function VerfiyDocumentContent() {
   const saveStep3Data = async (): Promise<boolean> => {
     try {
       if (!validateStep(3)) return false;
-      if (!originalData) {
-        toast.error("Original data not loaded yet");
-        return false;
-      }
       let hasChanges = false;
-      if (hasDataChanged(profileData.socialLinks, originalData.socialLinks)) {
+      const originalSocialLinks = originalData?.socialLinks || {
+        website: "",
+        instagram: "",
+        facebook: "",
+        twitter: "",
+      };
+      if (hasDataChanged(profileData.socialLinks, originalSocialLinks)) {
         try {
           await updateSocialLinks(profileData.socialLinks).unwrap();
           toast.success("Social links saved!");
@@ -892,14 +903,14 @@ function VerfiyDocumentContent() {
         digitalSignature: profileData.digitalSignature,
       };
       const originalPreferencesData = {
-        shippingType: originalData.shippingType,
-        inventoryVolume: originalData.inventoryVolume,
-        supportContact: originalData.supportContact,
-        workingHours: originalData.workingHours,
-        serviceAreas: originalData.serviceAreas,
-        returnPolicy: originalData.returnPolicy,
-        termsAgreed: originalData.termsAgreed,
-        digitalSignature: originalData.digitalSignature,
+        shippingType: originalData?.shippingType || "",
+        inventoryVolume: originalData?.inventoryVolume || "",
+        supportContact: originalData?.supportContact || "",
+        workingHours: originalData?.workingHours || "",
+        serviceAreas: originalData?.serviceAreas || [],
+        returnPolicy: originalData?.returnPolicy || "",
+        termsAgreed: originalData?.termsAgreed || false,
+        digitalSignature: originalData?.digitalSignature || "",
       };
       const calculateProgress = () => {
         try {
@@ -965,16 +976,26 @@ function VerfiyDocumentContent() {
       if (!hasChanges) {
         toast.success("No changes detected in Step 3");
       } else {
-        setOriginalData((prev) =>
-          prev
+        setOriginalData((prev) => {
+          const next = prev
             ? {
                 ...prev,
                 socialLinks: profileData.socialLinks,
                 ...preferencesData,
                 profileProgress: profileProgress,
               }
-            : null
-        );
+            : ({
+                socialLinks: profileData.socialLinks,
+                ...preferencesData,
+                profileProgress: profileProgress,
+              } as any);
+          try {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem("yg_buyer_verify_original", JSON.stringify(next));
+            }
+          } catch {}
+          return next;
+        });
         toast.success("Step 3 data saved successfully!");
       }
       refetch();
@@ -1252,5 +1273,3 @@ export default function VerfiyDocument() {
     </Suspense>
   );
 }
-
-

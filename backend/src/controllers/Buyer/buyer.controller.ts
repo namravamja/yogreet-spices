@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import * as buyerService from "../../services/Buyer/buyer.service";
 import * as cartService from "../../services/Buyer/cart.service";
 import * as orderService from "../../services/Buyer/order.service";
+import { Buyer } from "../../models/Buyer";
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
@@ -232,4 +233,97 @@ export const getOrder = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
+export const autoVerifyBuyer = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
 
+    const buyer = await Buyer.findByIdAndUpdate(
+      userId,
+      { $set: { isVerified: true, isAuthenticated: true } },
+      { new: true }
+    )
+      .select("-password")
+      .lean();
+
+    if (!buyer) throw new Error("Buyer not found");
+
+    res.json({ success: true, message: "Buyer verified successfully", data: { id: buyer._id.toString(), isVerified: true } });
+  } catch (error) {
+    res.status(400).json({ success: false, message: (error as Error).message });
+  }
+};
+
+export const updateBuyerVerificationStep1 = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const {
+      company_registration_number,
+      company_name,
+      date_of_incorporation,
+      business_license_number,
+      business_license_issuing_authority,
+      business_license_expiry_date,
+    } = req.body || {};
+
+    const updates: any = {};
+    if (company_registration_number !== undefined) updates.companyRegistrationNumber = company_registration_number;
+    if (company_name !== undefined) updates.companyName = company_name;
+    if (date_of_incorporation !== undefined) {
+      updates.dateOfIncorporation = date_of_incorporation ? new Date(date_of_incorporation) : undefined;
+    }
+    if (business_license_number !== undefined) updates.businessLicenseNumber = business_license_number;
+    if (business_license_issuing_authority !== undefined) updates.businessLicenseIssuingAuthority = business_license_issuing_authority;
+    if (business_license_expiry_date !== undefined) {
+      updates.businessLicenseExpiryDate = business_license_expiry_date ? new Date(business_license_expiry_date) : undefined;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(200).json({ success: true, message: "No changes", data: null });
+    }
+
+    const buyer = await Buyer.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true }
+    ).select("-password").lean();
+
+    if (!buyer) throw new Error("Buyer not found");
+
+    return res.json({ success: true, message: "Step 1 details updated", data: { id: buyer._id.toString() } });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: (error as Error).message });
+  }
+};
+
+export const uploadBuyerVerificationStep1Docs = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new Error("Unauthorized");
+
+    const files = (req as any).files as Record<string, Express.Multer.File[] | undefined>;
+    const updates: any = {};
+
+    const getUrl = (arr?: Express.Multer.File[]) => arr && arr[0] && ((arr[0] as any).path || (arr[0] as any).location || arr[0].path);
+
+    const certUrl = getUrl(files?.company_registration_certificate as any);
+    const ssmUrl = getUrl(files?.ssm_company_profile_document as any);
+    const tradeUrl = getUrl(files?.business_trade_license_document as any);
+
+    if (certUrl) updates.companyRegistrationCertificate = certUrl;
+    if (ssmUrl) updates.ssmCompanyProfileDocument = ssmUrl;
+    if (tradeUrl) updates.businessTradeLicenseDocument = tradeUrl;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: "No documents provided" });
+    }
+
+    await Buyer.findByIdAndUpdate(userId, { $set: updates });
+
+    return res.json({ success: true, message: "Documents uploaded", data: updates });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: (error as Error).message });
+  }
+};

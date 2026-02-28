@@ -19,6 +19,7 @@ import {
   FileText,
   Settings,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -42,17 +43,17 @@ const quickStart = [
   },
   {
     step: "03",
+    title: "Handle Disputes",
+    description: "Review evidence and resolve refunds or releases",
+    href: "/admin/disputes",
+    icon: AlertTriangle,
+  },
+  {
+    step: "04",
     title: "View Analytics",
     description: "Monitor platform statistics and performance metrics",
     href: "/admin/analytics",
     icon: BarChart3,
-  },
-  {
-    step: "04",
-    title: "Platform Settings",
-    description: "Configure platform settings and preferences",
-    href: "/admin/settings",
-    icon: Settings,
   },
 ]
 

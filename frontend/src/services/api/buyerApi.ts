@@ -209,6 +209,49 @@ export const buyerApi = BuyerApi.injectEndpoints({
       invalidatesTags: ["Cart", "Buyer", "Orders"],
     }),
 
+    // Buyer verification step 1 (details)
+    saveVerificationStep1: builder.mutation({
+      query: (data) => ({
+        url: "/verify/step1",
+        method: "PUT",
+        body: data,
+      }),
+      transformResponse: (response: any) => {
+        if (response?.success) {
+          return { _message: response.message };
+        }
+        return response;
+      },
+      invalidatesTags: ["Buyer"],
+    }),
+
+    // Buyer verification step 1 documents
+    uploadVerificationStep1Docs: builder.mutation({
+      query: (formData: FormData) => ({
+        url: "/verify/documents/step1",
+        method: "POST",
+        body: formData,
+      }),
+      transformResponse: (response: any) => {
+        return response?.data ?? response;
+      },
+      invalidatesTags: ["Buyer"],
+    }),
+
+    autoVerify: builder.mutation({
+      query: () => ({
+        url: "/verify/auto-approve",
+        method: "POST",
+      }),
+      transformResponse: (response: any) => {
+        if (response?.success) {
+          return { _message: response.message || "Buyer verified successfully" };
+        }
+        return response;
+      },
+      invalidatesTags: ["Buyer"],
+    }),
+
   }),
 });
 
@@ -228,4 +271,7 @@ export const {
   useGetOrdersQuery,
   useGetOrderQuery,
   useCreateOrderMutation,
+  useSaveVerificationStep1Mutation,
+  useUploadVerificationStep1DocsMutation,
+  useAutoVerifyMutation,
 } = buyerApi;

@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useGetAdminQuery } from "@/services/api/adminApi";
+import { useGetAdminQuery, useGetDisputesQuery, useRefundPaymentMutation, useForceReleasePaymentMutation } from "@/services/api/adminApi";
 import { formatCurrency } from "@/utils/currency";
+import { toast } from "sonner";
 
 export default function AdminDisputesPage() {
   const { data: adminData } = useGetAdminQuery(undefined);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: orders = [], isLoading: loading, isError, refetch } = useGetDisputesQuery(undefined);
+  const [refundPayment] = useRefundPaymentMutation();
+  const [forceReleasePayment] = useForceReleasePaymentMutation();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [refundAmounts, setRefundAmounts] = useState<Record<string, string>>({});
   const statusColor = (s: string = "") =>
     s.toLowerCase() === "held"
       ? "bg-yellow-100 text-yellow-800"
@@ -21,24 +23,8 @@ export default function AdminDisputesPage() {
       ? "bg-gray-100 text-gray-800"
       : "bg-stone-100 text-stone-800";
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-        const res = await fetch(`${base}/admin/disputes`, { credentials: "include" });
-        const json = await res.json();
-        setOrders(json.data || []);
-      } catch (e: any) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
   if (loading) return <div className="p-6">Loading disputes...</div>;
-  if (error) return <div className="p-6 text-red-600">Failed to load disputes: {error}</div>;
+  if (isError) return <div className="p-6 text-red-600">Failed to load disputes</div>;
 
   return (
     <div className="container mx-auto px-2 max-w-7xl py-6">
@@ -48,7 +34,7 @@ export default function AdminDisputesPage() {
         <div className="text-stone-600 bg-white border border-stone-200 rounded-xs p-6">No disputes found.</div>
       ) : (
         <div className="space-y-4">
-          {orders.map((o) => {
+          {orders.map((o: any) => {
             const shortId = String(o._id).slice(0, 8).toUpperCase();
             return (
               <div key={o._id} className="bg-white border border-stone-200 shadow-sm rounded-xs p-4">
@@ -64,14 +50,14 @@ export default function AdminDisputesPage() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      disabled={actionLoading?.endsWith(String(o._id)) || false}
+                      disabled={actionLoading === `release-${o._id}`}
                       className={`px-3 py-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded cursor-pointer transition-colors inline-flex items-center ${actionLoading === `release-${o._id}` ? "opacity-80 cursor-wait" : ""}`}
                       onClick={async () => {
                         setActionLoading(`release-${o._id}`);
                         try {
-                          const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-                          await fetch(`${base}/admin/payments/${o._id}/force-release`, { method: "POST", credentials: "include" });
-                          location.reload();
+                          await forceReleasePayment({ orderId: o._id }).unwrap();
+                          toast.success("Payment force released");
+                          await refetch();
                         } finally {
                           setActionLoading(null);
                         }
@@ -86,15 +72,39 @@ export default function AdminDisputesPage() {
                         "Force Release"
                       )}
                     </button>
-                    <button
-                      disabled={actionLoading?.endsWith(String(o._id)) || false}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min={0}
+                        placeholder="Amount"
+                        value={refundAmounts[o._id] ?? ""}
+                        onChange={(e) => setRefundAmounts((prev) => ({ ...prev, [o._id]: e.target.value }))}
+                        className="w-28 px-2 py-1 border border-stone-300 rounded text-sm"
+                      />
+                      <button
+                      disabled={actionLoading === `refund-${o._id}`}
                       className={`px-3 py-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded cursor-pointer transition-colors inline-flex items-center ${actionLoading === `refund-${o._id}` ? "opacity-80 cursor-wait" : ""}`}
                       onClick={async () => {
                         setActionLoading(`refund-${o._id}`);
                         try {
-                          const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-                          await fetch(`${base}/admin/payments/${o._id}/refund`, { method: "POST", credentials: "include" });
-                          location.reload();
+                          const raw = refundAmounts[o._id];
+                          let amount: number | undefined = undefined;
+                          if (raw && raw.trim() !== "") {
+                            amount = parseFloat(raw);
+                            if (isNaN(amount) || amount <= 0) {
+                              toast.error("Enter a valid refund amount");
+                              return;
+                            }
+                            if (o.totalAmount && amount > o.totalAmount) {
+                              toast.error("Amount exceeds order total");
+                              return;
+                            }
+                          }
+                          await refundPayment({ orderId: o._id, amount }).unwrap();
+                          toast.success("Refund processed");
+                          await refetch();
                         } finally {
                           setActionLoading(null);
                         }
@@ -108,7 +118,8 @@ export default function AdminDisputesPage() {
                       ) : (
                         "Refund"
                       )}
-                    </button>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">

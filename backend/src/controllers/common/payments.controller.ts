@@ -68,6 +68,12 @@ export const raiseDispute = async (req: AuthRequest, res: Response) => {
   const order = await Order.findById(orderId);
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
   if (order.buyerId?.toString() !== buyerId) return res.status(403).json({ success: false, message: "Forbidden" });
+  if (order.deliveryStatus === "disputed") {
+    return res.status(400).json({ success: false, message: "Dispute already raised for this order" });
+  }
+  if (order.paymentStatus === "refunded") {
+    return res.status(400).json({ success: false, message: "Order already refunded" });
+  }
   const file: any = (req as any).file;
   const url = file?.path || file?.location || file?.secure_url;
   if (!url) {

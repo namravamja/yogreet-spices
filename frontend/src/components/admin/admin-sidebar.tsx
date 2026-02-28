@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { FiHome, FiUsers, FiShoppingBag } from "react-icons/fi"
+import { FiHome, FiUsers, FiShoppingBag, FiAlertTriangle } from "react-icons/fi"
 
 interface AdminSidebarProps {
   onClose?: () => void
@@ -61,9 +61,20 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
             <FiShoppingBag className="w-4 h-4 shrink-0" />
             <span>Buyers</span>
           </Link>
+          <Link
+            href="/admin/disputes"
+            onClick={handleLinkClick}
+            className={`flex items-center gap-3 px-4 py-3 font-inter text-sm transition-colors ${
+              isActive("/admin/disputes")
+                ? "bg-yogreet-red text-white"
+                : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
+            }`}
+          >
+            <FiAlertTriangle className="w-4 h-4 shrink-0" />
+            <span>Disputes</span>
+          </Link>
         </nav>
       </div>
     </aside>
   )
 }
-

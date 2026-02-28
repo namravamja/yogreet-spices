@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import * as buyerController from "../../controllers/Buyer/buyer.controller";
 import { verifyToken } from "../../middleware/authMiddleware";
-import { uploadSingle } from "../../middleware/multer";
+import { uploadSingle, uploadFlexibleImages, handleMulterError } from "../../middleware/multer";
 import { asyncHandler } from "../../middleware/errorHandler";
 
 const router = express.Router();
@@ -45,5 +45,19 @@ router.get("/orders", asyncHandler(buyerController.getOrders as any));
 router.get("/orders/:id", asyncHandler(buyerController.getOrder as any));
 router.post("/orders", asyncHandler(buyerController.createOrder as any));
 
-export default router;
+router.post("/verify/auto-approve", asyncHandler(buyerController.autoVerifyBuyer as any));
 
+// Buyer document verification (Step 1)
+router.put("/verify/step1", asyncHandler(buyerController.updateBuyerVerificationStep1 as any));
+router.post(
+  "/verify/documents/step1",
+  (req, res, next) =>
+    uploadFlexibleImages([
+      { name: "company_registration_certificate", maxCount: 1 },
+      { name: "ssm_company_profile_document", maxCount: 1 },
+      { name: "business_trade_license_document", maxCount: 1 },
+    ])(req, res, (err: any) => (err ? handleMulterError(err, req, res, next) : next())),
+  asyncHandler(buyerController.uploadBuyerVerificationStep1Docs as any)
+);
+
+export default router;

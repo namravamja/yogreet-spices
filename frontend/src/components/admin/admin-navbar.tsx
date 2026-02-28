@@ -5,7 +5,7 @@ import { YOGREET_LOGO_URL } from "@/constants/static-images"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { FiHome, FiUsers, FiShoppingBag, FiLogOut, FiUser, FiChevronDown, FiMenu, FiX } from "react-icons/fi"
+import { FiHome, FiUsers, FiShoppingBag, FiLogOut, FiUser, FiChevronDown, FiMenu, FiX, FiAlertTriangle } from "react-icons/fi"
 import { useAuth } from "@/hooks/useAuth"
 import { useLogoutMutation } from "@/services/api/authApi"
 import { toast } from "sonner"
@@ -72,6 +72,7 @@ export function AdminNavbar() {
     { href: "/admin", label: "Dashboard", icon: FiHome },
     { href: "/admin/sellers", label: "Sellers", icon: FiUsers },
     { href: "/admin/buyers", label: "Buyers", icon: FiShoppingBag },
+    { href: "/admin/disputes", label: "Disputes", icon: FiAlertTriangle },
   ]
 
   return (
@@ -217,4 +218,3 @@ export function AdminNavbar() {
     </nav>
   )
 }
-
