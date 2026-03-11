@@ -38,9 +38,24 @@ export const PublicApi = createApi({
       invalidatesTags: (_r, _e, id) => [{ type: "Orders", id }, "Orders"],
     }),
     raiseDispute: builder.mutation({
-      query: ({ orderId, file }: { orderId: string; file: File }) => {
+      query: ({ 
+        orderId, 
+        file, 
+        reason, 
+        reasonDescription, 
+        description 
+      }: { 
+        orderId: string; 
+        file: File; 
+        reason?: "not_received" | "wrong_item" | "damaged" | "quality_issue" | "other";
+        reasonDescription?: string;
+        description?: string;
+      }) => {
         const fd = new FormData();
         fd.append("buyerBarcodeImage", file);
+        if (reason) fd.append("reason", reason);
+        if (reasonDescription) fd.append("reasonDescription", reasonDescription);
+        if (description) fd.append("description", description);
         return {
           url: `/payments/${orderId}/dispute`,
           method: "POST",

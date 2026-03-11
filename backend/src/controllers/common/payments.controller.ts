@@ -7,6 +7,7 @@ import { SellerPayout } from "../../models/SellerPayout";
 import { getPaymentService } from "../../services/payments";
 import { Buyer } from "../../models/Buyer";
 import { sendAutoReleaseWarningEmail } from "../../helpers/orderMailer";
+import * as disputeService from "../../services/common/dispute.service";
 
 interface AuthRequest extends Request {
   user?: { id: string; role: string };
@@ -64,7 +65,10 @@ export const markDeliveredBySeller = async (req: AuthRequest, res: Response) => 
 export const raiseDispute = async (req: AuthRequest, res: Response) => {
   const buyerId = req.user?.id;
   const { orderId } = req.params;
+  const { reason, reasonDescription, description } = req.body;
+  
   if (!buyerId) return res.status(401).json({ success: false, message: "Unauthorized" });
+  
   const order = await Order.findById(orderId);
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
   if (order.buyerId?.toString() !== buyerId) return res.status(403).json({ success: false, message: "Forbidden" });
@@ -74,15 +78,32 @@ export const raiseDispute = async (req: AuthRequest, res: Response) => {
   if (order.paymentStatus === "refunded") {
     return res.status(400).json({ success: false, message: "Order already refunded" });
   }
+  
   const file: any = (req as any).file;
   const url = file?.path || file?.location || file?.secure_url;
   if (!url) {
     return res.status(400).json({ success: false, message: "Buyer barcode image is required" });
   }
-  order.deliveryStatus = "disputed";
-  order.buyerBarcodeImage = url;
-  await order.save();
-  return res.json({ success: true, message: "Dispute raised" });
+
+  try {
+    // Create comprehensive dispute record
+    const dispute = await disputeService.createDispute({
+      orderId,
+      buyerId,
+      reason: reason || "not_received",
+      reasonDescription,
+      barcodeImage: url,
+      description,
+    });
+
+    return res.json({ 
+      success: true, 
+      message: "Dispute raised successfully",
+      data: { disputeId: dispute._id }
+    });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || "Failed to raise dispute" });
+  }
 };
 
 export const confirmAndRelease = async (req: AuthRequest, res: Response) => {

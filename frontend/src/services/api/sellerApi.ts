@@ -207,6 +207,18 @@ export const sellerApi = SellerApi.injectEndpoints({
       },
     }),
 
+    // Get single seller order by ID
+    getSellerOrder: builder.query({
+      query: (orderId: string) => `/orders/${orderId}`,
+      providesTags: (result, error, orderId) => [{ type: "Orders", id: orderId }],
+      transformResponse: (response: any) => {
+        if (response?.success && response?.data) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
     updateOrderStatus: builder.mutation({
       query: ({ orderId, status }: { orderId: string; status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" }) => ({
         url: `/orders/${orderId}/status`,
@@ -349,6 +361,7 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useGetSellerOrdersQuery,
+  useGetSellerOrderQuery,
   useUpdateOrderStatusMutation,
   useGetSellerAnalyticsQuery,
   useGetSalesInsightsQuery,

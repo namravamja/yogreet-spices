@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react"
 import { useGetAllSellersQuery } from "@/services/api/adminApi"
-import { FiSearch, FiCheckCircle, FiXCircle, FiClock, FiChevronDown, FiEdit } from "react-icons/fi"
+import { FiSearch, FiCheckCircle, FiXCircle, FiClock, FiChevronDown, FiEdit, FiPackage, FiShoppingCart } from "react-icons/fi"
 import Image from "next/image"
+import Link from "next/link"
 
 type SortOption = "best-match" | "newest" | "oldest" | "name-asc" | "name-desc"
 
@@ -286,12 +287,9 @@ export default function AdminSellersPage() {
             ) : (
               <div className="space-y-4">
                 {filteredAndSortedSellers.map((seller: any) => (
-                  <a
+                  <div
                     key={seller.id}
-                    href={`/admin/sellers/${seller.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group block bg-white border border-yogreet-light-gray  p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    className="group bg-white border border-yogreet-light-gray  p-6 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex gap-6">
                       {/* Image */}
@@ -321,9 +319,14 @@ export default function AdminSellersPage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <h3 className="text-lg font-poppins font-semibold text-yogreet-charcoal mb-1 group-hover:underline transition-all">
+                            <Link
+                              href={`/admin/sellers/${seller.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-lg font-poppins font-semibold text-yogreet-charcoal mb-1 hover:underline transition-all"
+                            >
                               {seller.companyName || seller.fullName || "N/A"}
-                            </h3>
+                            </Link>
                             <p className="text-sm font-inter text-yogreet-warm-gray mb-2">
                               {seller.businessType || "Business"}
                             </p>
@@ -341,7 +344,7 @@ export default function AdminSellersPage() {
 
                         <p className="text-sm font-inter text-yogreet-charcoal mb-3">{seller.email}</p>
 
-                        <div className="flex flex-wrap items-center gap-4 text-sm font-inter text-yogreet-warm-gray">
+                        <div className="flex flex-wrap items-center gap-4 text-sm font-inter text-yogreet-warm-gray mb-4">
                           {seller.businessAddress && (
                             <span>
                             {[seller.businessAddress.city, seller.businessAddress.state, seller.businessAddress.country]
@@ -353,9 +356,27 @@ export default function AdminSellersPage() {
                           <span>Profile: {seller.profileCompletion || 0}%</span>
                           <span>Joined: {new Date(seller.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
                         </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/admin/sellers/${seller.id}/products`}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-inter font-medium text-yogreet-charcoal bg-yogreet-light-gray/50 hover:bg-yogreet-sage hover:text-white rounded transition-colors"
+                          >
+                            <FiPackage className="w-4 h-4" />
+                            View Products ({seller._count?.products || 0})
+                          </Link>
+                          <Link
+                            href={`/admin/sellers/${seller.id}/orders`}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-inter font-medium text-yogreet-charcoal bg-yogreet-light-gray/50 hover:bg-yogreet-sage hover:text-white rounded transition-colors"
+                          >
+                            <FiShoppingCart className="w-4 h-4" />
+                            View Orders
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 ))}
               </div>
               )}

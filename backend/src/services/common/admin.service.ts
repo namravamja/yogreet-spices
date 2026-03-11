@@ -423,3 +423,342 @@ export const markFieldsAsReviewed = async (sellerId: string, fields: string[]) =
     throw new Error(`Failed to mark fields as reviewed: ${(error as Error).message}`);
   }
 };
+
+export const getBuyerById = async (buyerId: string) => {
+  try {
+    const buyer = await Buyer.findById(buyerId)
+      .select("-password -forgotPasswordToken -forgotPasswordExpires -verifyToken -verifyExpires")
+      .lean();
+
+    if (!buyer) {
+      throw new Error("Buyer not found");
+    }
+
+    const { Address } = await import("../../models/Address");
+    const { Cart } = await import("../../models/Cart");
+
+    // Get addresses
+    const addresses = await Address.find({ userId: buyer._id }).lean();
+
+    // Get order and cart counts
+    const orderCount = await Order.countDocuments({ buyerId: buyer._id });
+    const cartCount = await Cart.countDocuments({ buyerId: buyer._id });
+
+    return {
+      id: buyer._id.toString(),
+      email: (buyer as any).email,
+      firstName: (buyer as any).firstName,
+      lastName: (buyer as any).lastName,
+      phone: (buyer as any).phone,
+      avatar: (buyer as any).avatar,
+      dateOfBirth: (buyer as any).dateOfBirth,
+      gender: (buyer as any).gender,
+      companyName: (buyer as any).companyName,
+      companyRegistrationNumber: (buyer as any).companyRegistrationNumber,
+      isVerified: (buyer as any).isVerified,
+      isAuthenticated: (buyer as any).isAuthenticated,
+      createdAt: (buyer as any).createdAt,
+      updatedAt: (buyer as any).updatedAt,
+      addresses: addresses.map((addr: any) => ({
+        id: addr._id.toString(),
+        street: addr.street,
+        city: addr.city,
+        state: addr.state,
+        country: addr.country,
+        pinCode: addr.pinCode,
+        isDefault: addr.isDefault,
+      })),
+      _count: {
+        orders: orderCount,
+        cartItems: cartCount,
+      },
+    };
+  } catch (error) {
+    throw new Error(`Failed to fetch buyer: ${(error as Error).message}`);
+  }
+};
+
+export const getSellerProductsById = async (sellerId: string) => {
+  try {
+    // Verify seller exists
+    const seller = await Seller.findById(sellerId);
+    if (!seller) {
+      throw new Error("Seller not found");
+    }
+
+    const { Review } = await import("../../models/Review");
+    const { Discount } = await import("../../models/Discount");
+    const mongoose = await import("mongoose");
+
+    const products = await Product.find({ sellerId: new mongoose.default.Types.ObjectId(sellerId) })
+      .populate({
+        path: "reviews",
+        select: "rating title text date verified buyerId",
+        populate: {
+          path: "buyerId",
+          select: "firstName lastName",
+        },
+      })
+      .populate({
+        path: "activeDiscount",
+        select: "name code type value isActive startDate endDate",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return products.map((product: any) => {
+      // Check if discount is valid
+      let activeDiscount = null;
+      if (product.activeDiscount && product.activeDiscount.isActive) {
+        const now = new Date();
+        const startDate = product.activeDiscount.startDate ? new Date(product.activeDiscount.startDate) : null;
+        const endDate = product.activeDiscount.endDate ? new Date(product.activeDiscount.endDate) : null;
+        
+        const isValidDate = (!startDate || now >= startDate) && (!endDate || now <= endDate);
+        
+        if (isValidDate) {
+          activeDiscount = {
+            id: product.activeDiscount._id?.toString(),
+            name: product.activeDiscount.name,
+            code: product.activeDiscount.code,
+            type: product.activeDiscount.type,
+            value: product.activeDiscount.value,
+          };
+        }
+      }
+
+      return {
+        id: product._id.toString(),
+        productName: product.productName,
+        category: product.category,
+        subCategory: product.subCategory,
+        typeOfSpice: product.typeOfSpice,
+        form: product.form,
+        shortDescription: product.shortDescription,
+        productImages: product.productImages,
+        shippingCost: product.shippingCost,
+        purityLevel: product.purityLevel,
+        originSource: product.originSource,
+        processingMethod: product.processingMethod,
+        shelfLife: product.shelfLife,
+        manufacturingDate: product.manufacturingDate,
+        expiryDate: product.expiryDate,
+        samplePrice: product.samplePrice,
+        sampleWeight: product.sampleWeight,
+        sampleDescription: product.sampleDescription,
+        smallPrice: product.smallPrice,
+        smallWeight: product.smallWeight,
+        smallDescription: product.smallDescription,
+        mediumPrice: product.mediumPrice,
+        mediumWeight: product.mediumWeight,
+        mediumDescription: product.mediumDescription,
+        largePrice: product.largePrice,
+        largeWeight: product.largeWeight,
+        largeDescription: product.largeDescription,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+        Review: product.reviews?.map((review: any) => ({
+          id: review._id.toString(),
+          rating: review.rating,
+          title: review.title,
+          text: review.text,
+          date: review.date,
+          verified: review.verified,
+          buyer: review.buyerId ? {
+            firstName: review.buyerId.firstName,
+            lastName: review.buyerId.lastName,
+          } : null,
+        })) || [],
+        activeDiscount,
+      };
+    });
+  } catch (error) {
+    throw new Error(`Failed to fetch seller products: ${(error as Error).message}`);
+  }
+};
+
+export const getBuyerOrdersById = async (buyerId: string) => {
+  try {
+    // Verify buyer exists
+    const buyer = await Buyer.findById(buyerId);
+    if (!buyer) {
+      throw new Error("Buyer not found");
+    }
+
+    const { OrderItem } = await import("../../models/OrderItem");
+    const { Address } = await import("../../models/Address");
+    const mongoose = await import("mongoose");
+
+    const orders = await Order.find({ buyerId: new mongoose.default.Types.ObjectId(buyerId) })
+      .populate({
+        path: "shippingAddressId",
+      })
+      .sort({ placedAt: -1 })
+      .lean();
+
+    // Get order items for each order with product and seller info
+    const ordersWithItems = await Promise.all(
+      orders.map(async (order: any) => {
+        const orderItems = await OrderItem.find({
+          orderId: order._id,
+        })
+          .populate({
+            path: "productId",
+            select: "productName productImages category",
+          })
+          .populate({
+            path: "sellerId",
+            select: "fullName companyName email",
+          })
+          .lean();
+
+        return {
+          id: order._id.toString(),
+          buyerId: order.buyerId?.toString(),
+          totalAmount: order.totalAmount,
+          subtotal: order.subtotal,
+          shippingCost: order.shippingCost,
+          taxAmount: order.taxAmount,
+          status: order.status,
+          deliveryStatus: order.deliveryStatus,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          gateway: order.gateway,
+          currency: order.currency,
+          placedAt: order.placedAt,
+          deliveredAt: order.deliveredAt,
+          autoReleaseAt: order.autoReleaseAt,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          shippingAddress: order.shippingAddressId ? {
+            id: order.shippingAddressId._id?.toString(),
+            street: order.shippingAddressId.street,
+            city: order.shippingAddressId.city,
+            state: order.shippingAddressId.state,
+            country: order.shippingAddressId.country,
+            pinCode: order.shippingAddressId.pinCode,
+          } : null,
+          orderItems: orderItems.map((item: any) => ({
+            id: item._id.toString(),
+            productId: item.productId?._id?.toString() || item.productId?.toString(),
+            quantity: item.quantity,
+            priceAtPurchase: item.priceAtPurchase,
+            product: item.productId ? {
+              id: item.productId._id.toString(),
+              productName: item.productId.productName,
+              productImages: item.productId.productImages || [],
+              category: item.productId.category,
+            } : null,
+            seller: item.sellerId ? {
+              id: item.sellerId._id.toString(),
+              fullName: item.sellerId.fullName,
+              companyName: item.sellerId.companyName || item.sellerId.fullName,
+              email: item.sellerId.email,
+            } : null,
+          })),
+        };
+      })
+    );
+
+    return ordersWithItems;
+  } catch (error) {
+    throw new Error(`Failed to fetch buyer orders: ${(error as Error).message}`);
+  }
+};
+
+export const getSellerOrdersById = async (sellerId: string) => {
+  try {
+    // Verify seller exists
+    const seller = await Seller.findById(sellerId);
+    if (!seller) {
+      throw new Error("Seller not found");
+    }
+
+    const { OrderItem } = await import("../../models/OrderItem");
+    const mongoose = await import("mongoose");
+
+    // Find all order items for this seller
+    const sellerItems = await OrderItem.find({ sellerId: new mongoose.default.Types.ObjectId(sellerId) }, { orderId: 1 }).lean();
+    const orderIds = Array.from(new Set(sellerItems.map((item: any) => item.orderId.toString())));
+
+    if (orderIds.length === 0) {
+      return [];
+    }
+
+    const orders = await Order.find({ _id: { $in: orderIds.map((id) => new mongoose.default.Types.ObjectId(id)) } })
+      .populate({
+        path: "buyerId",
+        select: "firstName lastName email phone",
+      })
+      .populate({
+        path: "shippingAddressId",
+      })
+      .sort({ placedAt: -1 })
+      .lean();
+
+    // Get order items for each order (only items belonging to this seller)
+    const ordersWithItems = await Promise.all(
+      orders.map(async (order: any) => {
+        const orderItems = await OrderItem.find({
+          orderId: order._id,
+          sellerId: new mongoose.default.Types.ObjectId(sellerId),
+        })
+          .populate({
+            path: "productId",
+            select: "productName productImages category",
+          })
+          .lean();
+
+        return {
+          id: order._id.toString(),
+          buyer: order.buyerId ? {
+            id: order.buyerId._id.toString(),
+            firstName: order.buyerId.firstName,
+            lastName: order.buyerId.lastName,
+            email: order.buyerId.email,
+            phone: order.buyerId.phone,
+          } : null,
+          totalAmount: order.totalAmount,
+          subtotal: order.subtotal,
+          shippingCost: order.shippingCost,
+          taxAmount: order.taxAmount,
+          status: order.status,
+          deliveryStatus: order.deliveryStatus,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          gateway: order.gateway,
+          currency: order.currency,
+          placedAt: order.placedAt,
+          deliveredAt: order.deliveredAt,
+          autoReleaseAt: order.autoReleaseAt,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          shippingAddress: order.shippingAddressId ? {
+            id: order.shippingAddressId._id?.toString(),
+            street: order.shippingAddressId.street,
+            city: order.shippingAddressId.city,
+            state: order.shippingAddressId.state,
+            country: order.shippingAddressId.country,
+            pinCode: order.shippingAddressId.pinCode,
+          } : null,
+          orderItems: orderItems.map((item: any) => ({
+            id: item._id.toString(),
+            productId: item.productId?._id?.toString() || item.productId?.toString(),
+            quantity: item.quantity,
+            priceAtPurchase: item.priceAtPurchase,
+            product: item.productId ? {
+              id: item.productId._id.toString(),
+              productName: item.productId.productName,
+              productImages: item.productId.productImages || [],
+              category: item.productId.category,
+            } : null,
+          })),
+        };
+      })
+    );
+
+    return ordersWithItems;
+  } catch (error) {
+    throw new Error(`Failed to fetch seller orders: ${(error as Error).message}`);
+  }
+};

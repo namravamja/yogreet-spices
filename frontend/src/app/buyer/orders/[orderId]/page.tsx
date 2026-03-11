@@ -73,6 +73,10 @@ export default function OrderDetailsPage() {
   const [raiseDispute, { isLoading: isDisputing }] = useRaiseDisputeMutation();
   const [disputeFile, setDisputeFile] = useState<File | null>(null);
   const [disputePreview, setDisputePreview] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState<"not_received" | "wrong_item" | "damaged" | "quality_issue" | "other">("not_received");
+  const [disputeReasonDescription, setDisputeReasonDescription] = useState<string>("");
+  const [disputeDescription, setDisputeDescription] = useState<string>("");
+  const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [nowTs, setNowTs] = useState<number>(Date.now());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -491,7 +495,7 @@ export default function OrderDetailsPage() {
                    order.deliveryStatus !== "disputed" &&
                    ((order.paymentStatus === "held") ||
                     (order.deliveryStatus === "delivered" || order.status?.toLowerCase() === "delivered")) && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {order.autoReleaseAt && (
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-stone-600">Time left to raise an issue</span>
@@ -504,78 +508,177 @@ export default function OrderDetailsPage() {
                           </span>
                         </div>
                       )}
-                      <label className="block text-sm text-stone-700">Upload product barcode photo</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] || null;
-                          setDisputeFile(f);
-                          if (disputePreview) {
-                            try { URL.revokeObjectURL(disputePreview); } catch {}
-                          }
-                          if (f) {
-                            setDisputePreview(URL.createObjectURL(f));
-                          } else {
-                            setDisputePreview(null);
-                          }
-                        }}
-                        className="block w-full text-sm text-stone-700"
-                        ref={fileInputRef}
-                      />
-                      {disputePreview && (
-                        <div className="flex items-center gap-3 p-2 border border-stone-200 rounded">
-                          <img src={disputePreview} alt="Dispute preview" className="w-16 h-16 object-contain rounded bg-white" />
+                      
+                      {!showDisputeForm ? (
+                        <button
+                          disabled={remainingMs !== null && remainingMs <= 0}
+                          onClick={() => setShowDisputeForm(true)}
+                          className={`w-full border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center ${(remainingMs !== null && remainingMs <= 0) ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          Report an Issue
+                        </button>
+                      ) : (
+                        <div className="border border-orange-200 rounded-lg p-4 bg-orange-50/50 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-yogreet-charcoal">Report an Issue</h4>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowDisputeForm(false);
+                                setDisputeFile(null);
+                                setDisputePreview(null);
+                                setDisputeReason("not_received");
+                                setDisputeReasonDescription("");
+                                setDisputeDescription("");
+                                if (fileInputRef.current) fileInputRef.current.value = "";
+                              }}
+                              className="text-stone-500 hover:text-stone-700 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+
+                          {/* Reason Selection */}
+                          <div>
+                            <label className="block text-sm font-medium text-stone-700 mb-2">What's the issue?</label>
+                            <select
+                              value={disputeReason}
+                              onChange={(e) => setDisputeReason(e.target.value as any)}
+                              className="w-full px-3 py-2 border border-stone-300 rounded text-sm bg-white"
+                            >
+                              <option value="not_received">I didn't receive my order</option>
+                              <option value="wrong_item">I received the wrong item</option>
+                              <option value="damaged">Item arrived damaged</option>
+                              <option value="quality_issue">Quality doesn't match description</option>
+                              <option value="other">Other issue</option>
+                            </select>
+                          </div>
+
+                          {/* Reason Description */}
+                          {(disputeReason === "other" || disputeReason === "quality_issue") && (
+                            <div>
+                              <label className="block text-sm font-medium text-stone-700 mb-2">
+                                Please describe the issue
+                              </label>
+                              <textarea
+                                value={disputeReasonDescription}
+                                onChange={(e) => setDisputeReasonDescription(e.target.value)}
+                                placeholder="Explain what went wrong..."
+                                className="w-full px-3 py-2 border border-stone-300 rounded text-sm resize-none"
+                                rows={2}
+                              />
+                            </div>
+                          )}
+
+                          {/* Proof Image Upload */}
+                          <div>
+                            <label className="block text-sm font-medium text-stone-700 mb-2">
+                              Upload proof (barcode/photo) <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0] || null;
+                                setDisputeFile(f);
+                                if (disputePreview) {
+                                  try { URL.revokeObjectURL(disputePreview); } catch {}
+                                }
+                                if (f) {
+                                  setDisputePreview(URL.createObjectURL(f));
+                                } else {
+                                  setDisputePreview(null);
+                                }
+                              }}
+                              className="block w-full text-sm text-stone-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-sm file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200"
+                              ref={fileInputRef}
+                            />
+                            {disputePreview && (
+                              <div className="flex items-center gap-3 p-2 mt-2 border border-stone-200 rounded bg-white">
+                                <img src={disputePreview} alt="Dispute preview" className="w-16 h-16 object-contain rounded" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (disputePreview) {
+                                      try { URL.revokeObjectURL(disputePreview); } catch {}
+                                    }
+                                    setDisputePreview(null);
+                                    setDisputeFile(null);
+                                    if (fileInputRef.current) fileInputRef.current.value = "";
+                                  }}
+                                  className="px-2 py-1 text-xs border border-stone-300 rounded hover:bg-stone-50 cursor-pointer"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            )}
+                            <p className="text-xs text-stone-500 mt-1">
+                              Upload the product barcode or photo showing the issue
+                            </p>
+                          </div>
+
+                          {/* Additional Description */}
+                          <div>
+                            <label className="block text-sm font-medium text-stone-700 mb-2">
+                              Additional details (optional)
+                            </label>
+                            <textarea
+                              value={disputeDescription}
+                              onChange={(e) => setDisputeDescription(e.target.value)}
+                              placeholder="Any other details that might help us resolve this faster..."
+                              className="w-full px-3 py-2 border border-stone-300 rounded text-sm resize-none"
+                              rows={2}
+                            />
+                          </div>
+
+                          {/* Submit Button */}
                           <button
-                            type="button"
-                            onClick={() => {
-                              if (disputePreview) {
-                                try { URL.revokeObjectURL(disputePreview); } catch {}
+                            disabled={isDisputing || !disputeFile || (remainingMs !== null && remainingMs <= 0)}
+                            onClick={async () => {
+                              if (!disputeFile) {
+                                toast.error("Please upload proof of the issue");
+                                return;
                               }
-                              setDisputePreview(null);
-                              setDisputeFile(null);
-                              if (fileInputRef.current) fileInputRef.current.value = "";
+                              if (remainingMs !== null && remainingMs <= 0) {
+                                toast.error("The dispute window has closed for this order");
+                                return;
+                              }
+                              try {
+                                await raiseDispute({ 
+                                  orderId: order.id, 
+                                  file: disputeFile,
+                                  reason: disputeReason,
+                                  reasonDescription: disputeReasonDescription || undefined,
+                                  description: disputeDescription || undefined,
+                                }).unwrap();
+                                toast.success("Issue raised successfully. Our team will review your evidence.");
+                                window.location.reload();
+                              } catch (e: any) {
+                                console.error(e);
+                                toast.error(e?.data?.message || "Failed to raise issue. Please try again.");
+                              }
                             }}
-                            className="px-2 py-1 text-xs border border-stone-300 rounded hover:bg-stone-50 cursor-pointer"
+                            className={`w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center ${isDisputing ? "opacity-80 cursor-wait" : ""}`}
                           >
-                            Remove
+                            {isDisputing ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Submitting...
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Submit Issue Report
+                              </>
+                            )}
                           </button>
+
+                          <p className="text-xs text-stone-500 text-center">
+                            Our team will review your issue and respond within 24-48 hours
+                          </p>
                         </div>
                       )}
-                      <button
-                        disabled={isDisputing || (remainingMs !== null && remainingMs <= 0)}
-                        onClick={async () => {
-                          if (!disputeFile) {
-                            fileInputRef.current?.click();
-                            return;
-                          }
-                          if (remainingMs !== null && remainingMs <= 0) {
-                            toast.error("The dispute window has closed for this order");
-                            return;
-                          }
-                          try {
-                            await raiseDispute({ orderId: order.id, file: disputeFile }).unwrap();
-                            toast.success("Issue raised successfully. Our team will review your evidence.");
-                            window.location.reload();
-                          } catch (e: any) {
-                            console.error(e);
-                            toast.error("Failed to raise issue. Please try again.");
-                          }
-                        }}
-                        className={`w-full border border-stone-300 text-stone-700 hover:bg-stone-50 px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center ${isDisputing ? "opacity-80 cursor-wait" : ""}`}
-                      >
-                        {isDisputing ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="w-4 h-4 mr-2" />
-                            Raise an Issue
-                          </>
-                        )}
-                      </button>
                     </div>
                   )}
                   <button className="w-full bg-yogreet-red hover:bg-yogreet-red/90 text-white px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center">

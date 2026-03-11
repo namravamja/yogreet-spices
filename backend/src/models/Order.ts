@@ -18,6 +18,7 @@ export interface IOrder extends Document {
   deliveredAt?: Date | null;
   autoReleaseAt?: Date | null;
   buyerBarcodeImage?: string | null;
+  disputeId?: mongoose.Types.ObjectId | null;
   placedAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +56,7 @@ const OrderSchema = new Schema<IOrder>(
     deliveredAt: { type: Date, default: null },
     autoReleaseAt: { type: Date, default: null, index: true },
     buyerBarcodeImage: { type: String, default: null },
+    disputeId: { type: Schema.Types.ObjectId, ref: "Dispute", default: null },
     placedAt: { type: Date, default: Date.now },
   },
   {

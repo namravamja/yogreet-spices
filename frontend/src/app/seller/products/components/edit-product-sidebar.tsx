@@ -229,9 +229,9 @@ export default function EditProductSidebar({
       const formData = new FormData();
       
       // Convert base64 images to File objects and append to FormData
-      // Keep existing URLs as-is (they'll be sent as JSON string)
+      // Keep existing Cloudinary URLs as-is (they'll be sent as JSON string)
       const newImageFiles: File[] = [];
-      const allImageUrls: string[] = [];
+      const existingImageUrls: string[] = [];
       
       for (let i = 0; i < productData.productImages.length; i++) {
         const image = productData.productImages[i];
@@ -246,16 +246,14 @@ export default function EditProductSidebar({
               type: blob.type || "image/jpeg",
             });
             newImageFiles.push(file);
-            // Also add to URLs array (will be replaced by uploaded URL)
-            allImageUrls.push(image);
+            // Don't add base64 to URLs - the backend will add the uploaded URL
           } catch (err) {
             console.error(`Failed to convert image ${i + 1}:`, err);
-            // If conversion fails, keep as string
-            allImageUrls.push(image);
+            // If conversion fails, skip this image
           }
-        } else if (typeof image === 'string') {
-          // It's already a URL (existing image)
-          allImageUrls.push(image);
+        } else if (typeof image === 'string' && image.trim()) {
+          // It's already a URL (existing image from Cloudinary)
+          existingImageUrls.push(image);
         }
       }
       
@@ -264,9 +262,9 @@ export default function EditProductSidebar({
         formData.append("productImages", file);
       });
       
-      // Append all images as JSON string (existing URLs + new base64 that will be replaced)
+      // Append existing URLs as JSON string
       // Backend will merge new uploaded URLs with existing URLs
-      formData.append("productImages", JSON.stringify(allImageUrls));
+      formData.append("existingImages", JSON.stringify(existingImageUrls));
       
       // Append other product data
       // Append barcode image if provided
@@ -301,10 +299,16 @@ export default function EditProductSidebar({
       // Refresh the page to show updated data
       router.refresh();
     } catch (error: any) {
-      console.error("Failed to update product:", error);
-      toast.error(
-        error?.data?.error || error?.data?.message || "Something went wrong while updating product"
-      );
+      // RTK Query errors have different structures
+      const errorMessage = 
+        error?.data?.error || 
+        error?.data?.message || 
+        error?.error || 
+        error?.message ||
+        (typeof error === 'string' ? error : "Something went wrong while updating product");
+      
+      console.error("Failed to update product:", errorMessage, error);
+      toast.error(errorMessage);
     }
   };
 

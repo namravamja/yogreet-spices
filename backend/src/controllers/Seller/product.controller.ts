@@ -121,38 +121,44 @@ export const updateProduct = async (req: AuthenticatedRequest, res: Response) =>
       newBarcodeUrl = barcodeArr[0]?.path || barcodeArr[0]?.location || barcodeArr[0]?.secure_url;
     }
 
-    // Handle productImages if it's a string (from FormData)
+    // Handle existingImages - URLs sent separately from uploaded files
     let existingImageUrls: string[] = [];
+    if (typeof productData.existingImages === 'string') {
+      try {
+        existingImageUrls = JSON.parse(productData.existingImages);
+      } catch {
+        existingImageUrls = [];
+      }
+    }
+    // Remove existingImages from productData as it's not a model field
+    delete productData.existingImages;
+
+    // Legacy support: Handle productImages if it's a string (from older API calls)
     if (typeof productData.productImages === 'string') {
       try {
-        existingImageUrls = JSON.parse(productData.productImages);
+        const parsed = JSON.parse(productData.productImages);
+        // Filter out base64 strings, only keep URLs
+        existingImageUrls = [
+          ...existingImageUrls,
+          ...parsed.filter((url: string) => typeof url === 'string' && !url.startsWith('data:'))
+        ];
       } catch {
-        // If not valid JSON, treat as comma-separated string
-        existingImageUrls = String(productData.productImages)
-          .split(',')
-          .map((s: string) => s.trim())
-          .filter(Boolean);
+        // If not valid JSON, ignore
       }
-    } else if (Array.isArray(productData.productImages)) {
-      existingImageUrls = productData.productImages;
     }
 
-    // Merge existing URLs with new uploaded images
-    // If new files were uploaded, combine them with existing URLs
-    // Otherwise, keep existing images
-    if (newImageUrls.length > 0) {
-      // New images uploaded - combine with existing URLs
-      // Remove duplicates and keep order
-      const allImages = [...existingImageUrls, ...newImageUrls];
+    // Combine existing URLs with newly uploaded images
+    const allImages = [...existingImageUrls, ...newImageUrls];
+    if (allImages.length > 0) {
       productData.productImages = Array.from(new Set(allImages));
-    } else if (existingImageUrls.length > 0) {
-      // No new files, but existing images were sent - use those
-      productData.productImages = existingImageUrls;
+    } else {
+      // If no images provided, don't update the field
+      delete productData.productImages;
     }
+
     if (newBarcodeUrl) {
       productData.barcodeImage = newBarcodeUrl;
     }
-    // If neither, productImages will be undefined and won't be updated
 
     // Update product
     const product = await productService.updateProduct(userId, productId, productData);

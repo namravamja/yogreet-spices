@@ -113,3 +113,55 @@ export const markFieldsAsReviewed = async (req: AuthenticatedRequest, res: Respo
   }
 };
 
+export const getBuyerById = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "Buyer ID is required" });
+    }
+    const buyer = await adminService.getBuyerById(id);
+    res.json(buyer);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const getSellerProductsById = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "Seller ID is required" });
+    }
+    const products = await adminService.getSellerProductsById(id);
+    res.json(products);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const getBuyerOrdersById = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "Buyer ID is required" });
+    }
+    const orders = await adminService.getBuyerOrdersById(id);
+    res.json(orders);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const getSellerOrdersById = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "Seller ID is required" });
+    }
+    const orders = await adminService.getSellerOrdersById(id);
+    res.json(orders);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+

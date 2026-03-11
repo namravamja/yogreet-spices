@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react"
 import { useGetAllBuyersQuery } from "@/services/api/adminApi"
-import { FiSearch, FiCheckCircle, FiXCircle, FiChevronDown } from "react-icons/fi"
+import { FiSearch, FiCheckCircle, FiXCircle, FiChevronDown, FiShoppingCart } from "react-icons/fi"
 import Image from "next/image"
+import Link from "next/link"
 
 type SortOption = "best-match" | "newest" | "oldest" | "name-asc" | "name-desc"
 
@@ -267,7 +268,7 @@ export default function AdminBuyersPage() {
                         )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4 text-sm font-inter text-yogreet-warm-gray">
+                        <div className="flex flex-wrap items-center gap-4 text-sm font-inter text-yogreet-warm-gray mb-4">
                           {buyer.addresses && buyer.addresses.length > 0 && (
                             <span>
                               {[buyer.addresses[0].city, buyer.addresses[0].state, buyer.addresses[0].country]
@@ -278,6 +279,17 @@ export default function AdminBuyersPage() {
                           <span>{buyer._count?.orders || 0} Orders</span>
                           {buyer.isAuthenticated && <span className="text-yogreet-sage font-medium">Active</span>}
                           <span>Joined: {new Date(buyer.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/admin/buyers/${buyer.id}/orders`}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-inter font-medium text-yogreet-charcoal bg-yogreet-light-gray/50 hover:bg-yogreet-sage hover:text-white rounded transition-colors"
+                          >
+                            <FiShoppingCart className="w-4 h-4" />
+                            View Orders ({buyer._count?.orders || 0})
+                          </Link>
                         </div>
                       </div>
                     </div>

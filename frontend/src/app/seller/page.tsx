@@ -444,7 +444,7 @@ export default function SellerLanding() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-yogreet-sage to-yogreet-sage/90">
+      <section className="py-20 bg-linear-to-br from-yogreet-sage to-yogreet-sage/90">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-poppins font-light text-white mb-6">
             Ready to Grow Your

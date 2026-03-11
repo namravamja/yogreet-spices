@@ -5,6 +5,7 @@ import { OrderItem } from "../../models/OrderItem";
 import { Buyer } from "../../models/Buyer";
 import { sendAutoReleaseWarningEmail } from "../../helpers/orderMailer";
 import { Product } from "../../models/Product";
+import { Address } from "../../models/Address";
 
 interface AuthRequest extends Request {
   user?: { id: string; role: string };
@@ -155,4 +156,138 @@ export const getSellerOrders = async (req: AuthRequest, res: Response) => {
       hasPreviousPage: page > 1,
     },
   });
+};
+
+export const getSellerOrderById = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+  if (!user || user.role !== "SELLER") {
+    return res.status(403).json({ success: false, message: "Forbidden" });
+  }
+  const sellerId = user.id;
+  const { orderId } = req.params;
+
+  if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ success: false, message: "Invalid order ID" });
+  }
+
+  // Verify seller owns this order
+  const { order, allowed } = await verifySellerOwnsOrder(orderId, sellerId);
+  if (!order) {
+    return res.status(404).json({ success: false, message: "Order not found" });
+  }
+  if (!allowed) {
+    return res.status(403).json({ success: false, message: "Forbidden" });
+  }
+
+  // Get order items belonging to this seller
+  const items = await OrderItem.find({
+    orderId: new mongoose.Types.ObjectId(orderId),
+    sellerId: new mongoose.Types.ObjectId(sellerId),
+  }).lean();
+
+  // Get product info for items
+  const productIds = items.map((it: any) => it.productId).filter(Boolean);
+  const productsMap = new Map<string, any>();
+  if (productIds.length > 0) {
+    const products = await Product.find(
+      { _id: { $in: productIds } },
+      { productName: 1, productImages: 1, category: 1, skuCode: 1 }
+    ).lean();
+    for (const p of products) {
+      productsMap.set(String((p as any)._id), p);
+    }
+  }
+
+  // Get buyer info
+  let buyerInfo = null;
+  if (order.buyerId) {
+    const buyer = await Buyer.findById(order.buyerId, {
+      firstName: 1,
+      lastName: 1,
+      email: 1,
+      phone: 1,
+    }).lean();
+    if (buyer) {
+      buyerInfo = {
+        id: String((buyer as any)._id),
+        firstName: (buyer as any).firstName,
+        lastName: (buyer as any).lastName,
+        email: (buyer as any).email,
+        phone: (buyer as any).phone,
+      };
+    }
+  }
+
+  // Get shipping address
+  let shippingAddress = null;
+  if (order.shippingAddressId) {
+    const address = await Address.findById(order.shippingAddressId).lean();
+    if (address) {
+      shippingAddress = {
+        id: String((address as any)._id),
+        firstName: (address as any).firstName,
+        lastName: (address as any).lastName,
+        company: (address as any).company,
+        street: (address as any).street,
+        apartment: (address as any).apartment,
+        city: (address as any).city,
+        state: (address as any).state,
+        postalCode: (address as any).postalCode,
+        country: (address as any).country,
+        phone: (address as any).phone,
+      };
+    }
+  }
+
+  // Shape order items
+  const shapedItems = items.map((it: any) => ({
+    id: String(it._id),
+    orderId: String(it.orderId),
+    productId: String(it.productId),
+    quantity: it.quantity,
+    priceAtPurchase: it.priceAtPurchase,
+    sellerId: String(it.sellerId),
+    product: (() => {
+      const p = productsMap.get(String(it.productId));
+      if (!p) return undefined;
+      return {
+        id: String((p as any)._id),
+        productName: (p as any).productName,
+        productImages: (p as any).productImages || [],
+        category: (p as any).category,
+        skuCode: (p as any).skuCode,
+      };
+    })(),
+  }));
+
+  // Calculate subtotal for this seller's items only
+  const sellerSubtotal = shapedItems.reduce((sum, item) => {
+    return sum + (item.quantity || 0) * (item.priceAtPurchase || 0);
+  }, 0);
+
+  const orderData = {
+    id: String(order._id),
+    buyerId: String(order.buyerId),
+    totalAmount: order.totalAmount,
+    subtotal: order.subtotal,
+    shippingCost: order.shippingCost,
+    taxAmount: order.taxAmount,
+    sellerSubtotal,
+    status: order.status,
+    shippingAddressId: order.shippingAddressId ? String(order.shippingAddressId) : undefined,
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    deliveryStatus: order.deliveryStatus,
+    deliveredAt: order.deliveredAt,
+    autoReleaseAt: order.autoReleaseAt,
+    currency: order.currency,
+    mode: order.mode,
+    placedAt: order.placedAt,
+    updatedAt: order.updatedAt,
+    orderItems: shapedItems,
+    buyer: buyerInfo,
+    shippingAddress,
+  };
+
+  return res.json({ success: true, data: orderData });
 };
