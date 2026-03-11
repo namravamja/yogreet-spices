@@ -29,7 +29,7 @@ export const SellerApi = createApi({
     baseUrl: `${BASE_API_URL}/seller`,
     credentials: "include",
   }),
-  tagTypes: ["Seller", "Products", "Orders"],
+  tagTypes: ["Seller", "Products", "Orders", "Analytics", "Discounts"],
   endpoints: () => ({}),
 });
 

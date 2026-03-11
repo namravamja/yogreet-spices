@@ -50,6 +50,9 @@ function transformProduct(product: any) {
   // Use category as origin for now (or you can add origin field to Product model)
   const origin = product.category || "Unknown Origin"
 
+  // Get active discount info
+  const discount = product.activeDiscount || null
+
   return {
     id: product.id,
     name: product.productName,
@@ -66,6 +69,7 @@ function transformProduct(product: any) {
     rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
     reviews: reviews.length,
     description: product.shortDescription || product.description || null,
+    discount, // Include discount info
   }
 }
 

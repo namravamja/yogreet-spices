@@ -47,7 +47,7 @@ const features = [
     description: "Monitor your sales performance and make data-driven decisions",
     icon: BarChart3,
     color: "sage",
-    href: "/seller/analytics",
+    href: "/seller/dashboard",
     benefits: ["Sales reports", "Performance metrics", "Revenue tracking"],
   },
 ]
@@ -57,7 +57,7 @@ const quickStart = [
     step: "01",
     title: "Verify Your Documents",
     description: "Complete seller verification to start exporting",
-    href: "/seller/verify-document", // Will be dynamically updated based on progress
+    href: "/seller/verify-document",
     icon: CheckCircle2,
   },
   {
@@ -76,9 +76,9 @@ const quickStart = [
   },
   {
     step: "04",
-    title: "Analytics Dashboard",
+    title: "View Dashboard",
     description: "Monitor your business performance and growth",
-    href: "/seller/analytics",
+    href: "/seller/dashboard",
     icon: BarChart3,
   },
 ]
@@ -199,106 +199,95 @@ export default function SellerLanding() {
                         <div className="p-4 bg-blue-500/10 rounded-xl mr-4 shrink-0">
                           <UserCircle className="w-7 h-7 text-blue-600" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-manrope font-semibold text-yogreet-charcoal mb-2">
+                        <div className="text-left">
+                          <h3 className="text-lg font-poppins font-medium text-yogreet-charcoal">
                             Profile Completion
                           </h3>
-                          <p className="text-sm text-stone-600 font-inter leading-relaxed">
-                            {profileProgress < 100
-                              ? "Complete your profile to continue"
-                              : "Profile is complete"}
+                          <p className="text-stone-500 text-sm font-inter">
+                            Complete your seller profile
                           </p>
                         </div>
                       </div>
                       
-                      <div className="mt-auto space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-inter font-medium text-stone-700">
-                            Progress
-                          </span>
-                          <span className="text-lg font-manrope font-semibold text-blue-600">
+                      <div className="mb-6">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-inter text-stone-600">Progress</span>
+                          <span className="text-sm font-manrope font-semibold text-blue-600">
                             {profileProgress}%
                           </span>
                         </div>
-                        <div className="relative h-3 w-full overflow-hidden rounded-full bg-stone-100">
-                          <div
-                            className="h-full bg-blue-600 transition-all duration-500 rounded-full"
+                        <div className="w-full bg-stone-100 rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${profileProgress}%` }}
-                          />
+                          ></div>
                         </div>
-                        {profileProgress < 100 && (
-                          <Link
-                            href={profileProgress > 40 ? "/seller/profile" : "/seller/edit-profile"}
-                            className="inline-flex items-center justify-center w-full mt-5 px-4 py-2.5 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg font-manrope font-medium text-sm transition-all duration-300 group"
-                          >
-                            {profileProgress > 40 ? "View Profile" : "Complete Profile"}
-                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                          </Link>
-                        )}
                       </div>
+                      
+                      <Link
+                        href="/seller/edit-profile"
+                        className="mt-auto bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-manrope font-medium transition-colors flex items-center justify-center"
+                      >
+                        {profileProgress < 100 ? 'Complete Profile' : 'Edit Profile'}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
                     </div>
 
-                    {/* Verification Status Card */}
+                    {/* Document Verification Card */}
                     <div className="bg-white rounded-xl border border-stone-200 p-8 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full">
                       <div className="flex items-start mb-6">
-                        <div className="p-4 bg-yogreet-red/10 rounded-xl mr-4 shrink-0">
-                          <FileCheck className="w-7 h-7 text-yogreet-red" />
+                        <div className="p-4 bg-yogreet-sage/10 rounded-xl mr-4 shrink-0">
+                          <FileCheck className="w-7 h-7 text-yogreet-sage" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-xl font-manrope font-semibold text-yogreet-charcoal mb-2">
-                            Verification Status
+                        <div className="text-left">
+                          <h3 className="text-lg font-poppins font-medium text-yogreet-charcoal">
+                            Document Verification
                           </h3>
-                          <p className="text-sm text-stone-600 font-inter leading-relaxed">
-                            {documentVerificationProgress < 100
-                              ? "Complete verification to start selling"
-                              : "Verification is complete"}
+                          <p className="text-stone-500 text-sm font-inter">
+                            Upload required documents
                           </p>
                         </div>
                       </div>
                       
-                      <div className="mt-auto space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-inter font-medium text-stone-700">
-                            Progress
-                          </span>
-                          <span className="text-lg font-manrope font-semibold text-yogreet-red">
+                      <div className="mb-6">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-inter text-stone-600">Progress</span>
+                          <span className="text-sm font-manrope font-semibold text-yogreet-sage">
                             {documentVerificationProgress}%
                           </span>
                         </div>
-                        <div className="relative h-3 w-full overflow-hidden rounded-full bg-stone-100">
-                          <div
-                            className="h-full bg-yogreet-red transition-all duration-500 rounded-full"
+                        <div className="w-full bg-stone-100 rounded-full h-2">
+                          <div 
+                            className="bg-yogreet-sage h-2 rounded-full transition-all duration-500"
                             style={{ width: `${documentVerificationProgress}%` }}
-                          />
+                          ></div>
                         </div>
-                        {documentVerificationProgress < 100 && (
-                          <Link
-                            href={documentVerificationProgress > 40 ? "/seller/documents" : "/seller/verify-document"}
-                            className="inline-flex items-center justify-center w-full mt-5 px-4 py-2.5 bg-yogreet-red/10 text-yogreet-red hover:bg-yogreet-red hover:text-white rounded-lg font-manrope font-medium text-sm transition-all duration-300 group"
-                          >
-                            {documentVerificationProgress > 40 ? "View Documents" : "Complete Verification"}
-                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                          </Link>
-                        )}
                       </div>
+                      
+                      <Link
+                        href="/seller/verify-document"
+                        className="mt-auto bg-yogreet-sage hover:bg-yogreet-sage/90 text-white px-6 py-3 rounded-lg font-manrope font-medium transition-colors flex items-center justify-center"
+                      >
+                        {documentVerificationProgress < 100 ? 'Continue Verification' : 'View Documents'}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link
-                      href="/seller/products"
-                      className="bg-yogreet-sage text-white px-8 py-4 rounded-lg hover:bg-yogreet-sage/90 transition-all duration-300 font-manrope font-medium flex items-center justify-center group shadow-md hover:shadow-lg"
+                      href="/seller/dashboard"
+                      className="bg-yogreet-sage hover:bg-yogreet-sage/90 text-white px-8 py-4 rounded-lg font-manrope font-medium transition-all duration-300 flex items-center group"
                     >
-                      <Package className="w-5 h-5 mr-2" />
-                      Add Products
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                      View Dashboard
+                      <BarChart3 className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Link>
                     <Link
-                      href="/seller/orders"
-                      className="bg-white text-yogreet-charcoal px-8 py-4 rounded-lg border-2 border-stone-200 hover:bg-stone-50 hover:border-yogreet-sage transition-all duration-300 font-manrope font-medium flex items-center justify-center group shadow-md hover:shadow-lg"
+                      href="/seller/products"
+                      className="bg-white hover:bg-stone-50 text-yogreet-charcoal px-8 py-4 rounded-lg font-manrope font-medium border border-stone-200 transition-all duration-300 flex items-center group"
                     >
-                      <Play className="w-5 h-5 mr-2" />
-                      View Orders
+                      Manage Products
+                      <Package className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </div>
                 )}
@@ -313,131 +302,109 @@ export default function SellerLanding() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-poppins font-light text-yogreet-charcoal mb-4">
-              Everything You Need to{" "}
-              <span className="text-yogreet-sage font-medium">Succeed</span>
+              Everything You Need to
+              <span className="font-medium text-yogreet-sage"> Succeed</span>
             </h2>
-            <p className="text-lg text-stone-600 max-w-2xl mx-auto font-inter">
-              Powerful tools designed specifically for spice exporters to
-              manage their business and grow their exports.
+            <p className="text-stone-600 max-w-2xl mx-auto font-inter">
+              Powerful tools designed to help you manage your spice export
+              business efficiently
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
-              return (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {features.map((feature, index) => (
+              <Link
+                key={index}
+                href={feature.href}
+                className="group bg-stone-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-stone-200"
+              >
                 <div
-                  key={index}
-                  className="group bg-white rounded-xl border border-stone-200 p-8 hover:shadow-lg hover:border-yogreet-sage/30 transition-all duration-300"
+                  className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ${
+                    feature.color === "red"
+                      ? "bg-yogreet-red/10"
+                      : "bg-yogreet-sage/10"
+                  }`}
                 >
-                  <div className="flex items-start mb-6">
-                    <div
-                      className={`p-3 rounded-lg ${
-                        feature.color === "red"
-                          ? "bg-yogreet-red/10"
-                          : "bg-yogreet-sage/10"
-                      } mr-4`}
-                    >
-                      <Icon
-                        className={`w-6 h-6 ${
-                          feature.color === "red"
-                            ? "text-yogreet-red"
-                            : "text-yogreet-sage"
-                        }`}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-manrope font-medium text-yogreet-charcoal mb-2">
-                        {feature.title}
-                      </h3>
-                      <p className="text-stone-600 mb-4 font-inter">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <ul className="space-y-2">
-                      {feature.benefits.map((benefit, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-center text-stone-600 text-sm font-inter"
-                        >
-                          <div className="w-1.5 h-1.5 bg-yogreet-sage rounded-full mr-3"></div>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <Link
-                    href={feature.href}
-                    className="inline-flex items-center text-yogreet-sage hover:text-yogreet-sage/80 font-manrope font-medium group-hover:translate-x-1 transition-all duration-300"
-                  >
-                    Explore feature
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Link>
+                  <feature.icon
+                    className={`w-7 h-7 ${
+                      feature.color === "red"
+                        ? "text-yogreet-red"
+                        : "text-yogreet-sage"
+                    }`}
+                  />
                 </div>
-              )
-            })}
+
+                <h3 className="text-xl font-poppins font-medium text-yogreet-charcoal mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-stone-600 mb-6 font-inter leading-relaxed">
+                  {feature.description}
+                </p>
+
+                <ul className="space-y-2 mb-6">
+                  {feature.benefits.map((benefit, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center text-sm text-stone-500 font-inter"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-yogreet-sage mr-2" />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="flex items-center text-yogreet-sage font-manrope font-medium group-hover:translate-x-2 transition-transform">
+                  Explore
+                  <ChevronRight className="w-5 h-5 ml-1" />
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Quick Start Guide */}
-      <section className="py-20 gradient-to-r from-stone-50 to-stone-100">
+      <section className="py-20 bg-stone-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-poppins font-light text-yogreet-charcoal mb-4">
-              Quick Start{" "}
-              <span className="text-yogreet-sage font-medium">Guide</span>
+              Quick Start
+              <span className="font-medium text-yogreet-sage"> Guide</span>
             </h2>
-            <p className="text-lg text-stone-600 max-w-2xl mx-auto font-inter">
-              Follow these simple steps to set up your account and start
-              exporting your premium spices.
+            <p className="text-stone-600 max-w-2xl mx-auto font-inter">
+              Follow these simple steps to start your export journey
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {quickStart.map((item, index) => {
-                const Icon = item.icon
-                // Dynamically set href for "Verify Your Documents" based on progress
-                const href = item.href === "/seller/verify-document" && documentVerificationProgress > 40
-                  ? "/seller/documents"
-                  : item.href
-                return (
-                  <Link
-                    key={index}
-                    href={href}
-                    className="group bg-white rounded-lg p-6 border border-stone-200 hover:shadow-md hover:border-yogreet-sage/30 transition-all duration-300"
-                  >
-                    <div className="flex items-start">
-                      <div className="shrink-0 mr-4">
-                        <div className="w-12 h-12 bg-yogreet-sage/10 rounded-lg flex items-center justify-center mb-2">
-                          <Icon className="w-6 h-6 text-yogreet-sage" />
-                        </div>
-                        <div className="text-2xl font-poppins font-light text-yogreet-sage">
-                          {item.step}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-manrope font-medium text-yogreet-charcoal mb-2 group-hover:text-yogreet-sage transition-colors">
-                          {item.title}
-                        </h3>
-                        <p className="text-stone-600 text-sm mb-3 font-inter">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center text-yogreet-sage text-sm font-manrope font-medium">
-                          Start now
-                          <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {quickStart.map((item, index) => (
+              <Link
+                key={index}
+                href={item.href}
+                className="group bg-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 border border-stone-200 hover:border-yogreet-sage/30"
+              >
+                <div className="flex items-center mb-4">
+                  <span className="text-4xl font-poppins font-bold text-stone-200 mr-4">
+                    {item.step}
+                  </span>
+                  <div className="w-12 h-12 rounded-lg bg-yogreet-sage/10 flex items-center justify-center">
+                    <item.icon className="w-6 h-6 text-yogreet-sage" />
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-poppins font-medium text-yogreet-charcoal mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-stone-500 text-sm font-inter">
+                  {item.description}
+                </p>
+
+                <div className="mt-4 flex items-center text-yogreet-sage text-sm font-manrope font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -447,62 +414,60 @@ export default function SellerLanding() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-poppins font-light text-yogreet-charcoal mb-4">
-              Why Choose{" "}
-              <span className="text-yogreet-sage font-medium">Yogreet</span>
+              Why Choose
+              <span className="font-medium text-yogreet-sage"> Yogreet</span>
             </h2>
-            <p className="text-lg text-stone-600 max-w-2xl mx-auto font-inter">
-              Join thousands of spice exporters who trust our platform to grow their
-              export business.
+            <p className="text-stone-600 max-w-2xl mx-auto font-inter">
+              Join a platform built specifically for spice exporters
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            {platformBenefits.map((benefit, index) => {
-              const Icon = benefit.icon
-              return (
-                <div key={index} className="text-center group">
-                  <div className="w-16 h-16 gradient-to-br from-yogreet-sage/20 to-yogreet-red/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-8 h-8 text-yogreet-sage" />
-                  </div>
-                  <h3 className="text-lg font-manrope font-medium text-yogreet-charcoal mb-2">
-                    {benefit.title}
-                  </h3>
-                  <p className="text-stone-600 text-sm font-inter">
-                    {benefit.description}
-                  </p>
+            {platformBenefits.map((benefit, index) => (
+              <div
+                key={index}
+                className="text-center group"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-yogreet-sage/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-yogreet-sage/20 transition-colors">
+                  <benefit.icon className="w-8 h-8 text-yogreet-sage" />
                 </div>
-              )
-            })}
+                <h3 className="text-lg font-poppins font-medium text-yogreet-charcoal mb-2">
+                  {benefit.title}
+                </h3>
+                <p className="text-stone-500 text-sm font-inter leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-yogreet-charcoal">
+      <section className="py-20 bg-gradient-to-br from-yogreet-sage to-yogreet-sage/90">
         <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-poppins font-light text-white mb-4">
-              Ready to Start Your Journey?
-            </h2>
-            <p className="text-xl text-stone-300 mb-8 font-inter">
-              Join our community of premium spice exporters and start sharing your
-              authentic spices with the world.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href={documentVerificationProgress > 40 ? "/seller/documents" : "/seller/verify-document"}
-                className="bg-yogreet-sage text-white px-8 py-4 rounded-lg hover:bg-yogreet-sage/90 transition-all duration-300 font-manrope font-medium flex items-center justify-center group"
-              >
-                {documentVerificationProgress > 40 ? "View Documents" : "Verify Documents"}
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/seller/products"
-                className="bg-transparent text-white px-8 py-4 rounded-lg border-2 border-white hover:bg-white hover:text-yogreet-charcoal transition-all duration-300 font-manrope font-medium"
-              >
-                Explore Features
-              </Link>
-            </div>
+          <h2 className="text-3xl md:text-4xl font-poppins font-light text-white mb-6">
+            Ready to Grow Your
+            <span className="font-medium"> Spice Business?</span>
+          </h2>
+          <p className="text-white/80 max-w-2xl mx-auto mb-8 font-inter">
+            Start managing your products and connecting with buyers today.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/seller/dashboard"
+              className="bg-white text-yogreet-sage hover:bg-stone-100 px-8 py-4 rounded-lg font-manrope font-medium transition-colors flex items-center"
+            >
+              Go to Dashboard
+              <BarChart3 className="w-5 h-5 ml-2" />
+            </Link>
+            <Link
+              href="/seller/products/add"
+              className="bg-transparent border-2 border-white text-white hover:bg-white/10 px-8 py-4 rounded-lg font-manrope font-medium transition-colors flex items-center"
+            >
+              Add Your First Product
+              <Package className="w-5 h-5 ml-2" />
+            </Link>
           </div>
         </div>
       </section>

@@ -5,6 +5,8 @@ import { uploadFlexibleImages, uploadSellerVerificationDocuments } from "../../m
 import { asyncHandler } from "../../middleware/errorHandler";
 import productRoutes from "./product.routes";
 import orderRoutes from "./order.routes";
+import analyticsRoutes from "./analytics.routes";
+import discountRoutes from "./discount.routes";
 
 const router = express.Router();
 
@@ -42,5 +44,7 @@ router.put(
 // Product routes (delegated to separate product routes file)
 router.use("/products", productRoutes);
 router.use("/orders", orderRoutes);
+router.use("/analytics", analyticsRoutes);
+router.use("/discounts", discountRoutes);
 
 export default router;

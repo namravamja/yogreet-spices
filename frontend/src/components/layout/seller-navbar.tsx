@@ -184,6 +184,16 @@ export function SellerNavbar() {
                     Home
                   </Link>
                   <Link 
+                    href="/seller/dashboard" 
+                    className={`font-inter text-base transition-colors cursor-pointer ${
+                      pathname === "/seller/dashboard" 
+                        ? "text-yogreet-sage font-medium" 
+                        : "text-yogreet-charcoal hover:text-yogreet-sage"
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
                     href="/seller/orders" 
                     className={`font-inter text-base transition-colors cursor-pointer ${
                       pathname?.startsWith("/seller/orders") 
@@ -395,6 +405,16 @@ export function SellerNavbar() {
                     }`}
                   >
                     Home
+                  </Link>
+                  <Link 
+                    href="/seller/dashboard" 
+                    className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
+                      pathname === "/seller/dashboard"
+                        ? "text-yogreet-sage bg-yogreet-sage/10 font-medium" 
+                        : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
+                    }`}
+                  >
+                    Dashboard
                   </Link>
                   <Link 
                     href="/seller/orders" 

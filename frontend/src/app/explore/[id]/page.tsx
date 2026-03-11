@@ -16,6 +16,15 @@ import { useAddToCartMutation, useGetCartQuery, useUpdateCartItemMutation, useCl
 import { toast } from "sonner"
 import { formatCurrency } from "@/utils/currency"
 
+// Helper to calculate discounted price
+function calculateDiscountedPrice(originalPrice: number, discount: any): number {
+  if (!discount) return originalPrice
+  if (discount.type === "percentage") {
+    return originalPrice * (1 - discount.value / 100)
+  }
+  return Math.max(0, originalPrice - discount.value)
+}
+
 // Transform database product to detail page format
 function transformProductForDetail(product: any) {
   const reviews = product.Review || []
@@ -108,6 +117,7 @@ function transformProductForDetail(product: any) {
     sellerBusinessLogo,
     sellerCreatedAt,
     sellerProductCategories,
+    discount: product.activeDiscount || null,
     reviewsList: reviews.map((review: any) => ({
       id: review.id,
       userId: review.buyerId || review.id,
@@ -1115,6 +1125,17 @@ export default function ProductDetailPage() {
 
               {/* Package Content */}
               <div className="p-6 bg-white">
+                {/* Discount Badge */}
+                {product.discount && (
+                  <div className="mb-3">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-600">
+                      {product.discount.type === "percentage" 
+                        ? `${product.discount.value}% OFF` 
+                        : `${formatCurrency(product.discount.value, "INR")} OFF`}
+                    </span>
+                  </div>
+                )}
+
                 {/* Package Name */}
                 <h3 className="text-lg font-semibold text-yogreet-charcoal mb-2">
                   {selectedPackage === "sample" && "Order Sample"}
@@ -1123,43 +1144,76 @@ export default function ProductDetailPage() {
                   {selectedPackage === "large" && "Large Package"}
                 </h3>
 
-                {/* Price */}
+                {/* Price with Discount */}
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-2xl font-bold text-black">
-                      {formatCurrency(
-                        selectedPackage === "sample"
-                          ? Number(product.samplePricePerKg || 0)
-                          : selectedPackage === "small"
-                          ? Number(product.smallPricePerKg || product.price || 0)
-                          : selectedPackage === "medium"
-                          ? Number(product.mediumPricePerKg || 0)
-                          : Number(product.largePricePerKg || 0),
-                        "INR"
-                      )}/kg
-                    </span>
-                    <FiInfo className="w-4 h-4 text-gray-400" />
-                  </div>
-                  {selectedPackage === "sample" && product.samplePrice && product.sampleWeight && (
-                    <p className="text-sm text-yogreet-warm-gray">
-                      {formatCurrency(product.samplePrice, "INR")} for {product.sampleWeight}kg
-                    </p>
-                  )}
-                  {selectedPackage === "small" && product.smallPrice && product.smallWeight && (
-                    <p className="text-sm text-yogreet-warm-gray">
-                      {formatCurrency(product.smallPrice, "INR")} for {product.smallWeight}kg
-                    </p>
-                  )}
-                  {selectedPackage === "medium" && product.mediumPrice && product.mediumWeight && (
-                    <p className="text-sm text-yogreet-warm-gray">
-                      {formatCurrency(product.mediumPrice, "INR")} for {product.mediumWeight}kg
-                    </p>
-                  )}
-                  {selectedPackage === "large" && product.largePrice && product.largeWeight && (
-                    <p className="text-sm text-yogreet-warm-gray">
-                      {formatCurrency(product.largePrice, "INR")} for {product.largeWeight}kg
-                    </p>
-                  )}
+                  {(() => {
+                    const originalPricePerKg = 
+                      selectedPackage === "sample"
+                        ? Number(product.samplePricePerKg || 0)
+                        : selectedPackage === "small"
+                        ? Number(product.smallPricePerKg || product.price || 0)
+                        : selectedPackage === "medium"
+                        ? Number(product.mediumPricePerKg || 0)
+                        : Number(product.largePricePerKg || 0);
+                    
+                    const discountedPricePerKg = calculateDiscountedPrice(originalPricePerKg, product.discount);
+                    const hasDiscount = product.discount && discountedPricePerKg < originalPricePerKg;
+                    
+                    const originalPackagePrice = 
+                      selectedPackage === "sample" ? product.samplePrice :
+                      selectedPackage === "small" ? product.smallPrice :
+                      selectedPackage === "medium" ? product.mediumPrice :
+                      product.largePrice;
+                    
+                    const packageWeight = 
+                      selectedPackage === "sample" ? product.sampleWeight :
+                      selectedPackage === "small" ? product.smallWeight :
+                      selectedPackage === "medium" ? product.mediumWeight :
+                      product.largeWeight;
+                    
+                    const discountedPackagePrice = originalPackagePrice ? calculateDiscountedPrice(originalPackagePrice, product.discount) : 0;
+
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 mb-1">
+                          {hasDiscount ? (
+                            <>
+                              <span className="text-2xl font-bold text-red-600">
+                                {formatCurrency(discountedPricePerKg, "INR")}/kg
+                              </span>
+                              <span className="text-lg text-gray-400 line-through">
+                                {formatCurrency(originalPricePerKg, "INR")}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-2xl font-bold text-black">
+                              {formatCurrency(originalPricePerKg, "INR")}/kg
+                            </span>
+                          )}
+                          <FiInfo className="w-4 h-4 text-gray-400" />
+                        </div>
+                        {originalPackagePrice && packageWeight && (
+                          <p className="text-sm text-yogreet-warm-gray">
+                            {hasDiscount ? (
+                              <>
+                                <span className="text-red-600 font-medium">{formatCurrency(discountedPackagePrice, "INR")}</span>
+                                {" "}
+                                <span className="line-through text-gray-400">{formatCurrency(originalPackagePrice, "INR")}</span>
+                                {" "}for {packageWeight}kg
+                              </>
+                            ) : (
+                              <>{formatCurrency(originalPackagePrice, "INR")} for {packageWeight}kg</>
+                            )}
+                          </p>
+                        )}
+                        {hasDiscount && (
+                          <p className="text-xs text-green-600 mt-1 font-medium">
+                            You save {formatCurrency(originalPackagePrice - discountedPackagePrice, "INR")}!
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Description */}

@@ -7,14 +7,20 @@ export const getCartItems = async (buyerId: string) => {
   const cartItems = await Cart.find({ buyerId: new mongoose.Types.ObjectId(buyerId) })
     .populate({
       path: "productId",
-      populate: {
-        path: "sellerId",
-        select: "fullName companyName businessLogo businessAddressId",
-        populate: {
-          path: "businessAddressId",
-          select: "city state country",
+      populate: [
+        {
+          path: "sellerId",
+          select: "fullName companyName businessLogo businessAddressId",
+          populate: {
+            path: "businessAddressId",
+            select: "city state country",
+          },
         },
-      },
+        {
+          path: "activeDiscount",
+          select: "name code type value isActive startDate endDate",
+        },
+      ],
     })
     .sort({ createdAt: -1 })
     .lean();
@@ -23,12 +29,33 @@ export const getCartItems = async (buyerId: string) => {
     const product = item.productId as any;
     const seller = product?.sellerId;
     
+    // Check if discount is valid
+    let activeDiscount = null;
+    if (product?.activeDiscount && product.activeDiscount.isActive) {
+      const now = new Date();
+      const startDate = product.activeDiscount.startDate ? new Date(product.activeDiscount.startDate) : null;
+      const endDate = product.activeDiscount.endDate ? new Date(product.activeDiscount.endDate) : null;
+      
+      const isValidDate = (!startDate || now >= startDate) && (!endDate || now <= endDate);
+      
+      if (isValidDate) {
+        activeDiscount = {
+          id: product.activeDiscount._id?.toString(),
+          name: product.activeDiscount.name,
+          code: product.activeDiscount.code,
+          type: product.activeDiscount.type,
+          value: product.activeDiscount.value,
+        };
+      }
+    }
+    
     return {
       ...item,
       id: item._id.toString(),
       product: product ? {
         ...product,
         id: product._id.toString(),
+        activeDiscount,
         seller: seller ? {
           id: seller._id?.toString(),
           fullName: seller.fullName || null,

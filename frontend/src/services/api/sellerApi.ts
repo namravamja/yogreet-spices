@@ -215,6 +215,126 @@ export const sellerApi = SellerApi.injectEndpoints({
       }),
       invalidatesTags: ["Orders"],
     }),
+
+    // Get seller analytics
+    getSellerAnalytics: builder.query({
+      query: () => "/analytics",
+      providesTags: ["Analytics"],
+      transformResponse: (response: any) => {
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Get sales insights
+    getSalesInsights: builder.query({
+      query: (period: string = "30d") => `/analytics/insights?period=${period}`,
+      providesTags: ["Analytics"],
+      transformResponse: (response: any) => {
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Get seller discounts
+    getSellerDiscounts: builder.query({
+      query: () => "/discounts",
+      providesTags: ["Discounts"],
+      transformResponse: (response: any) => {
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Get single discount
+    getDiscount: builder.query({
+      query: (id: string) => `/discounts/${id}`,
+      providesTags: (result, error, id) => [{ type: "Discounts", id }],
+      transformResponse: (response: any) => {
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Create discount
+    createDiscount: builder.mutation({
+      query: (discountData) => ({
+        url: "/discounts",
+        method: "POST",
+        body: discountData,
+      }),
+      invalidatesTags: ["Discounts"],
+    }),
+
+    // Update discount
+    updateDiscount: builder.mutation({
+      query: ({ id, ...discountData }) => ({
+        url: `/discounts/${id}`,
+        method: "PUT",
+        body: discountData,
+      }),
+      invalidatesTags: (result, error, { id }) => ["Discounts", { type: "Discounts", id }],
+    }),
+
+    // Delete discount  
+    deleteDiscount: builder.mutation({
+      query: (id: string) => ({
+        url: `/discounts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Discounts"],
+    }),
+
+    // Toggle discount status
+    toggleDiscountStatus: builder.mutation({
+      query: (id: string) => ({
+        url: `/discounts/${id}/toggle`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (result, error, id) => ["Discounts", { type: "Discounts", id }],
+    }),
+
+    // Get products for discount selection
+    getProductsForDiscount: builder.query({
+      query: (discountId?: string) => ({
+        url: "/discounts/products",
+        params: discountId ? { discountId } : {},
+      }),
+      providesTags: ["Products", "Discounts"],
+      transformResponse: (response: any) => {
+        if (response && typeof response === "object" && "data" in response) {
+          return response.data;
+        }
+        return response;
+      },
+    }),
+
+    // Apply discount to products
+    applyDiscountToProducts: builder.mutation({
+      query: ({ discountId, productIds }: { discountId: string; productIds: string[] }) => ({
+        url: `/discounts/${discountId}/apply`,
+        method: "POST",
+        body: { productIds },
+      }),
+      invalidatesTags: ["Discounts", "Products"],
+    }),
+
+    // Remove discount from products
+    removeDiscountFromProducts: builder.mutation({
+      query: (discountId: string) => ({
+        url: `/discounts/${discountId}/remove`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Discounts", "Products"],
+    }),
   }),
 });
 
@@ -230,4 +350,15 @@ export const {
   useDeleteProductMutation,
   useGetSellerOrdersQuery,
   useUpdateOrderStatusMutation,
+  useGetSellerAnalyticsQuery,
+  useGetSalesInsightsQuery,
+  useGetSellerDiscountsQuery,
+  useGetDiscountQuery,
+  useCreateDiscountMutation,
+  useUpdateDiscountMutation,
+  useDeleteDiscountMutation,
+  useToggleDiscountStatusMutation,
+  useGetProductsForDiscountQuery,
+  useApplyDiscountToProductsMutation,
+  useRemoveDiscountFromProductsMutation,
 } = sellerApi;

@@ -23,6 +23,15 @@ import { AddAddressModal } from "@/components/buyer/AddAddressModal";
 import ConfirmationModal from "@/components/shared/ConfirmationModal";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
+// Helper to calculate discounted price
+function calculateDiscountedPrice(originalPrice: number, discount: any): number {
+  if (!discount) return originalPrice;
+  if (discount.type === "percentage") {
+    return originalPrice * (1 - discount.value / 100);
+  }
+  return Math.max(0, originalPrice - discount.value);
+}
+
 interface Address {
   id: string;
   firstName: string;
@@ -118,6 +127,10 @@ function CheckoutPageContent() {
         pricePerKg = samplePrice / sampleWeight;
       }
     }
+
+    // Get discount info
+    const discount = product.activeDiscount || null;
+    const discountedPricePerKg = calculateDiscountedPrice(pricePerKg, discount);
     
     return {
       id: `buynow-${product.id}`,
@@ -128,6 +141,8 @@ function CheckoutPageContent() {
         productName: product.productName,
         productImages: product.productImages || [],
         pricePerKg,
+        discountedPricePerKg,
+        discount,
         availableStock,
         category: product.category,
         seller: {
@@ -168,6 +183,10 @@ function CheckoutPageContent() {
       } else if (largeWeight > 0 && largePrice > 0) {
         pricePerKg = largePrice / largeWeight;
       }
+
+      // Get discount info
+      const discount = product.activeDiscount || null;
+      const discountedPricePerKg = calculateDiscountedPrice(pricePerKg, discount);
       
       return {
         id: item.id,
@@ -178,6 +197,8 @@ function CheckoutPageContent() {
           productName: product.productName,
           productImages: product.productImages || [],
           pricePerKg,
+          discountedPricePerKg,
+          discount,
           availableStock,
           category: product.category,
           seller: {
@@ -228,13 +249,24 @@ function CheckoutPageContent() {
     }
   };
 
-  // Calculate totals
+  // Calculate totals (using discounted prices)
   const subtotal = useMemo(() => {
     if (!cartItems || cartItems.length === 0) return 0;
     return cartItems.reduce((sum: number, item: any) => {
-      const pricePerKg = item.product?.pricePerKg || 0;
+      const discountedPricePerKg = item.product?.discountedPricePerKg || item.product?.pricePerKg || 0;
       const weight = item.weight || 0;
-      return sum + pricePerKg * weight;
+      return sum + discountedPricePerKg * weight;
+    }, 0);
+  }, [cartItems]);
+
+  // Calculate total savings from discounts
+  const totalSavings = useMemo(() => {
+    if (!cartItems || cartItems.length === 0) return 0;
+    return cartItems.reduce((sum: number, item: any) => {
+      const originalPrice = item.product?.pricePerKg || 0;
+      const discountedPrice = item.product?.discountedPricePerKg || originalPrice;
+      const weight = item.weight || 0;
+      return sum + (originalPrice - discountedPrice) * weight;
     }, 0);
   }, [cartItems]);
 
@@ -670,6 +702,9 @@ function CheckoutPageContent() {
                   {cartItems.map((item: any) => {
                     const weight = item.weight || 0;
                     const pricePerKg = item.product?.pricePerKg || 0;
+                    const discountedPricePerKg = item.product?.discountedPricePerKg || pricePerKg;
+                    const discount = item.product?.discount;
+                    const hasDiscount = discount && discountedPricePerKg < pricePerKg;
                     return (
                       <div key={item.id} className="flex gap-3 pb-4 border-b border-stone-200 last:border-0">
                         <div className="relative w-16 h-16 shrink-0">
@@ -679,16 +714,29 @@ function CheckoutPageContent() {
                             fill
                             className="object-cover rounded-xs"
                           />
+                          {hasDiscount && (
+                            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-semibold px-1 py-0.5 rounded">
+                              {discount.type === "percentage" ? `${discount.value}%` : "SALE"}
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-yogreet-charcoal text-sm mb-1 line-clamp-2">
                             {item.product?.productName || "Unknown Product"}
                           </h3>
                           <p className="text-xs text-stone-500 mb-1">
-                          {weight.toFixed(1)} kg × {formatCurrency(pricePerKg, currency)}
+                            {weight.toFixed(1)} kg × {" "}
+                            {hasDiscount ? (
+                              <>
+                                <span className="text-red-600">{formatCurrency(discountedPricePerKg, currency)}</span>
+                                <span className="line-through ml-1">{formatCurrency(pricePerKg, currency)}</span>
+                              </>
+                            ) : (
+                              formatCurrency(pricePerKg, currency)
+                            )}
                           </p>
-                          <p className="font-medium text-yogreet-charcoal text-sm">
-                            {formatCurrency(pricePerKg * weight, currency)}
+                          <p className={`font-medium text-sm ${hasDiscount ? "text-red-600" : "text-yogreet-charcoal"}`}>
+                            {formatCurrency(discountedPricePerKg * weight, currency)}
                           </p>
                         </div>
                       </div>
@@ -704,6 +752,12 @@ function CheckoutPageContent() {
                       {formatCurrency(subtotal, currency)}
                     </span>
                   </div>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount Savings</span>
+                      <span>-{formatCurrency(totalSavings, currency)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-stone-600">Shipping</span>
                     <span className="text-yogreet-charcoal">
@@ -719,6 +773,11 @@ function CheckoutPageContent() {
                     <span className="text-yogreet-charcoal">Total</span>
                     <span className="text-yogreet-red">{formatCurrency(total, currency)}</span>
                   </div>
+                  {totalSavings > 0 && (
+                    <div className="bg-green-50 text-green-700 text-xs p-2 rounded text-center">
+                      You&apos;re saving {formatCurrency(totalSavings, currency)} on this order!
+                    </div>
+                  )}
                 </div>
 
                 {/* Place Order Button */}

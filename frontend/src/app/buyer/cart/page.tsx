@@ -15,6 +15,14 @@ import { formatCurrency } from "@/utils/currency";
 import { useAuth } from "@/hooks/useAuth";
 import { PLACEHOLDER_JPG_URL } from "@/constants/static-images";
 
+// Helper to calculate discounted price
+function calculateDiscountedPrice(originalPrice: number, discount: any): number {
+  if (!discount) return originalPrice;
+  if (discount.type === "percentage") {
+    return originalPrice * (1 - discount.value / 100);
+  }
+  return Math.max(0, originalPrice - discount.value);
+}
 
 
 export default function BuyerCartPage() {
@@ -56,6 +64,10 @@ export default function BuyerCartPage() {
       pricePerKg = largePrice / largeWeight
     }
     
+    // Get discount info
+    const discount = product.activeDiscount || null
+    const discountedPricePerKg = calculateDiscountedPrice(pricePerKg, discount)
+    
     // Minimum quantity is the smallest package weight
     const minQuantity = Math.min(
       ...([sampleWeight, smallWeight, mediumWeight, largeWeight].filter(w => w > 0))
@@ -70,6 +82,8 @@ export default function BuyerCartPage() {
         productName: product.productName,
         productImages: product.productImages || [],
         pricePerKg,
+        discountedPricePerKg,
+        discount,
         availableStock,
         minQuantity,
         category: product.category,
@@ -119,14 +133,26 @@ export default function BuyerCartPage() {
     }
   };
 
-  // Calculate totals safely
+  // Calculate totals safely (using discounted prices)
   const subtotal = useMemo(() => {
     if (!cartItems || cartItems.length === 0) return 0;
 
     return cartItems.reduce((sum: number, item: any) => {
-      const pricePerKg = item.product?.pricePerKg || 0;
+      const discountedPricePerKg = item.product?.discountedPricePerKg || item.product?.pricePerKg || 0;
       const weight = item.weight || 0;
-      return sum + pricePerKg * weight;
+      return sum + discountedPricePerKg * weight;
+    }, 0);
+  }, [cartItems]);
+
+  // Calculate total savings from discounts
+  const totalSavings = useMemo(() => {
+    if (!cartItems || cartItems.length === 0) return 0;
+
+    return cartItems.reduce((sum: number, item: any) => {
+      const originalPrice = item.product?.pricePerKg || 0;
+      const discountedPrice = item.product?.discountedPricePerKg || originalPrice;
+      const weight = item.weight || 0;
+      return sum + (originalPrice - discountedPrice) * weight;
     }, 0);
   }, [cartItems]);
 
@@ -244,6 +270,9 @@ export default function BuyerCartPage() {
                 item.weight?.toString() || item.product?.minQuantity?.toString() || "1"
               );
               const pricePerKg = item.product?.pricePerKg || 0;
+              const discountedPricePerKg = item.product?.discountedPricePerKg || pricePerKg;
+              const discount = item.product?.discount;
+              const hasDiscount = discount && discountedPricePerKg < pricePerKg;
               const seller = item.product?.seller;
 
               return (
@@ -259,6 +288,12 @@ export default function BuyerCartPage() {
                           fill
                           className="object-cover rounded-xs"
                         />
+                        {/* Discount Badge */}
+                        {hasDiscount && (
+                          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
+                            {discount.type === "percentage" ? `${discount.value}%` : formatCurrency(discount.value, "INR")} OFF
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -332,10 +367,33 @@ export default function BuyerCartPage() {
 
                           <div className="flex items-center justify-between border-t border-stone-200 pt-3">
                             <div className="flex flex-col gap-0.5">
-                              <p className="text-sm text-stone-500">{formatCurrency(pricePerKg, "INR")} per kg</p>
-                              <p className="text-xs text-stone-400">{weight.toFixed(1)} kg × {formatCurrency(pricePerKg, "INR")}</p>
+                              {hasDiscount ? (
+                                <>
+                                  <p className="text-sm text-red-600 font-medium">
+                                    {formatCurrency(discountedPricePerKg, "INR")} per kg
+                                    <span className="text-stone-400 line-through ml-2 font-normal">
+                                      {formatCurrency(pricePerKg, "INR")}
+                                    </span>
+                                  </p>
+                                  <p className="text-xs text-stone-400">{weight.toFixed(1)} kg × {formatCurrency(discountedPricePerKg, "INR")}</p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm text-stone-500">{formatCurrency(pricePerKg, "INR")} per kg</p>
+                                  <p className="text-xs text-stone-400">{weight.toFixed(1)} kg × {formatCurrency(pricePerKg, "INR")}</p>
+                                </>
+                              )}
                             </div>
-                            <p className="font-medium text-yogreet-charcoal text-lg">{formatCurrency(pricePerKg * weight, "INR")}</p>
+                            <div className="text-right">
+                              {hasDiscount ? (
+                                <>
+                                  <p className="font-medium text-red-600 text-lg">{formatCurrency(discountedPricePerKg * weight, "INR")}</p>
+                                  <p className="text-xs text-green-600">You save {formatCurrency((pricePerKg - discountedPricePerKg) * weight, "INR")}</p>
+                                </>
+                              ) : (
+                                <p className="font-medium text-yogreet-charcoal text-lg">{formatCurrency(pricePerKg * weight, "INR")}</p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -359,6 +417,12 @@ export default function BuyerCartPage() {
                     <span className="text-stone-600">Subtotal</span>
                     <span className="text-yogreet-charcoal">{formatCurrency(subtotal, "INR")}</span>
                   </div>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount Savings</span>
+                      <span>-{formatCurrency(totalSavings, "INR")}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-stone-600">Shipping</span>
                     <span className="text-yogreet-charcoal">{shipping === 0 ? "Free" : formatCurrency(shipping, "INR")}</span>
@@ -372,6 +436,11 @@ export default function BuyerCartPage() {
                     <span className="text-yogreet-charcoal">Total</span>
                     <span className="text-yogreet-red">{formatCurrency(total, "INR")}</span>
                   </div>
+                  {totalSavings > 0 && (
+                    <div className="bg-green-50 text-green-700 text-sm p-3 rounded-xs text-center">
+                      You&apos;re saving {formatCurrency(totalSavings, "INR")} on this order!
+                    </div>
+                  )}
                 </div>
 
                 <Link href="/buyer/checkout">

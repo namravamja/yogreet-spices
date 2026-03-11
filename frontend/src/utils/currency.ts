@@ -38,14 +38,20 @@ export function defaultCurrency(): string {
 }
 
 export function formatCurrency(amount: number, currency?: string, locale?: string): string {
-  const curr = currency || defaultCurrency();
-  const loc =
-    locale ||
-    (curr === "INR" ? "en-IN" : curr === "GBP" ? "en-GB" : curr === "EUR" ? "de-DE" : "en-US");
+  // Always use INR for Yogreet Spices (India-based business)
+  const curr = currency || "INR";
+  const loc = locale || "en-IN";
+  
   try {
-    return new Intl.NumberFormat(loc, { style: "currency", currency: curr }).format(amount);
+    return new Intl.NumberFormat(loc, { 
+      style: "currency", 
+      currency: curr,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   } catch {
+    // Fallback: always use ₹ for INR
     const symbol = curr === "INR" ? "₹" : curr === "GBP" ? "£" : curr === "EUR" ? "€" : "₹";
-    return `${symbol}${amount.toFixed(2)}`;
+    return `${symbol}${Math.round(amount).toLocaleString("en-IN")}`;
   }
 }

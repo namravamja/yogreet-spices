@@ -10,4 +10,5 @@ export { BusinessAddress, IBusinessAddress } from "./BusinessAddress";
 export { Documents, IDocuments } from "./Documents";
 export { SocialLinks, ISocialLinks } from "./SocialLinks";
 export { Admin, IAdmin } from "./Admin";
+export { Discount, IDiscount } from "./Discount";
 

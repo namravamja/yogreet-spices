@@ -52,12 +52,37 @@ export const getProducts = async () => {
         path: "reviews",
         select: "rating",
       })
+      .populate({
+        path: "activeDiscount",
+        select: "name code type value isActive startDate endDate",
+      })
       .sort({ createdAt: -1 })
       .lean();
 
     // Transform to match expected format
     return products.map((product: any) => {
       const { barcodeImage, ...rest } = product;
+      
+      // Check if discount is valid
+      let activeDiscount = null;
+      if (product.activeDiscount && product.activeDiscount.isActive) {
+        const now = new Date();
+        const startDate = product.activeDiscount.startDate ? new Date(product.activeDiscount.startDate) : null;
+        const endDate = product.activeDiscount.endDate ? new Date(product.activeDiscount.endDate) : null;
+        
+        const isValidDate = (!startDate || now >= startDate) && (!endDate || now <= endDate);
+        
+        if (isValidDate) {
+          activeDiscount = {
+            id: product.activeDiscount._id?.toString(),
+            name: product.activeDiscount.name,
+            code: product.activeDiscount.code,
+            type: product.activeDiscount.type,
+            value: product.activeDiscount.value,
+          };
+        }
+      }
+      
       return {
         ...rest,
         id: product._id.toString(),
@@ -74,6 +99,7 @@ export const getProducts = async () => {
           businessAddress: product.sellerId.businessAddressId,
         } : null,
         Review: product.reviews || [],
+        activeDiscount,
       };
     });
   } catch (error: any) {

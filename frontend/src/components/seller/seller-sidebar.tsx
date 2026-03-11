@@ -25,6 +25,14 @@ export function SellerSidebar() {
               isActive("/seller") ? "bg-yogreet-red text-white" : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
             }`}
           >
+            Home
+          </Link>
+          <Link
+            href="/seller/dashboard"
+            className={`block px-4 py-3 font-inter text-sm transition-colors ${
+              isActive("/seller/dashboard") ? "bg-yogreet-red text-white" : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
+            }`}
+          >
             Dashboard
           </Link>
           <Link
@@ -46,16 +54,6 @@ export function SellerSidebar() {
             }`}
           >
             Orders
-          </Link>
-          <Link
-            href="/seller/analytics"
-            className={`block px-4 py-3 font-inter text-sm transition-colors ${
-              isActive("/seller/analytics")
-                ? "bg-yogreet-red text-white"
-                : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
-            }`}
-          >
-            Analytics
           </Link>
           <Link
             href="/seller/settings"

@@ -9,6 +9,14 @@ import { FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi"
 import { PLACEHOLDER_SVG_URL } from "@/constants/static-images"
 import { formatCurrency } from "@/utils/currency"
 
+interface DiscountInfo {
+  id: string
+  name: string
+  code: string
+  type: "percentage" | "fixed"
+  value: number
+}
+
 export interface ExploreSpiceCardProps {
   id: string
   name: string
@@ -24,6 +32,16 @@ export interface ExploreSpiceCardProps {
   rating: number
   reviews: number
   description?: string
+  discount?: DiscountInfo | null
+}
+
+// Helper to calculate discounted price
+function calculateDiscountedPrice(originalPrice: number, discount: DiscountInfo | null | undefined): number {
+  if (!discount) return originalPrice
+  if (discount.type === "percentage") {
+    return originalPrice * (1 - discount.value / 100)
+  }
+  return Math.max(0, originalPrice - discount.value)
 }
 
 export function ExploreSpiceCard({
@@ -41,11 +59,17 @@ export function ExploreSpiceCard({
   rating,
   reviews,
   description,
+  discount,
 }: ExploreSpiceCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [direction, setDirection] = useState<"left" | "right">("right")
   const router = useRouter()
+
+  // Calculate discounted prices
+  const discountedPrice = calculateDiscountedPrice(price, discount)
+  const discountedSmallPrice = smallPrice ? calculateDiscountedPrice(smallPrice, discount) : undefined
+  const hasDiscount = discount && discountedPrice < price
 
   // Ensure we always have at least one image
   const productImages = images && images.length > 0 ? images : [PLACEHOLDER_SVG_URL]
@@ -157,6 +181,13 @@ export function ExploreSpiceCard({
             </div>
           </>
         )}
+
+        {/* Discount Badge */}
+        {hasDiscount && (
+          <div className="absolute top-2 left-2 z-10 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-semibold shadow-md">
+            {discount.type === "percentage" ? `${discount.value}% OFF` : `${formatCurrency(discount.value, "INR")} OFF`}
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -231,13 +262,36 @@ export function ExploreSpiceCard({
 
         {/* Price */}
         <div className="mb-2">
-          <p className="text-base font-poppins font-semibold text-black">
-            From {formatCurrency(price, "INR")}/kg
-          </p>
-          {smallPrice && smallWeight && (
-            <p className="text-xs text-yogreet-warm-gray font-inter mt-0.5">
-              {formatCurrency(smallPrice, "INR")} for {smallWeight}kg
-            </p>
+          {hasDiscount ? (
+            <>
+              <div className="flex items-center gap-2">
+                <p className="text-base font-poppins font-semibold text-red-600">
+                  From {formatCurrency(discountedPrice, "INR")}/kg
+                </p>
+                <p className="text-sm font-poppins text-gray-400 line-through">
+                  {formatCurrency(price, "INR")}
+                </p>
+              </div>
+              {discountedSmallPrice && smallWeight && (
+                <p className="text-xs text-yogreet-warm-gray font-inter mt-0.5">
+                  <span className="text-red-600 font-medium">{formatCurrency(discountedSmallPrice, "INR")}</span>
+                  {" "}
+                  <span className="line-through text-gray-400">{formatCurrency(smallPrice!, "INR")}</span>
+                  {" "}for {smallWeight}kg
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-base font-poppins font-semibold text-black">
+                From {formatCurrency(price, "INR")}/kg
+              </p>
+              {smallPrice && smallWeight && (
+                <p className="text-xs text-yogreet-warm-gray font-inter mt-0.5">
+                  {formatCurrency(smallPrice, "INR")} for {smallWeight}kg
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

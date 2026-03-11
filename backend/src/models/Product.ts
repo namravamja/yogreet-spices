@@ -33,6 +33,9 @@ export interface IProduct extends Document {
   largeWeight?: string;
   largeDescription?: string;
   
+  // Discount
+  activeDiscount?: mongoose.Types.ObjectId;
+  
   sellerId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -71,6 +74,9 @@ const ProductSchema = new Schema<IProduct>(
     largePrice: { type: String },
     largeWeight: { type: String },
     largeDescription: { type: String },
+    
+    // Discount reference
+    activeDiscount: { type: Schema.Types.ObjectId, ref: "Discount", default: null },
     
     sellerId: { type: Schema.Types.ObjectId, ref: "Seller", required: true },
   },
