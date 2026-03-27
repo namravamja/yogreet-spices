@@ -110,6 +110,118 @@ export default function OrderDetailsPage() {
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const formatOrderDate = (dateValue: string) =>
+    new Date(dateValue).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+  const buildInvoiceHtml = (orderForInvoice: any) => {
+    const safeId = String(orderForInvoice.id || "");
+    const invoiceNo = safeId.slice(0, 8).toUpperCase();
+    const currency = (orderData as any)?.currency || "INR";
+    const subtotal =
+      Number(orderForInvoice.totalAmount || 0) -
+      Number(orderForInvoice.shippingCost || 0) -
+      Number(orderForInvoice.taxAmount || 0);
+    const itemRows = (orderForInvoice.orderItems || [])
+      .map(
+        (item: any) => `
+          <tr>
+            <td>${item.product?.productName || "Unknown Product"}</td>
+            <td>${item.artist?.storeName || item.artist?.fullName || "Unknown Seller"}</td>
+            <td>${item.quantity || 0}</td>
+            <td>${formatCurrency(Number(item.priceAtPurchase || 0), currency)}</td>
+            <td>${formatCurrency(Number(item.quantity || 0) * Number(item.priceAtPurchase || 0), currency)}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice #${invoiceNo}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+      .header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px; }
+      .brand { font-size: 24px; font-weight: 700; color: #7f1d1d; }
+      .muted { color: #6b7280; font-size: 13px; }
+      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; background: #f3f4f6; font-size: 12px; margin-right: 8px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+      th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; font-size: 13px; }
+      th { background: #f9fafb; }
+      .totals { margin-top: 16px; margin-left: auto; width: 320px; }
+      .totals-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+      .totals-row.total { font-weight: 700; font-size: 16px; border-bottom: none; margin-top: 6px; }
+      .footer { margin-top: 32px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <div class="brand">Yogreet Spices</div>
+        <div class="muted">Tax Invoice</div>
+      </div>
+      <div style="text-align: right;">
+        <div><strong>Invoice #:</strong> ${invoiceNo}</div>
+        <div><strong>Order ID:</strong> ${safeId}</div>
+        <div><strong>Date:</strong> ${formatOrderDate(orderForInvoice.placedAt)}</div>
+        <div><strong>Payment:</strong> ${orderForInvoice.paymentMethod || "N/A"}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 8px;">
+      <span class="badge">Order Status: ${String(orderForInvoice.status || "pending")}</span>
+      <span class="badge">Payment Status: ${String(orderForInvoice.paymentStatus || "unpaid")}</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Seller</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRows}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totals-row"><span>Subtotal</span><span>${formatCurrency(subtotal, currency)}</span></div>
+      <div class="totals-row"><span>Shipping</span><span>${formatCurrency(Number(orderForInvoice.shippingCost || 0), currency)}</span></div>
+      <div class="totals-row"><span>Tax</span><span>${formatCurrency(Number(orderForInvoice.taxAmount || 0), currency)}</span></div>
+      <div class="totals-row total"><span>Total</span><span>${formatCurrency(Number(orderForInvoice.totalAmount || 0), currency)}</span></div>
+    </div>
+
+    <div class="footer">
+      Generated from your Yogreet buyer account order details.
+    </div>
+  </body>
+</html>`;
+  };
+
+  const handleDownloadInvoice = () => {
+    if (!order) return;
+    const html = buildInvoiceHtml(order);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `invoice-${String(order.id || "order").slice(0, 8)}.html`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  };
+
   // Normalize API response to the shape used by this component
   const order = orderData
     ? {
@@ -681,7 +793,10 @@ export default function OrderDetailsPage() {
                       )}
                     </div>
                   )}
-                  <button className="w-full bg-yogreet-red hover:bg-yogreet-red/90 text-white px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center">
+                  <button
+                    onClick={handleDownloadInvoice}
+                    className="w-full bg-yogreet-red hover:bg-yogreet-red/90 text-white px-4 py-2 text-sm font-medium transition-colors cursor-pointer rounded flex items-center justify-center"
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Download Invoice
                   </button>

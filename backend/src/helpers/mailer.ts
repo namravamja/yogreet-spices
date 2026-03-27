@@ -2,8 +2,12 @@ import nodemailer from "nodemailer";
 
 // Validate email configuration
 const validateEmailConfig = () => {
-  const requiredVars = ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'BACKEND_URL'];
+  const requiredVars = ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS'];
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
+
+  if (!process.env.MAIL_BACKEND_URL && !process.env.BACKEND_URL) {
+    missingVars.push('MAIL_BACKEND_URL or BACKEND_URL');
+  }
   
   if (missingVars.length > 0) {
     throw new Error(
@@ -60,7 +64,7 @@ export const sendVerificationEmail = async (email: string, token: string, role: 
   }
 
   // Use backend verification endpoint which will redirect to document verification
-  const backendUrl = process.env.BACKEND_URL!;
+  const backendUrl = process.env.MAIL_BACKEND_URL || process.env.BACKEND_URL!;
   const verificationUrl = `${backendUrl}/api/auth/verify-email?token=${token}`;
 
   const roleColor = role === "SELLER" ? "#6b8e6b" : "#8B6B9D"; // sage for seller, purple for buyer

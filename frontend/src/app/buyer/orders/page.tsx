@@ -39,6 +39,126 @@ export default function BuyerOrdersPage() {
   const [dateFilter, setDateFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
+  const formatCurrency = (amount: number) => `₹${Number(amount || 0).toFixed(2)}`;
+
+  const formatOrderDate = (dateValue: string) =>
+    new Date(dateValue).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+  const getTaxAmount = (order: any) =>
+    Number(order.taxAmount || Math.round(Number(order.totalAmount || 0) * 0.08));
+
+  const getShippingAmount = (order: any) => Number(order.shippingCost || 0);
+
+  const getSubtotalAmount = (order: any) =>
+    Number(order.totalAmount || 0) - getShippingAmount(order) - getTaxAmount(order);
+
+  const buildInvoiceHtml = (order: any) => {
+    const safeId = String(order.id || "");
+    const invoiceNo = safeId.slice(0, 8).toUpperCase();
+    const createdDate = formatOrderDate(order.placedAt);
+    const shipping = getShippingAmount(order);
+    const tax = getTaxAmount(order);
+    const subtotal = getSubtotalAmount(order);
+    const itemRows = (order.orderItems || [])
+      .map(
+        (item: any) => `
+          <tr>
+            <td>${item.product?.productName || "Unknown Product"}</td>
+            <td>${item.artist?.storeName || item.artist?.fullName || "Unknown Seller"}</td>
+            <td>${item.quantity || 0}</td>
+            <td>${formatCurrency(Number(item.priceAtPurchase || 0))}</td>
+            <td>${formatCurrency(Number(item.quantity || 0) * Number(item.priceAtPurchase || 0))}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice #${invoiceNo}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+      .header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px; }
+      .brand { font-size: 24px; font-weight: 700; color: #7f1d1d; }
+      .muted { color: #6b7280; font-size: 13px; }
+      .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; background: #f3f4f6; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+      th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; font-size: 13px; }
+      th { background: #f9fafb; }
+      .totals { margin-top: 16px; margin-left: auto; width: 320px; }
+      .totals-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+      .totals-row.total { font-weight: 700; font-size: 16px; border-bottom: none; margin-top: 6px; }
+      .footer { margin-top: 32px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <div class="brand">Yogreet Spices</div>
+        <div class="muted">Tax Invoice</div>
+      </div>
+      <div style="text-align: right;">
+        <div><strong>Invoice #:</strong> ${invoiceNo}</div>
+        <div><strong>Order ID:</strong> ${safeId}</div>
+        <div><strong>Date:</strong> ${createdDate}</div>
+        <div><strong>Payment:</strong> ${order.paymentMethod || "N/A"}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 8px;">
+      <span class="badge">Order Status: ${String(order.status || "pending")}</span>
+      <span class="badge">Payment Status: ${String(order.paymentStatus || "unpaid")}</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Seller</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRows}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totals-row"><span>Subtotal</span><span>${formatCurrency(subtotal)}</span></div>
+      <div class="totals-row"><span>Shipping</span><span>${formatCurrency(shipping)}</span></div>
+      <div class="totals-row"><span>Tax</span><span>${formatCurrency(tax)}</span></div>
+      <div class="totals-row total"><span>Total</span><span>${formatCurrency(Number(order.totalAmount || 0))}</span></div>
+    </div>
+
+    <div class="footer">
+      Generated from your Yogreet buyer account order history.
+    </div>
+  </body>
+</html>`;
+  };
+
+  const handleDownloadInvoice = (order: any) => {
+    const html = buildInvoiceHtml(order);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `invoice-${String(order.id || "order").slice(0, 8)}.html`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  };
+
   // Fetch orders from API
   const { data: ordersData, isLoading, error } = useGetOrdersQuery(undefined, {
     skip: false,
@@ -465,6 +585,13 @@ export default function BuyerOrdersPage() {
                       )}
                     </div>
                     <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleDownloadInvoice(order)}
+                        className="border border-stone-300 text-stone-700 hover:bg-stone-50 px-3 py-1 text-sm font-medium transition-colors cursor-pointer rounded"
+                      >
+                        <Download className="w-4 h-4 mr-2 inline" />
+                        Download Invoice
+                      </button>
                       <Link href={`/buyer/orders/${order.id}`}>
                         <button className="border border-yogreet-red bg-yogreet-red/10 text-yogreet-red hover:bg-yogreet-red hover:text-white px-3 py-1 text-sm font-medium transition-colors cursor-pointer rounded">
                           <Eye className="w-4 h-4 mr-2 inline" />
