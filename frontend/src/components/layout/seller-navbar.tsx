@@ -213,6 +213,16 @@ export function SellerNavbar() {
                   >
                     My Products
                   </Link>
+                  <Link 
+                    href="/seller/chat" 
+                    className={`font-inter text-base transition-colors cursor-pointer ${
+                      pathname?.startsWith("/seller/chat") 
+                        ? "text-yogreet-sage font-medium" 
+                        : "text-yogreet-charcoal hover:text-yogreet-sage"
+                    }`}
+                  >
+                    Messages
+                  </Link>
                 </div>
               </>
             )}
@@ -435,6 +445,16 @@ export function SellerNavbar() {
                     }`}
                   >
                     My Products
+                  </Link>
+                  <Link 
+                    href="/seller/chat" 
+                    className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
+                      pathname?.startsWith("/seller/chat")
+                        ? "text-yogreet-sage bg-yogreet-sage/10 font-medium" 
+                        : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
+                    }`}
+                  >
+                    Messages
                   </Link>
                 </div>
               ) : (

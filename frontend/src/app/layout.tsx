@@ -5,6 +5,7 @@ import "./globals.css";
 import StoreProvider from "@/lib/store/provider";
 import { VerificationModalProviderWithModal } from "@/components/auth/verification-modal-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SocketProvider } from "@/contexts/SocketContext";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -42,10 +43,12 @@ export default function RootLayout({
         className={`${poppins.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
       >
         <StoreProvider>
-          <VerificationModalProviderWithModal>
-            {children}
-          </VerificationModalProviderWithModal>
-          <Toaster position="top-right" richColors closeButton />
+          <SocketProvider>
+            <VerificationModalProviderWithModal>
+              {children}
+            </VerificationModalProviderWithModal>
+            <Toaster position="top-right" richColors closeButton />
+          </SocketProvider>
         </StoreProvider>
       </body>
     </html>

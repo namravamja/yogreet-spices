@@ -15,6 +15,7 @@ import { PLACEHOLDER_SVG_URL, PLACEHOLDER_JPG_URL } from "@/constants/static-ima
 import { useAddToCartMutation, useGetCartQuery, useUpdateCartItemMutation, useClearCartMutation } from "@/services/api/buyerApi"
 import { toast } from "sonner"
 import { formatCurrency } from "@/utils/currency"
+import { BuyerChatWidget } from "@/components/chat/BuyerChatWidget"
 
 // Helper to calculate discounted price
 function calculateDiscountedPrice(originalPrice: number, discount: any): number {
@@ -134,7 +135,7 @@ export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data, isLoading, error } = useGetProductsQuery()
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth("buyer")
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth("buyer")
   const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation()
   const { data: cartData } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
@@ -154,6 +155,7 @@ export default function ProductDetailPage() {
   })
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("most-relevant")
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Transform products and find the matching one
   const products = useMemo(() => {
@@ -1113,9 +1115,16 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* Chat with Buyer */}
+              {/* Chat with Seller */}
               <div className="px-4 py-3 border-b border-gray-200 bg-white">
                 <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setIsLoginModalOpen(true)
+                    } else if (product?.sellerId) {
+                      setIsChatOpen(true)
+                    }
+                  }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-yogreet-sage text-white font-medium hover:bg-yogreet-sage/90 transition-colors cursor-pointer text-sm rounded-md"
                 >
                   <FiMessageCircle className="w-4 h-4" />
@@ -1335,6 +1344,17 @@ export default function ProductDetailPage() {
         onClose={handleCloseModals}
         onSwitchToLogin={handleSwitchToLogin}
       />
+
+      {/* Chat Widget */}
+      {isChatOpen && product?.sellerId && isAuthenticated && (
+        <BuyerChatWidget
+          sellerId={product.sellerId}
+          sellerName={product.seller}
+          sellerAvatar={product.sellerProfilePicture || product.sellerBusinessLogo}
+          buyerId={(user as any)?._id || (user as any)?.id || ""}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
 
     </main>
   )

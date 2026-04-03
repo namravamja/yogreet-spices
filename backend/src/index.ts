@@ -6,11 +6,14 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { connectDB } from "./config/db";
+import { initSocket } from "./socket/chatSocket";
+import chatRoutes from "./routes/common/chat.routes";
 import authRoutes from "./routes/common/auth.routes";
 import buyerRoutes from "./routes/Buyer/buyer.routes";
 import sellerRoutes from "./routes/Seller/seller.routes";
@@ -28,6 +31,7 @@ import { Buyer } from "./models/Buyer";
 import { sendAutoReleasedEmail } from "./helpers/orderMailer";
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 
 app.set("trust proxy", 1);
@@ -82,6 +86,9 @@ app.use("/api/verify", verificationRoutes);
 // Payments
 app.use("/api/payments", paymentRoutes);
 
+// Chat
+app.use("/api/chat", chatRoutes);
+
 // 404 and error handlers
 app.use(notFound);
 app.use(errorHandler);
@@ -92,7 +99,10 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDB();
     
-    app.listen(PORT, () => {
+    // Initialize Socket.IO
+    initSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📱 Environment: ${process.env.NODE_ENV || "development"}`);
       console.log(
