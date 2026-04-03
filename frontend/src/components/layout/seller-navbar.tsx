@@ -12,6 +12,8 @@ import { FiMenu, FiUser, FiLogOut, FiChevronDown, FiCheckCircle, FiFileText } fr
 import { SellerSignupModal, SellerLoginModal } from "../auth"
 import { useDoubleTapLogout } from "@/hooks/useDoubleTapLogout"
 import { toast } from "sonner"
+import { useSocket } from "@/contexts/SocketContext"
+import { useGetConversationsQuery } from "@/services/api/chatApi"
 
 export function SellerNavbar() {
   const router = useRouter()
@@ -28,6 +30,9 @@ export function SellerNavbar() {
   const [isDocVerificationPending] = useState(true)
   const [profileCompletion, setProfileCompletion] = useState(0)
   const [documentCompletion, setDocumentCompletion] = useState(0)
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0)
+
+  const { onNewMessage } = useSocket()
 
   // Check cookie on component mount
   useEffect(() => {
@@ -41,6 +46,45 @@ export function SellerNavbar() {
   const { data: sellerDataFromApi } = useGetSellerQuery(undefined, {
     skip: !isSellerLoggedIn,
   } as any)
+
+  // Fetch initial unread message count from conversations
+  const { data: convsData } = useGetConversationsQuery(undefined, {
+    skip: !isSellerLoggedIn,
+  } as any)
+
+  useEffect(() => {
+    if (convsData?.data) {
+      const total = (convsData.data as any[]).reduce(
+        (sum: number, c: any) => sum + (c.sellerUnreadCount || 0),
+        0
+      )
+      setUnreadMsgCount(total)
+    }
+  }, [convsData])
+
+  // Reset badge when navigating to chat page
+  useEffect(() => {
+    if (pathname?.startsWith("/seller/chat")) {
+      setUnreadMsgCount(0)
+    }
+  }, [pathname])
+
+  // Subscribe to new messages for live badge + toast
+  useEffect(() => {
+    const unsubscribe = onNewMessage((msg) => {
+      if (msg.senderRole === "buyer") {
+        if (!pathname?.startsWith("/seller/chat")) {
+          setUnreadMsgCount((c) => c + 1)
+          const preview = msg.text || "📷 Image"
+          toast("New message", {
+            description: preview.length > 60 ? preview.slice(0, 60) + "…" : preview,
+            action: { label: "View", onClick: () => router.push("/seller/chat") },
+          })
+        }
+      }
+    })
+    return unsubscribe
+  }, [onNewMessage, pathname, router])
 
   useEffect(() => {
     if (sellerDataFromApi) {
@@ -215,13 +259,18 @@ export function SellerNavbar() {
                   </Link>
                   <Link 
                     href="/seller/chat" 
-                    className={`font-inter text-base transition-colors cursor-pointer ${
+                    className={`relative font-inter text-base transition-colors cursor-pointer ${
                       pathname?.startsWith("/seller/chat") 
                         ? "text-yogreet-sage font-medium" 
                         : "text-yogreet-charcoal hover:text-yogreet-sage"
                     }`}
                   >
                     Messages
+                    {unreadMsgCount > 0 && (
+                      <span className="absolute -top-2 -right-4 min-w-[18px] h-[18px] px-1 bg-yogreet-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                        {unreadMsgCount > 99 ? "99+" : unreadMsgCount}
+                      </span>
+                    )}
                   </Link>
                 </div>
               </>
@@ -448,13 +497,18 @@ export function SellerNavbar() {
                   </Link>
                   <Link 
                     href="/seller/chat" 
-                    className={`block px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
+                    className={`flex items-center justify-between px-4 py-2 font-inter text-sm transition-colors cursor-pointer ${
                       pathname?.startsWith("/seller/chat")
                         ? "text-yogreet-sage bg-yogreet-sage/10 font-medium" 
                         : "text-yogreet-charcoal hover:bg-yogreet-light-gray"
                     }`}
                   >
                     Messages
+                    {unreadMsgCount > 0 && (
+                      <span className="min-w-[18px] h-[18px] px-1 bg-yogreet-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                        {unreadMsgCount > 99 ? "99+" : unreadMsgCount}
+                      </span>
+                    )}
                   </Link>
                 </div>
               ) : (

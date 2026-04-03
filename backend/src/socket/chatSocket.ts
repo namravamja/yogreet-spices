@@ -146,7 +146,7 @@ export function initSocket(httpServer: HttpServer): SocketIOServer {
             senderId: new mongoose.Types.ObjectId(userId),
             senderRole: userRole,
             text: trimmedText,
-            imageUrl: safeImageUrl || null,
+            imageUrl: safeImageUrl,
             read: false,
           });
 
@@ -166,14 +166,14 @@ export function initSocket(httpServer: HttpServer): SocketIOServer {
           await ChatConversation.findByIdAndUpdate(conversationId, updateFields);
 
           const payload = {
-            _id: message._id,
+            _id: (message as any)._id,
             conversationId,
             senderId: userId,
             senderRole: userRole,
             text: trimmedText,
-            imageUrl: safeImageUrl || null,
+            imageUrl: safeImageUrl ?? null,
             read: false,
-            createdAt: message.createdAt,
+            createdAt: (message as any).createdAt,
           };
 
           // Broadcast to conversation room (both participants)

@@ -45,6 +45,7 @@ export function BuyerChatWidget({
   const [isTyping, setIsTyping] = useState(false);
   const [sellerTyping, setSellerTyping] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [unreadWhenMinimized, setUnreadWhenMinimized] = useState(0);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -99,11 +100,17 @@ export function BuyerChatWidget({
         // Mark as read
         if (msg.senderRole === "seller") {
           markRead(conversationId!);
+          // Toast + badge when minimized
+          if (minimized) {
+            setUnreadWhenMinimized((c) => c + 1);
+            const preview = msg.text || "📷 Image";
+            toast(`${sellerName}: ${preview.length > 50 ? preview.slice(0, 50) + "…" : preview}`);
+          }
         }
       }
     });
     return unsubscribe;
-  }, [conversationId, onNewMessage, markRead, dispatch]);
+  }, [conversationId, onNewMessage, markRead, dispatch, minimized, sellerName]);
 
   // Listen for typing events
   useEffect(() => {
@@ -252,13 +259,23 @@ export function BuyerChatWidget({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => setMinimized((v) => !v)}
-            className="p-1 rounded hover:bg-white/10 transition-colors cursor-pointer"
+            onClick={() => {
+              setMinimized((v) => {
+                if (v) setUnreadWhenMinimized(0); // reset badge on expand
+                return !v;
+              });
+            }}
+            className="relative p-1 rounded hover:bg-white/10 transition-colors cursor-pointer"
             aria-label={minimized ? "Expand chat" : "Minimize chat"}
           >
             <FiChevronDown
               className={`w-4 h-4 transition-transform ${minimized ? "rotate-180" : ""}`}
             />
+            {minimized && unreadWhenMinimized > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-0.5 bg-yogreet-red text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {unreadWhenMinimized > 9 ? "9+" : unreadWhenMinimized}
+              </span>
+            )}
           </button>
           <button
             onClick={onClose}

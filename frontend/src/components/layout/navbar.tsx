@@ -13,6 +13,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { removeCookie } from "@/utils/cookies"
 import { useDoubleTapLogout } from "@/hooks/useDoubleTapLogout"
+import { useSocket } from "@/contexts/SocketContext"
 
 // Component to handle searchParams logic separately
 function NavbarSearchParamsHandler({ 
@@ -58,6 +59,7 @@ export function Navbar() {
   const { data: cartData } = useGetCartQuery(undefined, {
     skip: !isAuthenticated,
   })
+  const { onNewMessage } = useSocket()
   
   const cartItemsCount = cartData?.length || 0
   
@@ -160,6 +162,20 @@ export function Navbar() {
 
   // Double tap logout handler
   const { handleLogoutClick } = useDoubleTapLogout(performLogout)
+
+  // Toast notification for new seller messages (when buyer is not on a product/explore page with widget open)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const unsubscribe = onNewMessage((msg) => {
+      if (msg.senderRole === "seller" && !pathname?.startsWith("/explore/")) {
+        const preview = msg.text || "📷 Image";
+        toast("New message from seller", {
+          description: preview.length > 60 ? preview.slice(0, 60) + "…" : preview,
+        });
+      }
+    });
+    return unsubscribe;
+  }, [isAuthenticated, onNewMessage, pathname]);
 
   // Dropdown handlers with delay
   const handleMouseEnter = () => {
