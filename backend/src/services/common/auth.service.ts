@@ -49,15 +49,13 @@ export const signupBuyer = async (data: SignupData) => {
   buyer.verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
   await buyer.save();
 
-  // Send verification email - throw error if it fails so user knows
+  // Send verification email - account is kept even if email fails (user can resend)
   try {
     await sendVerificationEmail(buyer.email, verifyToken, "BUYER");
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("❌ Failed to send verification email to buyer:", errorMessage);
-    // Delete the buyer account if email fails to send
-    await Buyer.findByIdAndDelete(buyer._id);
-    throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
+    // Keep the account — user can use the resend verification endpoint
   }
 
   setTimeout(async () => {
@@ -164,15 +162,13 @@ export const signupSeller = async (data: SellerSignupData) => {
   (seller as any).verifyExpires = new Date(Date.now() + 5 * 60 * 1000);
   await (seller as any).save();
 
-  // Send verification email - throw error if it fails so user knows
+  // Send verification email - account is kept even if email fails (user can resend)
   try {
     await sendVerificationEmail((seller as any).email, verifyToken, "SELLER");
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("❌ Failed to send verification email to seller:", errorMessage);
-    // Delete the seller account if email fails to send
-    await Seller.findByIdAndDelete((seller as any)._id);
-    throw new Error(`Account creation failed: Could not send verification email. ${errorMessage}`);
+    // Keep the account — user can use the resend verification endpoint
   }
 
   setTimeout(async () => {

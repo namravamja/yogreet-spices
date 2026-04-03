@@ -25,14 +25,15 @@ const getTransporter = (): nodemailer.Transporter => {
     // Validate configuration before creating transporter
     validateEmailConfig();
     
+    const port = Number(process.env.EMAIL_PORT!) || 465;
     transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST!,
-      port: Number(process.env.EMAIL_PORT!),
+      port,
+      secure: port === 465, // true for 465 (SMTPS), false for 587 (STARTTLS)
       auth: {
         user: process.env.EMAIL_USER!,
         pass: process.env.EMAIL_PASS!,
       },
-      secure: false, // For port 587
       tls: {
         rejectUnauthorized: false,
       },
