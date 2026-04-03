@@ -26,7 +26,7 @@ export const listDisputes = async (req: AuthenticatedRequest, res: Response) => 
 // Get single dispute details
 export const getDisputeById = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { disputeId } = req.params;
+    const { disputeId } = req.params as { disputeId: string };
     const dispute = await disputeService.getDisputeById(disputeId);
     
     if (!dispute) {
@@ -42,7 +42,7 @@ export const getDisputeById = async (req: AuthenticatedRequest, res: Response) =
 // Get dispute by order ID
 export const getDisputeByOrderId = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { orderId } = req.params;
+    const { orderId } = req.params as { orderId: string };
     const dispute = await disputeService.getDisputeByOrderId(orderId);
     
     if (!dispute) {
@@ -58,7 +58,7 @@ export const getDisputeByOrderId = async (req: AuthenticatedRequest, res: Respon
 // Update dispute status
 export const updateDisputeStatus = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { disputeId } = req.params;
+    const { disputeId } = req.params as { disputeId: string };
     const { status } = req.body;
     const adminId = req.user?.id;
 
@@ -86,7 +86,7 @@ export const updateDisputeStatus = async (req: AuthenticatedRequest, res: Respon
 // Resolve dispute
 export const resolveDispute = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { disputeId } = req.params;
+    const { disputeId } = req.params as { disputeId: string };
     const { action, refundAmount, refundPercentage, notes } = req.body;
     const adminId = req.user?.id;
 
@@ -121,7 +121,7 @@ export const resolveDispute = async (req: AuthenticatedRequest, res: Response) =
 // Add admin note
 export const addAdminNote = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { disputeId } = req.params;
+    const { disputeId } = req.params as { disputeId: string };
     const { note } = req.body;
     const adminId = req.user?.id;
 
@@ -152,7 +152,7 @@ export const addAdminNote = async (req: AuthenticatedRequest, res: Response) => 
 // Add evidence (admin can add evidence too)
 export const addEvidence = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { disputeId } = req.params;
+    const { disputeId } = req.params as { disputeId: string };
     const { type, description } = req.body;
     const adminId = req.user?.id;
 
@@ -190,7 +190,7 @@ export const addEvidence = async (req: AuthenticatedRequest, res: Response) => {
 // Update priority
 export const updatePriority = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { disputeId } = req.params;
+    const { disputeId } = req.params as { disputeId: string };
     const { priority } = req.body;
     const adminId = req.user?.id;
 

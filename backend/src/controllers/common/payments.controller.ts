@@ -15,7 +15,7 @@ interface AuthRequest extends Request {
 
 export const createPayment = async (req: AuthRequest, res: Response) => {
   const buyerId = req.user?.id;
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   if (!buyerId) return res.status(401).json({ success: false, message: "Unauthorized" });
   if (!orderId) return res.status(400).json({ success: false, message: "Order ID required" });
 
@@ -42,7 +42,7 @@ export const markDeliveredBySeller = async (req: AuthRequest, res: Response) => 
   if (!user || user.role !== "SELLER") {
     return res.status(403).json({ success: false, message: "Forbidden" });
   }
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   if (!orderId) return res.status(400).json({ success: false, message: "Order ID required" });
   const order = await Order.findById(orderId);
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -64,7 +64,7 @@ export const markDeliveredBySeller = async (req: AuthRequest, res: Response) => 
 
 export const raiseDispute = async (req: AuthRequest, res: Response) => {
   const buyerId = req.user?.id;
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   const { reason, reasonDescription, description } = req.body;
   
   if (!buyerId) return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -108,7 +108,7 @@ export const raiseDispute = async (req: AuthRequest, res: Response) => {
 
 export const confirmAndRelease = async (req: AuthRequest, res: Response) => {
   const buyerId = req.user?.id;
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   if (!buyerId) return res.status(401).json({ success: false, message: "Unauthorized" });
   const order = await Order.findById(orderId);
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });

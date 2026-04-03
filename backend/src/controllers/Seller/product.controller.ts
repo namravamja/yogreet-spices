@@ -24,7 +24,7 @@ export const getSellerProduct = async (req: AuthenticatedRequest, res: Response)
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const productId = req.params.id;
+    const productId = req.params.id as string;
     if (!productId) {
       return res.status(400).json({ error: "Product ID is required" });
     }
@@ -101,7 +101,7 @@ export const updateProduct = async (req: AuthenticatedRequest, res: Response) =>
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const productId = req.params.id;
+    const productId = req.params.id as string;
     if (!productId) {
       return res.status(400).json({ error: "Product ID is required" });
     }
@@ -174,7 +174,7 @@ export const deleteProduct = async (req: AuthenticatedRequest, res: Response) =>
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const productId = req.params.id;
+    const productId = req.params.id as string;
     if (!productId) {
       return res.status(400).json({ error: "Product ID is required" });
     }

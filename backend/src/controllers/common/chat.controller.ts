@@ -10,7 +10,7 @@ export const getOrCreateConversation = async (req: Request, res: Response): Prom
   try {
     const user = (req as any).user;
     const buyerId = user.id;
-    const { sellerId } = req.params;
+    const { sellerId } = req.params as { sellerId: string };
 
     if (!mongoose.Types.ObjectId.isValid(sellerId)) {
       res.status(400).json({ success: false, message: "Invalid seller ID" });
@@ -123,7 +123,7 @@ export const getMessages = async (req: Request, res: Response): Promise<void> =>
   try {
     const user = (req as any).user;
     const userId = user.id;
-    const { conversationId } = req.params;
+    const { conversationId } = req.params as { conversationId: string };
     const page = parseInt((req.query.page as string) || "1", 10);
     const limit = 50;
 

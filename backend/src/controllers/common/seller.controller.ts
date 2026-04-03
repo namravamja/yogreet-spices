@@ -3,7 +3,7 @@ import * as sellerService from "../../services/common/seller.service";
 
 export const getPublicSellerProfile = async (req: Request, res: Response) => {
   try {
-    const sellerId = req.params.id;
+    const sellerId = req.params.id as string;
     if (!sellerId) {
       return res.status(400).json({ error: "Seller ID is required" });
     }

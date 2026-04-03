@@ -33,7 +33,7 @@ export const listDisputes = async (_req: AuthenticatedRequest, res: Response) =>
 };
 
 export const forceRelease = async (req: AuthenticatedRequest, res: Response) => {
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   const order = await Order.findById(orderId);
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
   const currency = order.currency || "INR";
@@ -72,7 +72,7 @@ export const forceRelease = async (req: AuthenticatedRequest, res: Response) => 
 };
 
 export const refund = async (req: AuthenticatedRequest, res: Response) => {
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   const { amount } = req.body as { amount?: number };
   const order = await Order.findById(orderId);
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -89,7 +89,7 @@ export const refund = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 export const resolveDispute = async (req: AuthenticatedRequest, res: Response) => {
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   const { action, amount } = req.body as { action: "refund" | "partial_refund" | "release"; amount?: number };
   if (!["refund", "partial_refund", "release"].includes(action)) {
     return res.status(400).json({ success: false, message: "Invalid action" });

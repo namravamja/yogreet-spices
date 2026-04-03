@@ -33,7 +33,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
   if (!user || user.role !== "SELLER") {
     return res.status(403).json({ success: false, message: "Forbidden" });
   }
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
   const { status } = req.body as { status?: string };
   if (!orderId) return res.status(400).json({ success: false, message: "Order ID required" });
   if (!status || !ALLOWED_STATUSES.includes(status as OrderStatus)) {
@@ -164,7 +164,7 @@ export const getSellerOrderById = async (req: AuthRequest, res: Response) => {
     return res.status(403).json({ success: false, message: "Forbidden" });
   }
   const sellerId = user.id;
-  const { orderId } = req.params;
+  const { orderId } = req.params as { orderId: string };
 
   if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
     return res.status(400).json({ success: false, message: "Invalid order ID" });

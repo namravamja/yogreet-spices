@@ -47,7 +47,7 @@ export const getAdmin = async (req: AuthenticatedRequest, res: Response) => {
 
 export const getSellerById = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     if (!id) {
       return res.status(400).json({ error: "Seller ID is required" });
     }
@@ -115,7 +115,7 @@ export const markFieldsAsReviewed = async (req: AuthenticatedRequest, res: Respo
 
 export const getBuyerById = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     if (!id) {
       return res.status(400).json({ error: "Buyer ID is required" });
     }
@@ -128,7 +128,7 @@ export const getBuyerById = async (req: AuthenticatedRequest, res: Response) => 
 
 export const getSellerProductsById = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     if (!id) {
       return res.status(400).json({ error: "Seller ID is required" });
     }
@@ -141,7 +141,7 @@ export const getSellerProductsById = async (req: AuthenticatedRequest, res: Resp
 
 export const getBuyerOrdersById = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     if (!id) {
       return res.status(400).json({ error: "Buyer ID is required" });
     }
@@ -154,7 +154,7 @@ export const getBuyerOrdersById = async (req: AuthenticatedRequest, res: Respons
 
 export const getSellerOrdersById = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     if (!id) {
       return res.status(400).json({ error: "Seller ID is required" });
     }

@@ -35,7 +35,7 @@ export const getSellerDiscounts = async (req: AuthRequest, res: Response) => {
 export const getDiscount = async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user?.id;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     if (!sellerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -163,7 +163,7 @@ export const createDiscount = async (req: AuthRequest, res: Response) => {
 export const updateDiscount = async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user?.id;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     if (!sellerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -266,7 +266,7 @@ export const updateDiscount = async (req: AuthRequest, res: Response) => {
 export const deleteDiscount = async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user?.id;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     if (!sellerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -296,7 +296,7 @@ export const deleteDiscount = async (req: AuthRequest, res: Response) => {
 export const toggleDiscountStatus = async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user?.id;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     if (!sellerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -330,7 +330,7 @@ export const toggleDiscountStatus = async (req: AuthRequest, res: Response) => {
 export const applyDiscountToProducts = async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user?.id;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { productIds } = req.body;
 
     if (!sellerId) {
@@ -388,7 +388,7 @@ export const applyDiscountToProducts = async (req: AuthRequest, res: Response) =
 export const removeDiscountFromProducts = async (req: AuthRequest, res: Response) => {
   try {
     const sellerId = req.user?.id;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     if (!sellerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });

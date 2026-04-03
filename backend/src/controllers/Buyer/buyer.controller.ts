@@ -88,7 +88,7 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response) =>
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const addressId = req.params.id;
+    const addressId = req.params.id as string;
     if (!addressId) throw new Error("Invalid address ID");
 
     const addressData: buyerService.AddressUpdateData = req.body;
@@ -104,7 +104,7 @@ export const deleteAddress = async (req: AuthenticatedRequest, res: Response) =>
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const addressId = req.params.id;
+    const addressId = req.params.id as string;
     if (!addressId) throw new Error("Invalid address ID");
 
     await buyerService.deleteAddress(userId, addressId);
@@ -119,7 +119,7 @@ export const setDefaultAddress = async (req: AuthenticatedRequest, res: Response
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const addressId = req.params.id;
+    const addressId = req.params.id as string;
     if (!addressId) throw new Error("Invalid address ID");
 
     const address = await buyerService.setDefaultAddress(userId, addressId);
@@ -159,7 +159,7 @@ export const updateCartItem = async (req: AuthenticatedRequest, res: Response) =
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const cartItemId = req.params.id;
+    const cartItemId = req.params.id as string;
     const cartItem = await cartService.updateCartItem(userId, cartItemId, req.body);
     res.json({ success: true, message: "Cart item updated successfully", data: cartItem });
   } catch (error) {
@@ -172,7 +172,7 @@ export const removeCartItem = async (req: AuthenticatedRequest, res: Response) =
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const cartItemId = req.params.id;
+    const cartItemId = req.params.id as string;
     await cartService.removeCartItem(userId, cartItemId);
     res.status(200).json({ success: true, message: "Item removed from cart successfully" });
   } catch (error) {
@@ -223,7 +223,7 @@ export const getOrder = async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user?.id;
     if (!userId) throw new Error("Unauthorized");
 
-    const orderId = req.params.id;
+    const orderId = req.params.id as string;
     if (!orderId) throw new Error("Invalid order ID");
 
     const order = await orderService.getOrderById(userId, orderId);
