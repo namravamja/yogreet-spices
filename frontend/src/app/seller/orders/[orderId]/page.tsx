@@ -25,11 +25,26 @@ import { formatCurrency } from "@/utils/currency";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+const ALLOWED_STATUSES = [
+  "pending",
+  "confirmed", 
+  "seller_preparing",
+  "ready_for_pickup",
+  "cancelled"
+] as const;
+type OrderStatus = (typeof ALLOWED_STATUSES)[number];
+
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
-  shipped: "bg-purple-100 text-purple-800",
+  seller_preparing: "bg-purple-100 text-purple-800",
+  ready_for_pickup: "bg-green-100 text-green-800",
+  pickup_assigned: "bg-indigo-100 text-indigo-800",
+  picked_up: "bg-cyan-100 text-cyan-800",
+  in_transit: "bg-blue-100 text-blue-800",
+  out_for_delivery: "bg-teal-100 text-teal-800",
   delivered: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
   cancelled: "bg-red-100 text-red-800",
 };
 
@@ -43,9 +58,16 @@ const paymentStatusColors: Record<string, string> = {
 const getStatusIcon = (status: string) => {
   switch (status) {
     case "delivered":
+    case "completed":
       return <CheckCircle className="w-5 h-5 text-green-600" />;
-    case "shipped":
-      return <Truck className="w-5 h-5 text-purple-600" />;
+    case "ready_for_pickup":
+    case "pickup_assigned":
+    case "picked_up":
+    case "in_transit":
+    case "out_for_delivery":
+      return <Truck className="w-5 h-5 text-blue-600" />;
+    case "seller_preparing":
+      return <Package className="w-5 h-5 text-purple-600" />;
     case "confirmed":
       return <CheckCircle className="w-5 h-5 text-blue-600" />;
     case "cancelled":
@@ -54,9 +76,6 @@ const getStatusIcon = (status: string) => {
       return <Clock className="w-5 h-5 text-yellow-600" />;
   }
 };
-
-const ALLOWED_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
-type OrderStatus = (typeof ALLOWED_STATUSES)[number];
 
 export default function SellerOrderDetailsPage() {
   const params = useParams();
@@ -342,16 +361,44 @@ export default function SellerOrderDetailsPage() {
                 <Truck className="w-5 h-5 mr-2 text-yogreet-sage" />
                 Update Order Status
               </h2>
+              
+              {/* Show info if delivery partner is assigned */}
+              {(order as any).deliveryPartnerId && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4 flex items-start gap-2">
+                  <Truck className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-800 font-inter">
+                    <strong>Delivery Partner Assigned</strong>
+                    <p className="mt-1">
+                      This order has been assigned to our logistics partner. They will handle pickup and delivery.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Show info about ready for pickup */}
+              {order.status === "seller_preparing" && (
+                <div className="bg-purple-50 border border-purple-200 rounded-md p-4 mb-4 flex items-start gap-2">
+                  <Package className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
+                  <div className="text-sm text-purple-800 font-inter">
+                    <strong>Next Step:</strong> Mark as "Ready for Pickup" when your package is prepared and ready for collection by our delivery partner.
+                  </div>
+                </div>
+              )}
+              
               <div className="flex flex-col sm:flex-row gap-4">
                 <select
                   value={selectedStatus || order.status}
                   onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                  disabled={isUpdating || order.status === "cancelled" || order.status === "delivered"}
+                  disabled={
+                    isUpdating || 
+                    order.status === "cancelled" || 
+                    !["pending", "confirmed", "seller_preparing", "ready_for_pickup"].includes(order.status)
+                  }
                   className="flex-1 px-4 py-2 border border-stone-300 rounded-md focus:border-yogreet-sage focus:outline-none focus:ring-1 focus:ring-yogreet-sage bg-white font-inter disabled:bg-stone-100 disabled:cursor-not-allowed"
                 >
                   {ALLOWED_STATUSES.map((status) => (
                     <option key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                     </option>
                   ))}
                 </select>
@@ -362,7 +409,7 @@ export default function SellerOrderDetailsPage() {
                     !selectedStatus ||
                     selectedStatus === order.status ||
                     order.status === "cancelled" ||
-                    order.status === "delivered"
+                    !["pending", "confirmed", "seller_preparing", "ready_for_pickup"].includes(order.status)
                   }
                   className="px-6 py-2 bg-yogreet-sage hover:bg-yogreet-sage/90 text-white rounded-md font-manrope font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
@@ -376,9 +423,16 @@ export default function SellerOrderDetailsPage() {
                   )}
                 </button>
               </div>
-              {(order.status === "cancelled" || order.status === "delivered") && (
+              
+              {order.status === "cancelled" && (
                 <p className="text-sm text-stone-500 mt-3 font-inter">
-                  Status cannot be changed for {order.status} orders.
+                  Status cannot be changed for cancelled orders.
+                </p>
+              )}
+              
+              {!["pending", "confirmed", "seller_preparing", "ready_for_pickup", "cancelled"].includes(order.status) && (
+                <p className="text-sm text-stone-500 mt-3 font-inter">
+                  This order is now being handled by the delivery partner. Status updates will be managed by them.
                 </p>
               )}
             </div>

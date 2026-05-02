@@ -24,6 +24,12 @@ router.get("/buyers/:id", verifyToken, asyncHandler(adminController.getBuyerById
 router.get("/buyers/:id/orders", verifyToken, asyncHandler(adminController.getBuyerOrdersById as any));
 router.get("/stats", verifyToken, asyncHandler(adminController.getAdminStats as any));
 
+// Delivery partner monitoring routes
+router.get("/delivery-overview", verifyToken, asyncHandler(adminController.getDeliveryOverview as any));
+router.get("/delivery-partner", verifyToken, asyncHandler(adminController.getDeliveryPartnerProfile as any));
+router.get("/delivery-analytics", verifyToken, asyncHandler(adminController.getDeliveryAnalytics as any));
+router.get("/orders/:id/delivery-timeline", verifyToken, asyncHandler(adminController.getOrderDeliveryTimeline as any));
+
 // Legacy payments & disputes endpoints (for backward compatibility)
 router.get("/disputes", verifyToken, asyncHandler(disputeController.listDisputes as any));
 router.post("/payments/:orderId/refund", verifyToken, asyncHandler(adminPayments.refund as any));

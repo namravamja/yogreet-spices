@@ -6,12 +6,19 @@ import { Buyer } from "../../models/Buyer";
 import { sendAutoReleaseWarningEmail } from "../../helpers/orderMailer";
 import { Product } from "../../models/Product";
 import { Address } from "../../models/Address";
+import { autoAssignDeliveryPartner } from "../../services/DeliveryPartner/delivery.service";
 
 interface AuthRequest extends Request {
   user?: { id: string; role: string };
 }
 
-const ALLOWED_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
+const ALLOWED_STATUSES = [
+  "pending",
+  "confirmed",
+  "seller_preparing",
+  "ready_for_pickup",
+  "cancelled"
+] as const;
 type OrderStatus = (typeof ALLOWED_STATUSES)[number];
 
 const verifySellerOwnsOrder = async (orderId: string, sellerId: string) => {
@@ -43,8 +50,20 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
   if (!allowed) return res.status(403).json({ success: false, message: "Forbidden" });
 
-  order.status = status as OrderStatus;
+  order.status = status as any;
 
+  // Auto-assign delivery partner when order is ready for pickup
+  if (status === "ready_for_pickup") {
+    try {
+      await autoAssignDeliveryPartner(orderId);
+      console.log(`✅ Delivery partner auto-assigned for order ${orderId}`);
+    } catch (error) {
+      console.error(`❌ Failed to auto-assign delivery partner for order ${orderId}:`, error);
+      // Don't fail the status update if auto-assignment fails
+    }
+  }
+
+  // Legacy support for "delivered" status (should be handled by delivery partner now)
   if (status === "delivered") {
     const now = new Date();
     order.deliveryStatus = "delivered";

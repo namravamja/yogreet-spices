@@ -220,7 +220,7 @@ export const sellerApi = SellerApi.injectEndpoints({
     }),
 
     updateOrderStatus: builder.mutation({
-      query: ({ orderId, status }: { orderId: string; status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" }) => ({
+      query: ({ orderId, status }: { orderId: string; status: "pending" | "confirmed" | "seller_preparing" | "ready_for_pickup" | "cancelled" }) => ({
         url: `/orders/${orderId}/status`,
         method: "PATCH",
         body: { status },

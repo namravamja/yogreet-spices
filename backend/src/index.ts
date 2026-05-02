@@ -23,6 +23,7 @@ import adminRoutes from "./routes/common/admin.routes";
 import verificationRoutes from "./routes/common/verification.routes";
 import paymentRoutes from "./routes/common/payments.routes";
 import webhookRoutes from "./routes/common/webhooks.routes";
+import deliveryRoutes from "./routes/DeliveryPartner/delivery.routes";
 import { Order } from "./models/Order";
 import { OrderItem } from "./models/OrderItem";
 import { SellerPayout } from "./models/SellerPayout";
@@ -94,6 +95,9 @@ app.use("/api/seller", sellerRoutes);
 
 // Admin routes
 app.use("/api/admin", adminRoutes);
+
+// Delivery partner routes
+app.use("/api/delivery", deliveryRoutes);
 
 // Document verification routes (public - no auth required)
 app.use("/api/verify", verificationRoutes);
